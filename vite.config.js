@@ -11,4 +11,11 @@ export default defineConfig({
       port: 5173,
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        inject: 'src/inject.ts',
+      },
+    },
+  },
 })

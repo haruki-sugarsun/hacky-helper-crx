@@ -3,8 +3,9 @@
     "name": "Hacky Helper",
     "version": "0.0.1",
     "permissions": [
-        "sidePanel"
+        "sidePanel", "scripting"
     ],
+    "host_permissions": ["*://*/*"],
     "action": { "default_popup": "index.html" },
     "side_panel": {
         "default_path": "sidepanel.html"
