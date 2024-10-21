@@ -14,6 +14,7 @@
     "vite": "^5.4.8"
   },
   "dependencies": {
-    "@types/chrome": "^0.0.278"
+    "@types/chrome": "^0.0.278",
+    "ollama": "^0.5.9"
   }
 }
