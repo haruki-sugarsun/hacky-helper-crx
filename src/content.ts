@@ -10,7 +10,7 @@ const html = `
 `
 
 const doc = new DOMParser().parseFromString(html, 'text/html')
-document.body.append(doc.body.firstElementChild!)
+// document.body.append(doc.body.firstElementChild!)
 
 function getVisibleText() {
   return nativeTreeWalker()
@@ -55,4 +55,4 @@ console.log(btn)
 console.log(Math.random())
 
 btn.onclick = (ev) => { console.log(ev); getVisibleText() }
-document.body.append(btn)
+// document.body.append(btn)

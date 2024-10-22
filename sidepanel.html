@@ -1,23 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hacky Helper: Side Panel</title>
-  </head>
-  <body>
-    <h1>Hacky Helper: Side Panel</h1>
-    <button id="reload_btn">RELOAD</button>
-    <button id="inspect_page" type="button">Inspect Page</button>
-    <hr>
-    <div id="app"></div>
-    <hr>
-    <div id="visible_text"></div>
 
-    <hr>
-    <div id="response"></div>
-    <script type="module" src="/src/sidepanel.ts"></script>
-    <hr>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hacky Helper: Side Panel</title>
+</head>
+
+<body>
+  <h1>H-H: Side</h1>
+  <!-- Controllers -->
+  <button id="reload_btn">RELOAD</button>
+  <button id="inspect_page" type="button">Inspect Page</button>
+  <label><input id="auto_inspecting" type="checkbox" value="false">Auto Inspecting</label>
+
+  <select id="language">
+    <option value="en">English</option>
+    <option value="ja">日本語</option>
+  </select>
+  <select id="mode">
+    <option value="summary">Summary</option>
+    <option value="writing">Support Writing</option>
+  </select>
+  <hr>
+
+  <!-- Status Line -->
+  <div id="status_line"></div>
+  <div id="app"></div>
+  <hr>
+
+  <!-- Feedback Display -->
+  <div id="visible_text"></div>
+
+  <hr>
+  <div id="response"></div>
+  <script type="module" src="/src/sidepanel.ts"></script>
+  <hr>
+</body>
+
 </html>
