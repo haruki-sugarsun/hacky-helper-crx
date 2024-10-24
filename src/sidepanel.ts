@@ -1,13 +1,13 @@
+import LRU from './lru-cache.ts'
+
 import ollama from 'ollama'
 import './sidepanel.css'
 
-// Get fixed elements and setup handlers:
+// Get references to the fixed elements and setup handlers:
 const auto_inspection_checkbox = document.querySelector<HTMLInputElement>('#auto_inspecting')!
 const status_line = document.querySelector<HTMLDivElement>('#status_line')!
 const language_choice = document.querySelector<HTMLInputElement>('#language')!
 const mode_choice = document.querySelector<HTMLInputElement>('#mode')!
-
-console.log(status_line)
 
 auto_inspection_checkbox.addEventListener('change', (event) => {
   if (!event || !event.target || !(event.target instanceof HTMLInputElement)) {
@@ -22,25 +22,38 @@ auto_inspection_checkbox.addEventListener('change', (event) => {
   // Here, you would add your logic to change content based on the selected language
 })
 
-// https://github.com/ollama/ollama-js
-console.log(Math.random())
-// ollama.chat({
-//   model: 'gemma2:2b',
-//   messages: [{ role: 'user', content: 'Why is the sky blue? I am asking for a fantasy explanation.' }],
-// }).then((res) => {
-//   console.log(res.message.content)
-//   document.querySelector<HTMLDivElement>('#response')!.innerText = res.message.content
-// }, (reason) => {
-//   console.log(reason)
-// })
-// console.log(Math.random())
+// Also exntention event handlers:
 
-// document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-//   <div>
-//   AB-C
-//   </div>
-// `
 
+
+
+// Auto-Inspection State Set:
+// Auto-inspection runs if (TODO: Pack these into an state object)
+// - Auto-Inspection is enabled (auto_inspection_checkbox)
+// - Auto-Inspection run counts does not exceed the limit (auto_inspection_remaining_count)
+// - No ongoing request is running (last_inspection_promise)
+// - 60sec already passed since the last run (last_inspection_run)
+// - Inspected content from the tab changed (last_inspection_content)  TODO: Refactor as this lives in inspect_page() and too comlicated...
+var last_inspection_promise: Promise<void> | null = null
+var last_inspection_run_timestamp = 0
+var last_inspection_content = ""
+var auto_inspection_remaining_count = 100
+
+const inference_cache = new LRU<string>(100);
+
+async function generateStatusLine() {
+  var line = ''
+  if (last_inspection_run_timestamp > 0 && last_inspection_promise) {
+    const dt = (new Date().getTime() - last_inspection_run_timestamp) / 1000
+    line += ` Last run ${dt.toFixed(1)}s ago, and is `
+    line += (await getPromiseState(last_inspection_promise)).state + '.'
+  }
+  line += ` Remaining Count: ${auto_inspection_remaining_count}.`
+  line += ` Cache Size: ${inference_cache.size()}/${inference_cache.capacity()}`
+  return line
+}
+
+// Utilities
 function reload_page() {
   location.href = 'sidepanel.html'
 }
@@ -82,7 +95,6 @@ async function inspect_page_EventHandler(this: HTMLButtonElement, ev: MouseEvent
   return inspect_page()
 }
 
-var last_inspection_promise: Promise<void> | null = null
 async function inspect_page() {
   const currentTab = await chrome.tabs.query({ active: true, currentWindow: true })
   console.log(currentTab)
@@ -92,7 +104,7 @@ async function inspect_page() {
   //   { target: { tabId: currentTab[0].id! },
   //   files: [ 'inject.js' ] })
 
-  updateStatus("Inspection starts.")
+  updateStatus("🚀 Inspection starts.")
   console.log(scriptingResults)
 
   const newVisibleText = scriptingResults.reduce((acc, curr) => { return acc + curr.result }, "")
@@ -104,20 +116,36 @@ async function inspect_page() {
     return
   }
 
-  const promptPrefixMap = new Map<string, string>()
-    promptPrefixMap.set("summary-en", 'Summarize the following text fetched from a web page. Give the answer in English: ')
-    promptPrefixMap.set("summary-ja", '以下の文章はウェブページから取得されたものです。日本語で要約してください: ')
-    promptPrefixMap.set("writing-en", 'Suggest an improvement for the following text, especially focusing on wording and expression. Note that some UI elements are also included. Give the answer in English: ')
-    promptPrefixMap.set("writing-ja", "以下の文章の改善を提案してください。特に表現や言葉遣いに集中してください。また、UI要素も含まれてしまっていることに注意してください。日本語で回答してください: ")
+  const promptPostfixMap = new Map<string, string>()
+  promptPostfixMap.set("summary-en", 'The above text is from a web page. Give the summary in English.')
+  promptPostfixMap.set("summary-ja", '以上の文章はウェブページから取得されました。日本語で要約してください.')
+  promptPostfixMap.set("writing-en", 'Suggest an improvement for the above text, especially focusing on wording and expression. Please ignore some UI elements as they are included unintentionally. Give the answer in English.')
+  promptPostfixMap.set("writing-ja", "以上の文章の改善を提案してください。特に表現や言葉遣いに集中してください。また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください.")
+  promptPostfixMap.set("ideation-en", 'Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English.')
+  promptPostfixMap.set("ideation-ja", "以上の文章に対し、新しいアイデアを提示して、より魅力的、インパクトのあるものにする方法を考えてください。追加できる新しい可能性はあるでしょうか？また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください.")
 
-  var prompt_prefix = promptPrefixMap.get((mode_choice.value + "-" + language_choice.value))
+  const modeStr = mode_choice.value + "-" + language_choice.value
+  const promptPostfix = promptPostfixMap.get(modeStr)
+  const wholePrompt = newVisibleText + "===\n" + promptPostfix
+
+  // Starting the inference with cache in consideration.
   last_inspection_content = newVisibleText
+  // Check if we have a cache.
+  const cachedResponse = inference_cache.get(wholePrompt)
+  if (cachedResponse) {
+    console.log("Using cachedReponse.")
+    document.querySelector<HTMLDivElement>('#response')!.innerText = cachedResponse
+    inference_cache.set(wholePrompt, cachedResponse)
+    return
+  }
+
   last_inspection_promise = ollama.chat({
     model: 'gemma2:2b',
-    messages: [{ role: 'user', content: prompt_prefix + newVisibleText }],
+    messages: [{ role: 'user', content: wholePrompt }],
   }).then((res) => {
     console.log(res.message.content)
     document.querySelector<HTMLDivElement>('#response')!.innerText = res.message.content
+    inference_cache.set(wholePrompt, res.message.content)
   }, (reason) => {
     console.log(reason)
     document.querySelector<HTMLDivElement>('#response')!.innerText = "Got a error: " + JSON.stringify(reason)
@@ -136,43 +164,34 @@ document.querySelector<HTMLButtonElement>('#inspect_page')!.addEventListener('cl
 
 
 // Setup an inspecting loop.
-// Auto-inspection runs if (TODO: Pack these into an state object)
-// - Auto-Inspection is enabled (auto_inspection_checkbox)
-// - Auto-Inspection run counts does not exceed the limit (auto_inspection_remaining_count)
-// - No ongoing request is running (last_inspection_promise)
-// - 60sec already passed since the last run (last_inspection_run)
-// - Inspected content from the tab changed (last_inspection_content)  TODO: Refactor as this lives in inspect_page() and too comlicated...
-var last_inspection_run = 0
-var last_inspection_content = ""
-var auto_inspection_remaining_count = 100
 async function inspection_loop() {
   const enabled = document.querySelector<HTMLInputElement>('#auto_inspecting')!.checked
-  console.log("inspection_loop", enabled, auto_inspection_remaining_count, last_inspection_run, last_inspection_promise, getPromiseState(last_inspection_promise!));
+  console.log("inspection_loop", enabled, auto_inspection_remaining_count, last_inspection_run_timestamp, last_inspection_promise, getPromiseState(last_inspection_promise!));
 
   if (!enabled) {
-    updateStatus("Auto-Inspection is disabled.");
+    updateStatus("🚫 Auto-Inspection is disabled.");
     return
   } else if (auto_inspection_remaining_count <= 0) {
-    updateStatus(" 💤 Auto-Inspection count exceeds the limit.");
+    updateStatus("💤 Auto-Inspection count exceeds the limit.");
     document.querySelector<HTMLInputElement>('#auto_inspecting')!.checked = false
     return
   }
   const last_run_state = await getPromiseState(last_inspection_promise!)
   if (last_run_state.state == "pending") {
     // is still runnning.
-    updateStatus(`⏳ The last run is still running. (${JSON.stringify(last_run_state)})`)
-    console.log("Skip auto inspection as the last run was too close or is still running.", last_inspection_run, last_inspection_promise)
+    updateStatus(`⏳ Waiting for the last run.`)
+    console.log("Skip auto inspection as the last run was too close or is still running.", last_inspection_run_timestamp, last_inspection_promise)
     return
   }
-  const mSecFromLastRun = new Date().getTime() - last_inspection_run
+  const mSecFromLastRun = new Date().getTime() - last_inspection_run_timestamp
   if (mSecFromLastRun < 60 * 1000) {
     // is still runnning.
-    updateStatus(`⏳ Skip auto inspection as the last run was too close (${mSecFromLastRun} msec).`)
+    updateStatus(`😴 Cooling down for ${60 * 1000 - mSecFromLastRun} msec.`)
     return
   }
 
   // Can run the inspection:
-  last_inspection_run = new Date().getTime()
+  last_inspection_run_timestamp = new Date().getTime()
   auto_inspection_remaining_count--
   inspect_page()
 }
@@ -202,7 +221,7 @@ function getPromiseState(promise: Promise<any>): Promise<any> {
   );
 }
 
-function updateStatus(status_line_str: string) {
-  status_line.innerText = status_line_str
+async function updateStatus(status_line_str: string) {
+  status_line.innerText = status_line_str + ' ' + await generateStatusLine()
   console.log(status_line_str)
 }
