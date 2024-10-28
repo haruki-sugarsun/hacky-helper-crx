@@ -9,6 +9,9 @@ const status_line = document.querySelector<HTMLDivElement>('#status_line')!
 const language_choice = document.querySelector<HTMLInputElement>('#language')!
 const mode_choice = document.querySelector<HTMLInputElement>('#mode')!
 
+// tabId -> { language: ..., mode: ... }
+const choicesMemo = new Map()
+
 auto_inspection_checkbox.addEventListener('change', (event) => {
   if (!event || !event.target || !(event.target instanceof HTMLInputElement)) {
     console.log("Unexpected call.", event)
@@ -21,9 +24,47 @@ auto_inspection_checkbox.addEventListener('change', (event) => {
   }
   // Here, you would add your logic to change content based on the selected language
 })
+language_choice.addEventListener('change', (_event) => {
+  saveChoices()
+})
+mode_choice.addEventListener('change', (_event) => {
+  saveChoices()
+})
+
+
+function saveChoices() {
+  chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    const currentTab = tabs[0]
+    choicesMemo.set(currentTab.id, { language: language_choice.value, mode: mode_choice.value })
+  })
+}
+
+function restoreChoices(id: number) {
+  const memo = choicesMemo.get(id)
+  console.log('restoreChoices', choicesMemo, memo)
+  if (!memo) {
+    return
+  }
+
+  language_choice.value = memo.language
+  mode_choice.value = memo.mode
+}
 
 // Also exntention event handlers:
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  console.log('onActivated', activeInfo)
 
+  // Check if the side panel is on the same window.
+  chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    console.log('onActivated - getting current', tabs)
+    const currentTab = tabs[0]
+    if (activeInfo.windowId != currentTab.windowId || currentTab.id == undefined) { // None of my business.
+      return
+    }
+
+    restoreChoices(currentTab.id)
+  })
+})
 
 
 
