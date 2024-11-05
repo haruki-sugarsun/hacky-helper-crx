@@ -42,12 +42,13 @@ function saveChoices() {
 function restoreChoices(id: number) {
   const memo = choicesMemo.get(id)
   console.log('restoreChoices', choicesMemo, memo)
-  if (!memo) {
-    return
+  if (memo) {
+    language_choice.value = memo.language
+    mode_choice.value = memo.mode
+  } else { // to default
+    language_choice.value = 'ja'
+    mode_choice.value = 'summary'
   }
-
-  language_choice.value = memo.language
-  mode_choice.value = memo.mode
 }
 
 // Also exntention event handlers:
