@@ -32,17 +32,19 @@
   </select>
   <hr>
 
-  <!-- Status Line -->
-  <div id="status_line"></div>
   <div id="app"></div>
-  <hr>
 
   <!-- Feedback Display -->
+  <div id="custom_prompt_container">CUSTOM:<textarea id="custom_prompt"></textarea></div>
   <div id="visible_text"></div>
 
+
   <hr>
-  <div id="response"></div>
+  <div id="response">default response</div>
   <script type="module" src="/src/sidepanel.ts"></script>
+  <!-- Status Line -->
+  <hr>
+  <div id="status_line"></div>
   <hr>
   <textarea id="debuglog">...</textarea>
 </body>

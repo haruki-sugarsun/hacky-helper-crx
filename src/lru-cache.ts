@@ -25,7 +25,7 @@ class LRU<T> {
     if (this.cache.size >= this.maxSize) {
       const lruKey = this.cache.keys().next().value
       // remove the least recently used item from the cache
-      this.cache.delete(lruKey)
+      lruKey && this.cache.delete(lruKey)
     }
     this.cache.set(key, { key, value })
   }

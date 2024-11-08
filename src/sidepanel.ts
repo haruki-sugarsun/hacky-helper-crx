@@ -8,6 +8,7 @@ const auto_inspection_checkbox = document.querySelector<HTMLInputElement>('#auto
 const status_line = document.querySelector<HTMLDivElement>('#status_line')!
 const language_choice = document.querySelector<HTMLInputElement>('#language')!
 const mode_choice = document.querySelector<HTMLInputElement>('#mode')!
+const custom_prompt = document.querySelector<HTMLTextAreaElement>('#custom_prompt')!
 
 // tabId -> { language: ..., mode: ... }
 const choicesMemo = new Map()
@@ -30,12 +31,15 @@ language_choice.addEventListener('change', (_event) => {
 mode_choice.addEventListener('change', (_event) => {
   saveChoices()
 })
-
+custom_prompt.addEventListener('input', (_event) => {
+  saveChoices()
+})
 
 function saveChoices() {
+  console.log('saveChoices')
   chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     const currentTab = tabs[0]
-    choicesMemo.set(currentTab.id, { language: language_choice.value, mode: mode_choice.value })
+    choicesMemo.set(currentTab.id, { language: language_choice.value, mode: mode_choice.value, custom_prompt: custom_prompt.value })
   })
 }
 
@@ -45,9 +49,12 @@ function restoreChoices(id: number) {
   if (memo) {
     language_choice.value = memo.language
     mode_choice.value = memo.mode
+    custom_prompt.value = memo.custom_prompt
+
   } else { // to default
     language_choice.value = 'ja'
     mode_choice.value = 'summary'
+    custom_prompt.value = ''
   }
 }
 
@@ -133,7 +140,7 @@ function getVisibleText() {
   return visibleText;
 }
 
-async function inspect_page_EventHandler(this: HTMLButtonElement, ev: MouseEvent) {
+async function inspect_page_EventHandler(this: HTMLButtonElement, _ev: MouseEvent) {
   return inspect_page()
 }
 
@@ -174,7 +181,7 @@ async function inspect_page() {
   const modeStr = mode_choice.value + "-" + language_choice.value
   const promptPrefix = promptPrefixMap.get(language_choice.value)
   const promptPostfix = promptPostfixMap.get(modeStr)
-  const wholePrompt = promptPrefix + '\n===\n' + newVisibleText + "===\n" + promptPostfix
+  const wholePrompt = custom_prompt.value + ' ' + promptPrefix + '\n===\n' + newVisibleText + "===\n" + promptPostfix
 
   // Starting the inference with cache in consideration.
   last_inspection_content = newVisibleText
@@ -208,7 +215,13 @@ async function inspect_page() {
 document.querySelector<HTMLButtonElement>('#reload_btn')!.addEventListener('click', reload_page)
 document.querySelector<HTMLButtonElement>('#inspect_page')!.addEventListener('click', inspect_page_EventHandler)
 
-// alert(Math.random())
+// For debugging
+declare global {
+  interface Window { hacky_helper_inspect_page_EventHandler: any; }
+}
+window.hacky_helper_inspect_page_EventHandler = inspect_page_EventHandler
+
+/// alert(Math.random())
 
 
 // Setup an inspecting loop.
