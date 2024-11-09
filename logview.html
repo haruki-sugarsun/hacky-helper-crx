@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hacky Helper: Log View</title>
+</head>
+
+<body>
+  <h1>H-H: Logs</h1>
+  <!-- Controllers -->
+  <button id="reload_btn">RELOAD</button>
+  <button id="inspect_page" type="button">Inspect Page</button>
+  <label><input id="auto_inspecting" type="checkbox" value="false">Auto Inspecting</label>
+
+  <select id="language">
+    <option value="en">English</option>
+    <option value="ja" selected="selected">日本語</option>
+  </select>
+  <select id="mode">
+    <option value="summary">Summary</option>
+    <option value="writing">Support Writing</option>
+    <option value="ideation">Ideation</option>
+  </select>
+  <hr>
+
+  <!-- Status Line -->
+  <div id="status_line"></div>
+  <div id="app"></div>
+  <hr>
+
+  <!-- Feedback Display -->
+  <div id="visible_text"></div>
+
+  <hr>
+  <div id="response"></div>
+  <script type="module" src="/src/logview.ts"></script>
+  <hr>
+  <textarea id="debuglog">...</textarea>
+</body>
+
+</html>
