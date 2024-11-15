@@ -9,44 +9,58 @@
 </head>
 
 <body>
-  <h1>H-H: Side</h1>
-  <!-- Controllers -->
-  <button id="reload_btn">RELOAD</button>
-  <select id="model">
-    <option value="gemma2:2b" selected="selected">gemma2:2b</option>
-    <option value="gemma2:latest">gemma2:latest</option>
-    <option value="gemma2:27b">gemma2:27b</option>
-  </select>
+  <div class="wrapper">
+    <div class="content">
+      <!-- <p>ページのコンテンツです。たくさんの内容を追加してみましょう。</p> -->
+      <h1>H-H: Side</h1>
+      <!-- Controllers -->
+      <button id="reload_btn">RELOAD</button>
+      <select id="model">
+        <option value="gemma2:2b" selected="selected">gemma2:2b</option>
+        <option value="gemma2:latest">gemma2:latest</option>
+        <option value="gemma2:27b">gemma2:27b</option>
+      </select>
 
-  <button id="inspect_page" type="button">Inspect Page</button>
-  <label><input id="auto_inspecting" type="checkbox" value="false">Auto Inspecting</label>
-  <a href="/logview.html" target="_blank">Log View</a>
-  <select id="language">
-    <option value="en">English</option>
-    <option value="ja" selected="selected">日本語</option>
-  </select>
-  <select id="mode">
-    <option value="summary">Summary</option>
-    <option value="writing">Support Writing</option>
-    <option value="ideation">Ideation</option>
-  </select>
-  <hr>
+      <button id="inspect_page" type="button">Inspect Page</button>
+      <label><input id="auto_inspecting" type="checkbox" value="false">Auto Inspecting</label>
+      <a href="/logview.html" target="_blank">Log View</a>
+      <select id="language">
+        <option value="en">English</option>
+        <option value="ja" selected="selected">日本語</option>
+      </select>
+      <select id="mode">
+        <option value="summary">Summary</option>
+        <option value="writing">Support Writing</option>
+        <option value="ideation">Ideation</option>
+      </select>
+      <hr>
 
-  <div id="app"></div>
+      <div id="app"></div>
+      <!-- Feedback Display -->
+      <div id="custom_prompt_container">CUSTOM:<textarea id="custom_prompt"></textarea></div>
+      <div id="visible_text"></div>
 
-  <!-- Feedback Display -->
-  <div id="custom_prompt_container">CUSTOM:<textarea id="custom_prompt"></textarea></div>
-  <div id="visible_text"></div>
 
+      <!-- <p>必要に応じてさらにコンテンツを追加してください。</p> -->
+      <hr>
+      <div id="response">default response</div>
+    </div>
 
-  <hr>
-  <div id="response">default response</div>
+    <div class="footer">
+      <!-- <p>これは可変サイズのフッターです。</p> -->
+      <!-- Status Line -->
+      <!-- <hr> -->
+      <button id="show_pending_btn">Show Pending</button>
+      <label><input id="auto_update" type="checkbox" value="false">Auto Update</label>
+      <div id="status_line"></div>
+      <!-- <hr> -->
+      <textarea id="debuglog">...</textarea>
+
+      <!-- <p>コンテンツの量に応じてフッターのサイズが変わります。</p> -->
+    </div>
+  </div>
+
   <script type="module" src="/src/sidepanel.ts"></script>
-  <!-- Status Line -->
-  <hr>
-  <div id="status_line"></div>
-  <hr>
-  <textarea id="debuglog">...</textarea>
 </body>
 
 </html>

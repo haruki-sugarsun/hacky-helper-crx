@@ -6,12 +6,16 @@ import './sidepanel.css'
 // Get references to the fixed elements and setup handlers:
 const auto_inspection_checkbox = document.querySelector<HTMLInputElement>('#auto_inspecting')!
 const status_line = document.querySelector<HTMLDivElement>('#status_line')!
+const model_choice = document.querySelector<HTMLInputElement>('#model')!
 const language_choice = document.querySelector<HTMLInputElement>('#language')!
 const mode_choice = document.querySelector<HTMLInputElement>('#mode')!
 const custom_prompt = document.querySelector<HTMLTextAreaElement>('#custom_prompt')!
 
+const auto_update_checkbox = document.querySelector<HTMLInputElement>('#auto_update')!
+
 // tabId -> { language: ..., mode: ... }
 const choicesMemo = new Map()
+const stickyrMemo = { model: model_choice.value }
 
 auto_inspection_checkbox.addEventListener('change', (event) => {
   if (!event || !event.target || !(event.target instanceof HTMLInputElement)) {
@@ -25,6 +29,9 @@ auto_inspection_checkbox.addEventListener('change', (event) => {
   }
   // Here, you would add your logic to change content based on the selected language
 })
+model_choice.addEventListener('change', (_event) => {
+  saveChoices()
+})
 language_choice.addEventListener('change', (_event) => {
   saveChoices()
 })
@@ -34,14 +41,40 @@ mode_choice.addEventListener('change', (_event) => {
 custom_prompt.addEventListener('input', (_event) => {
   saveChoices()
 })
+auto_update_checkbox.addEventListener('change', (_event) => {
+  // Hide the update button.
+  // TODO: Implement
+
+})
+document.querySelector<HTMLButtonElement>('#show_pending_btn')!.addEventListener('click', (_event) => {
+  if (pendingResponse == undefined) {
+    updateStatus("🤔 No pending response?")
+  } else {
+    updateStatus("✨ Enjoy!")
+    document.querySelector<HTMLDivElement>('#response')!.innerText = pendingResponse;
+    pendingResponse = undefined;
+  }
+})
 
 function saveChoices() {
   console.log('saveChoices')
   chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     const currentTab = tabs[0]
     choicesMemo.set(currentTab.id, { language: language_choice.value, mode: mode_choice.value, custom_prompt: custom_prompt.value })
+
+    // Use local storage
+    console.log(stickyrMemo)
+    stickyrMemo.model = model_choice.value
+    chrome.storage.local.set({ stickyrMemo: stickyrMemo }).then(() => {
+      console.log("Value is set");
+    });
   })
 }
+chrome.storage.local.get(["stickyrMemo"]).then((result) => {
+  console.log("Value is ", result);
+  model_choice.value = result.stickyrMemo.model
+})
+
 
 function restoreChoices(id: number) {
   const memo = choicesMemo.get(id)
@@ -50,7 +83,6 @@ function restoreChoices(id: number) {
     language_choice.value = memo.language
     mode_choice.value = memo.mode
     custom_prompt.value = memo.custom_prompt
-
   } else { // to default
     language_choice.value = 'ja'
     mode_choice.value = 'summary'
@@ -80,6 +112,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 // Auto-inspection runs if (TODO: Pack these into an state object)
 // - Auto-Inspection is enabled (auto_inspection_checkbox)
 // - Auto-Inspection run counts does not exceed the limit (auto_inspection_remaining_count)
+// - No pendingResponse awaits to show up (pendingResponse)
 // - No ongoing request is running (last_inspection_promise)
 // - 60sec already passed since the last run (last_inspection_run)
 // - Inspected content from the tab changed (last_inspection_content)  TODO: Refactor as this lives in inspect_page() and too comlicated...
@@ -87,6 +120,7 @@ var last_inspection_promise: Promise<void> | null = null
 var last_inspection_run_timestamp = 0
 var last_inspection_content = ""
 var auto_inspection_remaining_count = 100
+var pendingResponse: string | undefined = undefined // Response awaiting the users action to show.
 
 const inference_cache = new LRU<string>(100);
 
@@ -173,8 +207,8 @@ async function inspect_page() {
   const promptPostfixMap = new Map<string, string>()
   promptPostfixMap.set("summary-en", 'The above text is from a web page. Give the summary in English.')
   promptPostfixMap.set("summary-ja", '以上の文章はウェブページから取得されました。日本語で要約してください.')
-  promptPostfixMap.set("writing-en", 'Suggest an improvement for the above text, especially focusing on wording and expression. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
-  promptPostfixMap.set("writing-ja", '以上の文章の改善を提案してください。特に表現や言葉遣いに集中してください。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。また、UI要素も含まれてしまっていますが、無視してください。推敲した結果の文を、日本語で回答してください。')
+  promptPostfixMap.set("writing-en", 'Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
+  promptPostfixMap.set("writing-ja", '以上の文章を改善した後の文章を提示してください。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。誤字や脱字があれば指摘してください。また、UI要素も含まれてしまっていますが、無視してください。推敲した結果の文を、日本語で回答してください。')
   promptPostfixMap.set("ideation-en", 'Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English.')
   promptPostfixMap.set("ideation-ja", "以上の文章に対し、新しいアイデアを提示して、より魅力的、インパクトのあるものにする方法を考えてください。追加できる新しい可能性はあるでしょうか？また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください。")
 
@@ -195,12 +229,17 @@ async function inspect_page() {
   }
 
   last_inspection_promise = ollama.chat({
-    model: 'gemma2:2b',
+    model: model_choice.value,
     messages: [{ role: 'user', content: wholePrompt }],
   }).then((res) => {
     console.log(res.message.content)
-    document.querySelector<HTMLDivElement>('#response')!.innerText = res.message.content
     inference_cache.set(wholePrompt, res.message.content)
+    // pushConversationLog(prompt, response)
+    if (auto_update_checkbox.checked) {
+      document.querySelector<HTMLDivElement>('#response')!.innerText = res.message.content
+    } else {
+      pendingResponse = res.message.content
+    }
   }, (reason) => {
     console.log(reason)
     document.querySelector<HTMLDivElement>('#response')!.innerText = "Got a error: " + JSON.stringify(reason)
@@ -226,7 +265,7 @@ window.hacky_helper_inspect_page_EventHandler = inspect_page_EventHandler
 
 // Setup an inspecting loop.
 async function inspection_loop() {
-  const enabled = document.querySelector<HTMLInputElement>('#auto_inspecting')!.checked
+  const enabled = auto_inspection_checkbox.checked
   console.log("inspection_loop", enabled, auto_inspection_remaining_count, last_inspection_run_timestamp, last_inspection_promise, getPromiseState(last_inspection_promise!));
 
   if (!enabled) {
@@ -235,6 +274,11 @@ async function inspection_loop() {
   } else if (auto_inspection_remaining_count <= 0) {
     updateStatus("💤 Auto-Inspection count exceeds the limit.");
     document.querySelector<HTMLInputElement>('#auto_inspecting')!.checked = false
+    return
+  }
+
+  if (pendingResponse != undefined) {
+    updateStatus('✨ A response is awating. Click "Show Pending" to show it.');
     return
   }
   const last_run_state = await getPromiseState(last_inspection_promise!)
@@ -286,3 +330,6 @@ async function updateStatus(status_line_str: string) {
   status_line.innerText = status_line_str + ' ' + await generateStatusLine()
   console.log(status_line_str)
 }
+// function pushConversationLog(prompt: (message?: string, _default?: string) => string | null, response: any) {
+//   throw new Error('Function not implemented.')
+// }
