@@ -141,7 +141,7 @@ function reload_page() {
   location.href = 'sidepanel.html'
 }
 
-
+// Consider https://stackoverflow.com/questions/6961022/measure-bounding-box-of-text-node-in-javascript
 function getVisibleText() {
   const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   const viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -182,15 +182,28 @@ async function inspect_page() {
   const currentTab = await chrome.tabs.query({ active: true, currentWindow: true })
   console.log(currentTab)
 
-  const scriptingResults = await chrome.scripting.executeScript({ target: { tabId: currentTab[0].id!, allFrames: true }, func: getVisibleText })
-  // const scriptingResult = await chrome.scripting.executeScript(
-  //   { target: { tabId: currentTab[0].id! },
-  //   files: [ 'inject.js' ] })
-
   updateStatus("🚀 Inspection starts.")
-  console.log(scriptingResults)
+  var newVisibleText = ''
+  if (isOwnEditorPage(currentTab[0])) {
+    const response = await chrome.runtime.sendMessage({ action: "callFunction" })
+    // TODO: Support the case multiple editor pages are open at the same time.
+    if (response.status === "success") {
+      console.log("Function call successful!");
+      newVisibleText = response.visibleText
+    } else {
+      console.error("Failed to call function.");
+      throw new Error("Failed to call Editor by sendMessage")
+    }
+  } else {
+    const scriptingResults = await chrome.scripting.executeScript({ target: { tabId: currentTab[0].id!, allFrames: true }, func: getVisibleText })
+    // const scriptingResult = await chrome.scripting.executeScript(
+    //   { target: { tabId: currentTab[0].id! },
+    //   files: [ 'inject.js' ] })
 
-  const newVisibleText = scriptingResults.reduce((acc, curr) => { return acc + curr.result }, "")
+    console.log(scriptingResults)
+
+    newVisibleText = scriptingResults.reduce((acc, curr) => { return acc + curr.result }, "")
+  }
   console.log(newVisibleText)
 
   document.querySelector<HTMLDivElement>('#visible_text')!.innerText = newVisibleText
@@ -329,6 +342,11 @@ function getPromiseState(promise: Promise<any>): Promise<any> {
 async function updateStatus(status_line_str: string) {
   status_line.innerText = status_line_str + ' ' + await generateStatusLine()
   console.log(status_line_str)
+}
+
+function isOwnEditorPage(currentTab: chrome.tabs.Tab) {
+  const extensionUrl = chrome.runtime.getURL('editor.html');
+  return currentTab.url === extensionUrl
 }
 // function pushConversationLog(prompt: (message?: string, _default?: string) => string | null, response: any) {
 //   throw new Error('Function not implemented.')

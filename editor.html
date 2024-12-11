@@ -4,12 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hacky-Helper</title>
+    <title>Hacky-Helper: Editor</title>
   </head>
   <body>
-    <h1>Hacky-Helper</h1>
-    <a href="/editor.html" target="_blank">Open Editor</a>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <h1>Hacky-Helper: Editor</h1>
+
+    <div id="editor_content" contentEditable="true">ここは編集できる</div>
+
+    <textarea>ABCD</textarea>
+    <script type="module" src="/src/editor.ts"></script>
   </body>
 </html>
