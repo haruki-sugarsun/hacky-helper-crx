@@ -12,6 +12,7 @@ const mode_choice = document.querySelector<HTMLInputElement>('#mode')!
 const custom_prompt = document.querySelector<HTMLTextAreaElement>('#custom_prompt')!
 
 const auto_update_checkbox = document.querySelector<HTMLInputElement>('#auto_update')!
+const auto_tts_checkbox = document.querySelector<HTMLInputElement>('#auto_tts')!
 
 // tabId -> { language: ..., mode: ... }
 const choicesMemo = new Map()
@@ -51,10 +52,21 @@ document.querySelector<HTMLButtonElement>('#show_pending_btn')!.addEventListener
     updateStatus("🤔 No pending response?")
   } else {
     updateStatus("✨ Enjoy!")
-    document.querySelector<HTMLDivElement>('#response')!.innerText = pendingResponse;
+    showResponse(pendingResponse)
     pendingResponse = undefined;
   }
 })
+
+function showResponse(response: string) {
+  console.log('showRenponse', response.substr(100), '...')
+  document.querySelector<HTMLDivElement>('#response')!.innerText = response;
+
+  // TODO: Auto TTS
+  if (auto_tts_checkbox.checked) {
+    let utterance = new SpeechSynthesisUtterance(response);
+    speechSynthesis.speak(utterance);
+  }
+}
 
 function saveChoices() {
   console.log('saveChoices')
@@ -236,7 +248,7 @@ async function inspect_page() {
   const cachedResponse = inference_cache.get(wholePrompt)
   if (cachedResponse) {
     console.log("Using cachedReponse.")
-    document.querySelector<HTMLDivElement>('#response')!.innerText = cachedResponse
+    showResponse(cachedResponse)
     inference_cache.set(wholePrompt, cachedResponse)
     return
   }
@@ -249,7 +261,7 @@ async function inspect_page() {
     inference_cache.set(wholePrompt, res.message.content)
     // pushConversationLog(prompt, response)
     if (auto_update_checkbox.checked) {
-      document.querySelector<HTMLDivElement>('#response')!.innerText = res.message.content
+      showResponse(res.message.content)
     } else {
       pendingResponse = res.message.content
     }
