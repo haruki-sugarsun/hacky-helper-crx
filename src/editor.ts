@@ -30,10 +30,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-function myFunction(sender: chrome.runtime.MessageSender) {
-  console.log("Function called from side panel!", sender);
-  // Your function logic here
-}
+// function myFunction(sender: chrome.runtime.MessageSender) {
+//   console.log("Function called from side panel!", sender);
+//   // Your function logic here
+// }
 
 // Consider https://stackoverflow.com/questions/6961022/measure-bounding-box-of-text-node-in-javascript
 function getVisibleText() {
