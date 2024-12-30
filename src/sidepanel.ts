@@ -310,15 +310,6 @@ async function inspection_loop() {
   const enabled = auto_inspection_checkbox.checked
   console.log("inspection_loop", enabled, auto_inspection_remaining_count, last_inspection_run_timestamp, last_inspection_promise, getPromiseState(last_inspection_promise!));
 
-  if (!enabled) {
-    updateStatus("🚫 Auto-Inspection is disabled.");
-    return
-  } else if (auto_inspection_remaining_count <= 0) {
-    updateStatus("💤 Auto-Inspection count exceeds the limit.");
-    document.querySelector<HTMLInputElement>('#auto_inspecting')!.checked = false
-    return
-  }
-
   if (pendingResponse != undefined) {
     updateStatus('✨ A response is awating. Click "Show Pending" to show it.');
     return
@@ -334,6 +325,15 @@ async function inspection_loop() {
   if (mSecFromLastRun < 60 * 1000) {
     // is still runnning.
     updateStatus(`😴 Cooling down for ${60 * 1000 - mSecFromLastRun} msec.`)
+    return
+  }
+
+  if (!enabled) {
+    updateStatus("🚫 Auto-Inspection is disabled.");
+    return
+  } else if (auto_inspection_remaining_count <= 0) {
+    updateStatus("💤 Auto-Inspection count exceeds the limit.");
+    document.querySelector<HTMLInputElement>('#auto_inspecting')!.checked = false
     return
   }
 
