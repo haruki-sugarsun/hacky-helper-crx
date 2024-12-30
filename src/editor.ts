@@ -6,13 +6,16 @@ import './editor.css'
 
 // Page Elements
 const editorContent = document.querySelector<HTMLDivElement>('#editor_content')!
-// Initial load:
-const previousSave = await chrome.storage.local.get('editor_content_save')
-console.log(previousSave)
-if (previousSave.editor_content_save) {
-  editorContent.innerText = previousSave.editor_content_save
 
+async function init() {
+  // Initial load:
+  const previousSave = await chrome.storage.local.get('editor_content_save')
+  console.log(previousSave)
+  if (previousSave.editor_content_save) {
+    editorContent.innerText = previousSave.editor_content_save
+  }
 }
+init().then(_ => {})
 
 editorContent.addEventListener('input', (_ev) => {
   console.log(editorContent.innerText)

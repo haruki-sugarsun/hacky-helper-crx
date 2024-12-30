@@ -23,11 +23,11 @@ export default defineConfig({
       }
     }
   },
-  // build: {
-  //   rollupOptions: {
-  //     input: {
-  //       inject: 'src/inject.ts',
-  //     },
-  //   },
-  // },
+  build: {
+    rollupOptions: {
+      input: {
+        editor: 'editor.html',
+      },
+    },
+  },
 })
