@@ -234,6 +234,13 @@ async function inspect_page() {
   promptPostfixMap.set("summary-ja", '以上の文章はウェブページから取得されました。日本語で要約してください.')
   promptPostfixMap.set("writing-en", 'Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
   promptPostfixMap.set("writing-ja", '以上の文章を改善した後の文章を提示してください。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。誤字や脱字があれば指摘してください。また、UI要素も含まれてしまっていますが、無視してください。推敲した結果の文を、日本語で回答してください。')
+
+  promptPostfixMap.set("dedup-en", 'FIXME: Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
+  promptPostfixMap.set("dedup-ja", '以上の文章を改善します。重複した内容があれば、整理したあとの文章を提案してください。推敲した結果の文を、日本語で回答してください。')
+
+  promptPostfixMap.set("fillcontent-en", 'FIXME: Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
+  promptPostfixMap.set("fillcontent-ja", '以上の文章を改善します。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。結果の文を、日本語で回答してください。')
+
   promptPostfixMap.set("ideation-en", 'Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English.')
   promptPostfixMap.set("ideation-ja", "以上の文章に対し、新しいアイデアを提示して、より魅力的、インパクトのあるものにする方法を考えてください。追加できる新しい可能性はあるでしょうか？また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください。")
 
