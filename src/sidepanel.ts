@@ -234,11 +234,21 @@ async function inspect_page() {
   promptPostfixMap.set("summary-ja", '以上の文章はウェブページから取得されました。日本語で要約してください.')
   promptPostfixMap.set("writing-en", 'Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
   promptPostfixMap.set("writing-ja", '以上の文章を改善した後の文章を提示してください。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。誤字や脱字があれば指摘してください。また、UI要素も含まれてしまっていますが、無視してください。推敲した結果の文を、日本語で回答してください。')
+  // Writing phases
+  promptPostfixMap.set("define_goal-en", 'We are defining the goal of this document. Ask me 5 questions. Based on my answers, summarize the goal of this document as a list. Answer in English.')
+  promptPostfixMap.set("define_goal-ja", '文章作成のための「要件・ゴールの設定」をしたいです。今から私に質問して、その回答をもとに、要件とゴールを簡潔にまとめたものを箇条書きで出力してください。質問は5つ以内でお願いします。日本語で回答してください。')
 
-  promptPostfixMap.set("dedup-en", 'FIXME: Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
+  promptPostfixMap.set("define_keymsg-en", 'We are defining the key messages of this document. Suggest key messages to help the reader understand and accpect the document. Suggest them in a list. Answer in English.')
+  promptPostfixMap.set("define_keymsg-ja", '文章作成のための「キーメッセージ」を決定したいです。文章の読者の理解を助け、説得するためのメッセージとして何を記載するのがいいでしょうか。箇条書きで出力してください。日本語で回答してください。')
+
+  promptPostfixMap.set("design_struct-en", 'We are designing the structure of this document. Suggest a structure of the document to convey the "goal" and "key messages" of it. Show the headlines with summaries in a list. Answer in English.')
+  promptPostfixMap.set("design_struct-ja", '文章の構成を提案してください。文章の「ゴール」「キーメッセージ」が伝わりやすい構成を、各見出しの下に箇条書きで内容の要点を記載して出力してください。日本語で回答してください。')
+
+
+  promptPostfixMap.set("dedup-en", 'Suggest an improvement for the above text, especially focusing on deduping redundant expression, and show the revised text. Give me the improved text suggestions in English.')
   promptPostfixMap.set("dedup-ja", '以上の文章を改善します。重複した内容があれば、整理したあとの文章を提案してください。推敲した結果の文を、日本語で回答してください。')
 
-  promptPostfixMap.set("fillcontent-en", 'FIXME: Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.')
+  promptPostfixMap.set("fillcontent-en", 'Suggest an improvement for the above text. If you see a text "~~~", suggest appropriate context to fill it. Give me the improved text suggestions in English.')
   promptPostfixMap.set("fillcontent-ja", '以上の文章を改善します。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。結果の文を、日本語で回答してください。')
 
   promptPostfixMap.set("ideation-en", 'Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English.')
