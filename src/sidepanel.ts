@@ -311,7 +311,7 @@ async function inspection_loop() {
   console.log("inspection_loop", enabled, auto_inspection_remaining_count, last_inspection_run_timestamp, last_inspection_promise, getPromiseState(last_inspection_promise!));
 
   if (pendingResponse != undefined) {
-    updateStatus('✨ A response is awating. Click "Show Pending" to show it.');
+    updateStatus('✨ Click "Show Response" to check the result.');
     return
   }
   const last_run_state = await getPromiseState(last_inspection_promise!)

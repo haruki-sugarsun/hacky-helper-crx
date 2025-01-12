@@ -6,6 +6,7 @@ import './editor.css'
 
 // Page Elements
 const editorContent = document.querySelector<HTMLDivElement>('#editor_content')!
+const wordConnter = document.querySelector<HTMLDivElement>('#word-counter')!
 
 async function init() {
   // Initial load:
@@ -15,12 +16,28 @@ async function init() {
     editorContent.innerText = previousSave.editor_content_save
   }
 }
-init().then(_ => {})
+init().then(_ => { })
 
 editorContent.addEventListener('input', (_ev) => {
-  console.log(editorContent.innerText)
+  var text = editorContent.innerText
+  console.log(text)
 
-  chrome.storage.local.set({ 'editor_content_save': editorContent.innerText })
+  chrome.storage.local.set({ 'editor_content_save': text })
+
+
+  // Count Characters 
+  const charCount = text.replace(/\s/g, '').length;
+
+  // Count Words (Simple split, may need refinement for complex languages)
+  const wordCount = text.trim().split(/\s+/).length;
+
+  // Count Lines
+  const lineCount = text.split('\n').length;
+
+  console.log({ charCount, wordCount, lineCount });
+
+  wordConnter.innerHTML = `${charCount} chars (ignores whitespaces),<br>${wordCount} words,<br>${lineCount} lines.`
+
 })
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
