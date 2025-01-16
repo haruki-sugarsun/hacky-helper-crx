@@ -196,7 +196,7 @@ async function inspect_page() {
 
   updateStatus("🚀 Inspection starts.")
   var newVisibleText = ''
-  if (isOwnEditorPage(currentTab[0])) {
+  if (isOwnHostedPage(currentTab[0])) {
     const response = await chrome.runtime.sendMessage({ action: "callFunction" })
     // TODO: Support the case multiple editor pages are open at the same time.
     if (response.status === "success") {
@@ -373,9 +373,11 @@ async function updateStatus(status_line_str: string) {
   console.log(status_line_str)
 }
 
-function isOwnEditorPage(currentTab: chrome.tabs.Tab) {
-  const extensionUrl = chrome.runtime.getURL('editor.html');
-  return currentTab.url === extensionUrl
+function isOwnHostedPage(currentTab: chrome.tabs.Tab) {
+  const editorUrl = chrome.runtime.getURL('editor.html');
+  const voiceLogUrl = chrome.runtime.getURL('voice_log.html');
+
+  return currentTab.url?.startsWith(editorUrl) || currentTab.url?.startsWith(voiceLogUrl)
 }
 // function pushConversationLog(prompt: (message?: string, _default?: string) => string | null, response: any) {
 //   throw new Error('Function not implemented.')
