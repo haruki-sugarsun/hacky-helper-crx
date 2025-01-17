@@ -12,14 +12,17 @@ let recognition: SpeechRecognition;
 
 // Content Save
 // Initial load:
-const previousSave = await chrome.storage.local.get(['workarea_content_save', 'monologue_log_save'])
-console.log(previousSave)
-if (previousSave.workarea_content_save) {
-  workareaContent.innerText = previousSave.workarea_content_save
+async function init() {
+  const previousSave = await chrome.storage.local.get(['workarea_content_save', 'monologue_log_save'])
+  console.log(previousSave)
+  if (previousSave.workarea_content_save) {
+    workareaContent.innerText = previousSave.workarea_content_save
+  }
+  if (previousSave.monologue_log_save) {
+    monologueLog.innerText = previousSave.monologue_log_save
+  }
 }
-if (previousSave.monologue_log_save) {
-  monologueLog.innerText = previousSave.monologue_log_save
-}
+document.body.onload = init
 
 workareaContent.addEventListener('input', (_ev) => {
   console.log(workareaContent.innerText)

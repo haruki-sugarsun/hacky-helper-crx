@@ -27,6 +27,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         editor: 'editor.html',
+        voice_log: 'voice_log.html',
       },
     },
   },
