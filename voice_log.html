@@ -8,13 +8,23 @@
 </head>
 
 <body>
+  <script type="module" src="/src/components.ts"></script>
+
+  <div id="control_pane">
+    <input id="control_pane_toggle"><br>
+    <select id="model" data-sickhack-component="select_model"></select>
+    <button >Run</button>
+  </div>
+
   <!-- <h1>Hacky-Helper: Voice Log</h1> -->
 
   workarea:    <div id="workarea_content" contentEditable="true">ここは編集できる</div>
 
+  <div>Condenced: </div>
+  <div id="condenced_log" contentEditable="true">ここは編集できる</div>
+
   <div>monologue: (Interim Results: <span id="interim-result">...</span>)</div>
   <div id="monologue_log" contentEditable="true">ここは編集できる</div>
-  <button id=""></button>
 
   <label class="switch">
     <input type="checkbox" id="recognition-toggle">

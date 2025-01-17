@@ -6,7 +6,15 @@ body {
     width: 90%;
     margin: 1em;
     padding: 0.2em;
-    border: solid blue 1px;
+    border: solid darkblue 1px;
+}
+
+#condenced_log {
+    font-size: larger;
+    width: 90%;
+    margin: 1em;
+    padding: 0.2em;
+    border: solid darkgreen 1px;
 }
 
 #monologue_log {
@@ -14,7 +22,7 @@ body {
     width: 90%;
     margin: 1em;
     padding: 0.2em;
-    border: solid red 1px;
+    border: solid darkred 1px;
 }
 
 #monologue_log > br {
