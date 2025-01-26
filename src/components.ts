@@ -11,6 +11,12 @@ function component_model(elm: HTMLSelectElement) {
         <option value="llama3.2:latest">llama3.2:latest</option>
         <option value="amberchat:latest">amberchat:latest</option>
 
+        <option value="granite3.1-dense:latest">granite3.1-dense:latest</option>
+
+        <option value="deepseek-r1:32b">deepseek-r1:32b</option>
+        <option value="deepseek-r1:14b">deepseek-r1:14b</option>
+        <option value="deepseek-r1:8b">deepseek-r1:8b</option>
+
         <option value="7shi/tanuki-dpo-v1.0:latest">7shi/tanuki-dpo-v1.0:latest</option>
         <option value="llm-jp-3-1.8b-instruct:latest">llm-jp-3-1.8b-instruct:latest</option>
         <option value="llm-jp-3-3.7b-instruct-gguf_Q4_K_M:mod">llm-jp-3-3.7b-instruct-gguf_Q4_K_M:mod</option>

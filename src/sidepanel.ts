@@ -257,6 +257,10 @@ async function inspect_page() {
   promptPostfixMap.set("ideation-en", 'Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English.')
   promptPostfixMap.set("ideation-ja", "以上の文章に対し、新しいアイデアを提示して、より魅力的、インパクトのあるものにする方法を考えてください。追加できる新しい可能性はあるでしょうか？また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください。")
 
+  promptPostfixMap.set("ideation-en", 'Tell me about a possible issue in the program. or Suggest code snippet to complete the logic. Give the answer in English.')
+  promptPostfixMap.set("ideation-ja", "プログラムの潜在的な問題点を教えてください。または、ロジックを完成させるためのコードスニペットを提案してください。日本語で回答してください。")
+
+
   const modeStr = mode_choice.value + "-" + language_choice.value
   const promptPrefix = promptPrefixMap.get(language_choice.value)
   const promptPostfix = promptPostfixMap.get(modeStr)
