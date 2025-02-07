@@ -28,6 +28,7 @@ export default defineConfig({
       input: {
         editor: 'editor.html',
         voice_log: 'voice_log.html',
+        tabs: 'tabs.html',
       },
     },
   },

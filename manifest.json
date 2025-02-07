@@ -7,6 +7,9 @@
     ],
     "host_permissions": ["*://*/*"],
     "action": { "default_popup": "index.html" },
+    "background": {
+        "service_worker": "src/service-worker.ts"
+    },
     "side_panel": {
         "default_path": "sidepanel.html"
     },
