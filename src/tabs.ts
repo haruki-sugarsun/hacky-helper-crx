@@ -1,45 +1,51 @@
 import './style.css'
 import './tabs.css'
-import { GET_CACHED_SUMMARIES } from './lib/constants'
-import { SummaryEntry, TabInfo, TabSummary } from './lib/types'
-
-console.log('tabs.ts')
 
 // References to the fixed elements and handler setup:
 const tabs_tablist = document.querySelector<HTMLDivElement>('#tabs_tablist')!
+console.log(tabs_tablist)
 
 // Page State
 var windowIds: (number | undefined)[] = [];
-var state_windows;
-var state_tabs;
+
 
 // Page Initializer
-async function init() {
+function init() {
     console.log('init')
 
-    // TODO: register the listener before constructing the data model?
+    const windowsGetAll = chrome.windows.getAll().then(results => {
+        windowIds = [];
+        results.forEach(window => {
+            windowIds.push(window.id);
+            console.log(`ID: ${window.id}, Tabs: ${window.tabs}`);
+        });
+        console.log(`${windowIds}`);
+        return results;
+    });
+    const tabsQuery = chrome.tabs.query({ currentWindow: true }).then(tabs => {
+        console.log("Tabs in current window:");
+        tabs.forEach(tab => {
+            console.log(`Title: ${tab.title}, URL: ${tab.url}`);
+        });
+        return tabs;
+    });
+    Promise.allSettled([windowsGetAll, tabsQuery]).then(async results => {
+        const resWindowsGetAll = results[0];
+        const resTabsQuery = results[1];
+        console.log(resWindowsGetAll);
+        const w = await windowsGetAll;
+        console.log(w);
 
-    const windowsGetAll = chrome.windows.getAll();
-    const tabsQuery = chrome.tabs.query({ currentWindow: true });
-    const allResults = await Promise.allSettled([windowsGetAll, tabsQuery]).catch(err => {
+        console.log(resTabsQuery);
+
+    }).catch(err => {
         console.error(err);
         // TODO: Show some error dialog in this case?
-        return [{ status: 'rejected', results: err }];
     });
-    const rejectedResults = allResults.filter(result => result.status === 'rejected');
-    if (rejectedResults.length > 0) {
-        console.log(allResults)
-        window.alert(allResults)
-        return;
-    }
-    const windows = await windowsGetAll;
-    const tabs = await tabsQuery;
-    console.log(windows);
-    console.log(tabs);
 
-    updateUI(windows, tabs);
-    state_windows = windows;
-    state_tabs = tabs;
+
+
+    
 }
 
 // setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
