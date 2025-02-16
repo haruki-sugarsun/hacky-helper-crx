@@ -29,6 +29,7 @@ export default defineConfig({
         editor: 'editor.html',
         voice_log: 'voice_log.html',
         tabs: 'tabs.html',
+        settings: 'settings.html',
       },
     },
   },

@@ -17,6 +17,7 @@
   "dependencies": {
     "@types/chrome": "^0.0.278",
     "@types/dom-speech-recognition": "^0.0.4",
-    "ollama": "^0.5.9"
+    "ollama": "^0.5.9",
+    "snabbdom": "^3.6.2"
   }
 }
