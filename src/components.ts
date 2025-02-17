@@ -12,6 +12,7 @@ function component_model(elm: HTMLSelectElement) {
         <option value="amberchat:latest">amberchat:latest</option>
 
         <option value="granite3.1-dense:latest">granite3.1-dense:latest</option>
+        <option value="openthinker:7b">openthinker:7b</option>
 
         <option value="deepseek-r1:32b">deepseek-r1:32b</option>
         <option value="deepseek-r1:14b">deepseek-r1:14b</option>
