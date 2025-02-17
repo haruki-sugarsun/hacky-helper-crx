@@ -10,45 +10,36 @@ const tabs_tablist = document.querySelector<HTMLDivElement>('#tabs_tablist')!
 
 // Page State
 var windowIds: (number | undefined)[] = [];
-
+var state_windows;
+var state_tabs;
 
 // Page Initializer
-function init() {
+async function init() {
     console.log('init')
 
-    const windowsGetAll = chrome.windows.getAll().then(results => {
-        windowIds = [];
-        results.forEach(window => {
-            windowIds.push(window.id);
-            console.log(`ID: ${window.id}, Tabs: ${window.tabs}`);
-        });
-        console.log(`${windowIds}`);
-        return results;
-    });
-    const tabsQuery = chrome.tabs.query({ currentWindow: true }).then(tabs => {
-        console.log("Tabs in current window:");
-        tabs.forEach(tab => {
-            console.log(`Title: ${tab.title}, URL: ${tab.url}`);
-        });
-        return tabs;
-    });
-    Promise.allSettled([windowsGetAll, tabsQuery]).then(async results => {
-        const resWindowsGetAll = results[0];
-        const resTabsQuery = results[1];
-        console.log(resWindowsGetAll);
-        const w = await windowsGetAll;
-        console.log(w);
+    // TODO: register the listener before constructing the data model?
 
-        console.log(resTabsQuery);
-
-    }).catch(err => {
+    const windowsGetAll = chrome.windows.getAll();
+    const tabsQuery = chrome.tabs.query({ currentWindow: true });
+    const allResults = await Promise.allSettled([windowsGetAll, tabsQuery]).catch(err => {
         console.error(err);
         // TODO: Show some error dialog in this case?
+        return [{ status: 'rejected', results: err }];
     });
+    const rejectedResults = allResults.filter(result => result.status === 'rejected');
+    if (rejectedResults.length > 0) {
+        console.log(allResults)
+        window.alert(allResults)
+        return;
+    }
+    const windows = await windowsGetAll;
+    const tabs = await tabsQuery;
+    console.log(windows);
+    console.log(tabs);
 
-
-
-
+    updateUI(windows, tabs);
+    state_windows = windows;
+    state_tabs = tabs;
 }
 
 // setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
@@ -185,3 +176,14 @@ requestTabSummariesButton.addEventListener('click', () => {
         });
     });
 });
+function updateUI(windows: chrome.windows.Window[], tabs: chrome.tabs.Tab[]) {
+    windows.forEach(w => {
+        console.log(`ID: ${w.id}, Tabs: ${w.tabs}`);
+    });
+    tabs.forEach(t => {
+        console.log(`Title: ${t.title}, URL: ${t.url}`);
+    });
+
+    throw new Error('Function not implemented.');
+}
+

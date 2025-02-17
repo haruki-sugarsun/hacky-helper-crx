@@ -6,7 +6,7 @@ import { PersistentCache } from './persistent-cache';
 
 import './features/tab_organizer.ts'
 
-console.log('service-worker');
+console.log('service-worker', new Date());
 
 // Cache to store the latest N summary results for each tabID and URL combination
 // The key is a combination of tabID and URL, and the value is an array of summary results with timestamps
@@ -276,4 +276,28 @@ async function listKeywords(content: string): Promise<string[]> {
 
 async function createEmbeddings(content: string): Promise<number[]> {
     return await llmService.createEmbeddings(content);
+}
+// in-Memory Model and the background store.
+// Sessions (groups of tabs/URLs)
+
+// URL to embeddings cache map.
+const embeddings = {};
+
+// Bookmark folder as a Storage 
+
+
+
+// Initialization
+function init() {
+
+}
+
+function getEmbeddings(url ,text) {
+
+
+}
+
+function getSummary(url ,text) {
+
+    
 }
