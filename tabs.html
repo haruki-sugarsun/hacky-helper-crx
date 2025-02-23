@@ -7,46 +7,57 @@
     <title>Hacky-Helper: Tabs</title>
   </head>
   <body>
-    <h1>H-H: Tabs</h1>
-    <div id="tabs_sessions">
-      <ul>
-        <li>Session 1</li>
-        <li>Session 2</li>
-        <li>Session 3</li>
-        <li>Session 4</li>
-      </ul>
+    <header>
+      <h1>H-H: Tabs</h1>
 
-    </div>
+      <button id="requestTabSummariesButton">button to request the tab summaries.</button>
+      <button>button to request the embeddings.</button>
+      <button>button to request the tab grouping based on keywords.</button>
 
-    <div id="tabs_tablist">
+      <div class="settings">
+        <a href="settings.html" target="_blank">⚙️ settings</a>
+      </div>
+    </header>
 
-      <table border="1">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Age</th>
-                <th>City</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Alice</td>
-                <td>30</td>
-                <td>New York</td>
-            </tr>
-            <tr>
-                <td>Bob</td>
-                <td>25</td>
-                <td>Los Angeles</td>
-            </tr>
-            <tr>
-                <td>Charlie</td>
-                <td>35</td>
-                <td>Chicago</td>
-            </tr>
-        </tbody>
-    </table>
-    
+    <content>
+      <div id="tabs_sessions">
+        <ul>
+          <li>Session 1</li>
+          <li>Session 2</li>
+          <li>Session 3</li>
+          <li>Session 4</li>
+        </ul>
+      </div>
+
+      <div id="tabs_tablist">
+        <table border="1">
+          <thead>
+              <tr>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>City</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td>Alice</td>
+                  <td>30</td>
+                  <td>New York</td>
+              </tr>
+              <tr>
+                  <td>Bob</td>
+                  <td>25</td>
+                  <td>Los Angeles</td>
+              </tr>
+              <tr>
+                  <td>Charlie</td>
+                  <td>35</td>
+                  <td>Chicago</td>
+              </tr>
+          </tbody>
+      </table>
+    </content>
+
     <ul>
         <li>Tab 1</li>
         <li>Tab 2</li>

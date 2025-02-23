@@ -45,8 +45,29 @@ function init() {
 
 
 
-    
+
 }
 
 // setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
 init();
+// Add event listener for the "button to request the tab summaries."
+const requestTabSummariesButton = document.querySelector<HTMLButtonElement>('#requestTabSummariesButton')!;
+requestTabSummariesButton.addEventListener('click', () => {
+    console.log('Tab summaries requested');
+    chrome.tabs.query({}, (tabs) => {
+const summaries = tabs.map(tab => `Title: ${tab.title}\nURL: ${tab.url}`).join('\n\n');
+
+chrome.runtime.sendMessage({ type: 'CREATE_SUMMARY', payload: { content: summaries } }, (response) => {
+    if (response.type === 'SUMMARY_RESULT') {
+        const summaryElement = document.createElement('pre');
+        summaryElement.textContent = response.payload;
+        summaryElement.style.whiteSpace = 'pre-wrap';
+        summaryElement.style.wordWrap = 'break-word';
+        document.body.appendChild(summaryElement);
+        console.log('Tab summaries displayed.');
+    } else {
+        console.error('Failed to get tab summaries.');
+    }
+});
+    });
+});
