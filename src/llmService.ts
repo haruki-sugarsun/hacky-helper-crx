@@ -5,7 +5,7 @@ import { Ollama } from 'ollama';
 // Base class for LLM services
 abstract class BaseLLMService implements LLMService {
     // TODO: Now not sure if we need this base class?
-    abstract createSummary(content: string, url?: string): Promise<string>;
+    abstract createSummary(content: string): Promise<string>;
     abstract listKeywords(content: string): Promise<string[]>;
     abstract createEmbeddings(content: string): Promise<number[]>;
     
@@ -22,7 +22,7 @@ export interface LLMService {
 }
 
 export class OpenAILLMService extends BaseLLMService {
-    async createSummary(content: string, url?: string): Promise<string> {
+    async createSummary(content: string): Promise<string> {
         const startTime = performance.now();
 
         const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
@@ -90,7 +90,7 @@ export class OllamaLLMService extends BaseLLMService {
         });
     }
 
-    async createSummary(content: string, url?: string): Promise<string> {
+    async createSummary(content: string): Promise<string> {
         const startTime = performance.now();
 
         // TODO: Consider if we can have a common entrypoint method and dispatch within that.

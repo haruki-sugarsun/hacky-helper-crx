@@ -17,7 +17,7 @@ chrome.tabs.onActivated.addListener(async activeInfo => {
     if (activeInfo.tabId === leftMostTab.id && lastSelectedTabId === rightMostTab.id) {
         console.log('Switched from the right-most to the left-most tab');
         // Call your function here
-        if (ConfigStore.SORT_ON_TAB_SWITCH.get()) {
+        if (await ConfigStore.SORT_ON_TAB_SWITCH.get()) {
             console.log('triggering tab reordering.')
         }
     } else if (activeInfo.tabId === leftMostTab.id) {

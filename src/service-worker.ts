@@ -98,7 +98,7 @@ async function initTabManagement() {
 // Initialize Tab Management
 initTabManagement();
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const { type, payload } = message;
     
     // Return true to indicate we will send a response asynchronously
