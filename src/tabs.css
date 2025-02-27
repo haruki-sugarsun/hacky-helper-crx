@@ -1,1 +1,58 @@
-tabs.css
+/* Styles for the tabs page */
+
+/* Table styles */
+#tabs_tablist table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+#tabs_tablist th,
+#tabs_tablist td {
+  padding: 8px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+#tabs_tablist th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+#tabs_tablist tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* URL cell styles - truncate long URLs */
+.url-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Summary styles */
+.summary-timestamp {
+  font-size: 0.8em;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.summary-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* Clickable tab ID styles */
+.tab-id-cell.clickable {
+  cursor: pointer;
+  color: #0066cc;
+  text-decoration: underline;
+  transition: background-color 0.2s;
+}
+
+.tab-id-cell.clickable:hover {
+  background-color: #e6f0ff;
+}
