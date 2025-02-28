@@ -3,28 +3,43 @@ import { CREATE_SUMMARY, LIST_KEYWORDS, CREATE_EMBEDDINGS, GET_CACHED_SUMMARIES,
 import { CONFIG_STORE } from './config_store';
 import { SummaryEntry, TabInfo, TabSummary } from './lib/types';
 import { PersistentCache } from './persistent-cache';
+import { getPromiseState } from './lib/helpers.ts'; // Import the function
 
 import './features/tab_organizer.ts'
 
-console.log('service-worker', new Date());
+// Entrypoint logging:
+console.log('service-worker.ts', new Date());
 
+// Information for the queued LLM-related tasks:
+enum LLMTaskType {
+    CREATE_SUMMARY,
+    GET_CACHED_SUMMARIES,
+    LIST_KEYWORDS,
+    CREATE_EMBEDDINGS
+}
+
+// Constants for cache configuration
+const SUMMARY_CACHE_SIZE = 5; // Store the latest 5 summaries per tab+URL
+
+// Cache for storing summaries
 // Cache to store the latest N summary results for each tabID and URL combination
 // The key is a combination of tabID and URL, and the value is an array of summary results with timestamps
+const summaryCache = new PersistentCache<SummaryEntry[]>('tab_summaries', 100); // Caches up to 100 unique tab+URL entries
+// TODO: Consider removing tabID from the caching key, as only URL might be sufficient?
+// TODO: If we have a summary cache here, we might not need the caching layer in llmService?
+// TODO: Implement a cache for embeddings as well.
+// URL to embeddings cache map.
+// const embeddings = {};
 
-const SUMMARY_CACHE_SIZE = 5; // Store the latest 5 summaries per tab+URL
-const summaryCache = new PersistentCache<SummaryEntry[]>('tab_summaries', 100); // Cache for up to 100 different tab+URL combinations
-// TODO: If we have a summary cache here, we don't need the caching layer in llmService?
 
 
-// This function is no longer needed as we'll use sendResponse directly
 
 // Initialize LLM service based on configuration
 // TODO: Reload the service-worker on config changes.
 let llmService: LLMService;
 
-async function initLLMService() {
+async function initializeLLMService() {
     const useOllama = await CONFIG_STORE.get('USE_OLLAMA'); // TODO: use the read-only config.
-    
     if (useOllama) {
         const ollamaApiUrl = await CONFIG_STORE.get('OLLAMA_API_URL') || OLLAMA_API_URL_DEFAULT;
         const ollamaModel = await CONFIG_STORE.get('OLLAMA_MODEL') || OLLAMA_MODEL_DEFAULT;
@@ -37,23 +52,29 @@ async function initLLMService() {
 }
 
 // Initialize LLM service
-initLLMService().catch(error => {
+initializeLLMService().catch((error) => {
     console.error('Failed to initialize LLM service:', error);
     // Fallback to OpenAI
     // TODO: Implement a "simple" LLM Service which just do some string operation as the final fallback.
     llmService = new OpenAILLMService();
 });
 
+// TODO: Clean-up and organize the init functions.
+// We use https://developer.chrome.com/docs/extensions/reference/api/runtime?hl=ja#event-onInstalled
+// These events might not work in dev-mode, as we install the scripts via loader, not directly.
+self.addEventListener('install', () => console.log('service-worker installed'));
+self.addEventListener('activate', () => console.log('service-worker activated'));
+
 // In-Memory Store for Currently Opened Tabs.
 // TODO: Implement the details.
 // Page State
 // var _windowIds: (number | undefined)[] = [];
+// Track current tabs and their states
 let currentTabs: chrome.tabs.Tab[] = [];
 
-async function initTabManagement() {
-    // Initialize the currentTabs array with existing tabs
+async function initializeTabManagement() {
     currentTabs = await chrome.tabs.query({});
-    console.log('Initialized currentTabs:', currentTabs);
+    console.log('Initial tabs:', currentTabs);
 
     // Event Listeners for Tab Management
     chrome.tabs.onCreated.addListener((tab) => {
@@ -66,8 +87,9 @@ async function initTabManagement() {
     chrome.tabs.onRemoved.addListener((tabId, _removeInfo) => {
         console.log('Tab removed:', tabId);
         currentTabs = currentTabs.filter(t => t.id !== tabId);
+
+        // TODO: Clear the pending tasks in the llmTasks.
         console.log('Updated currentTabs:', currentTabs);
-        // Add your logic here
     });
 
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -77,16 +99,17 @@ async function initTabManagement() {
             currentTabs[index] = tab;
             console.log('Updated currentTabs:', currentTabs);
         }
-        
+
         // Generate and cache summary when a tab's content is updated
         if (changeInfo.status === 'complete' && tab.url && !tab.url.startsWith('chrome://')) {
             try {
                 // Get the tab's content
                 const content = await getTabContent(tabId);
                 if (content) {
-                    // Generate and cache the summary
-                    await createSummary(content, tabId, tab.url);
-                    console.log(`Generated and cached summary for tab ${tabId} at ${tab.url}`);
+                    // Queue a task to generate and cache the summary
+                    queueTaskForProcessing(tab.url, content)
+                    // TODO: Implement in the queueTaskForProcessing();
+                    console.log(`Queued to generate and cache summary for tab ${tabId} at ${tab.url}`);
                 }
             } catch (error) {
                 console.error(`Error generating summary for tab ${tabId}:`, error);
@@ -96,23 +119,76 @@ async function initTabManagement() {
 }
 
 // Initialize Tab Management
-initTabManagement();
+// TODO: Catch error and log or workaround.
+initializeTabManagement();
 
+// Queue of the background LLM related tasks:
+// TODO: Implement the limit for the llmTasks count.
+let llmTasks: { content: string; url: string; resolve: (summary: string, embeddings: number[]) => void }[] = [];
+let runningLlmTask: Promise<void> | undefined = undefined;
+
+function queueTaskForProcessing(url: string, content: string) {
+    // TODO: Check if we already have similar tasks (typically with the same URL),
+    // and update such task instead of pushing a new one at the end. The intention is
+    llmTasks.push({
+        url: url, content: content,
+        resolve: function (summary: string, embeddings: number[]): void {
+            // TODO: console.log the parameters.
+            // TODO: Consider if we should cache them here or in the createSummary/getEmbeddings().
+            throw new Error('Function not implemented.');
+        }
+    });
+    processNextTask(); // Start processing immediately if no task is currently being processed
+    // await createSummary(content, tabId, tab.url);
+
+}
+
+function processNextTask() {
+    // Check the llmTasks if we have anything to execute:
+    if (llmTasks.length == 0 || runningLlmTask && (getPromiseState(runningLlmTask).state == "pending")) {
+        // Nothing to do.
+        return;
+    }
+
+    try {
+        const task = llmTasks.shift()!;
+        const { url, content, resolve } = task;
+
+        // TODO: Refactor to breakdown the generation requests into multi-tasks.
+        runningLlmTask = new Promise<void>(async (resolveTask, rejectTask) => {
+            try {
+                let embeddings = await generateEmbeddings(content);
+                let keywords = await generateKeywords(content);
+                let summary = await generateSummary(content);
+
+                resolve(summary, embeddings);
+                resolveTask();
+            } catch (error) {
+                console.error('Error during LLM task:', error);
+                rejectTask(error);
+            } finally {
+                runningLlmTask = undefined;
+            }
+        });
+    } catch (error) {
+        console.error('Error processing task:', error);
+    }
+}
+
+// Handle incoming messages from content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const { type, payload } = message;
-    
     // Return true to indicate we will send a response asynchronously
     const handleAsync = async () => {
         try {
             switch (type) {
-                case CREATE_SUMMARY:
-                    const summary = await createSummary(
-                        payload.content, 
-                        payload.tabId, 
+                case CREATE_SUMMARY: // TODO: Consider if we really need this or not.
+                    const summary = await generateSummary(
+                        payload.content,
                         payload.url
                     );
-                    sendResponse({ 
-                        type: 'SUMMARY_RESULT', 
+                    sendResponse({
+                        type: 'SUMMARY_RESULT',
                         payload: {
                             summary,
                             tabId: payload.tabId,
@@ -132,9 +208,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                                 summaries: cachedSummaries || []
                             };
                         });
-                        
+
                         const tabSummaries: TabSummary[] = await Promise.all(tabSummariesPromises);
-                        
+
                         sendResponse({
                             type: 'CACHED_SUMMARIES_RESULT',
                             payload: {
@@ -156,41 +232,39 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     }
                     break;
                 case LIST_KEYWORDS:
-                    const keywords = await listKeywords(payload.content);
+                    const keywords = await generateKeywords(payload.content);
                     sendResponse({ type: 'KEYWORDS_RESULT', payload: keywords });
                     break;
                 case CREATE_EMBEDDINGS:
-                    const embeddings = await createEmbeddings(payload.content);
+                    const embeddings = await generateEmbeddings(payload.content);
                     sendResponse({ type: 'EMBEDDINGS_RESULT', payload: embeddings });
                     break;
                 default:
                     console.warn('Unknown LLM task type:', type);
-                    sendResponse({ type: 'ERROR', payload: 'Unknown LLM task type' });
+                    if (message.action === "callFunction") {
+                        // This is for editor.html, which has own handling logic.
+                        // TODO: implement proper targetting logic.
+                    } else {
+                        sendResponse({ type: 'ERROR', payload: 'Unknown LLM task type' });
+                    }
             }
         } catch (error) {
             console.error('Error handling message:', error);
-            sendResponse({ 
-                type: 'ERROR', 
-                payload: error instanceof Error ? error.message : String(error) 
+            sendResponse({
+                type: 'ERROR',
+                payload: error instanceof Error ? error.message : String(error)
             });
         }
     };
-    
+
     handleAsync();
     return true; // Indicates we'll respond asynchronously
 });
 
 /**
- * Creates a summary of the provided content and caches it for the given tabId and URL
- * @param content The content to summarize
- * @param tabId The ID of the tab where the content is from
- * @param url The URL of the page where the content is from
- * @returns The generated summary
- */
-/**
- * Gets the content of a tab
- * @param tabId The ID of the tab
- * @returns The content of the tab, or null if it couldn't be retrieved
+ * Retrieves the visible text content from a specific browser tab based on its ID.
+ * @param tabId The unique identifier of the browser tab from which content is to be extracted.
+ * @returns A promise that resolves with the tab's content as a string, or null if retrieval fails.
  */
 async function getTabContent(tabId: number): Promise<string | null> {
     try {
@@ -199,7 +273,7 @@ async function getTabContent(tabId: number): Promise<string | null> {
             target: { tabId },
             func: () => document.body.innerText
         });
-        
+
         if (results && results[0] && results[0].result) {
             return results[0].result;
         }
@@ -217,44 +291,46 @@ async function getTabContent(tabId: number): Promise<string | null> {
  * @param url The URL of the page where the content is from
  * @returns The generated summary
  */
-async function createSummary(content: string, tabId?: number, url?: string): Promise<string> {
-    // Generate a cache key if tabId and url are provided
-    const cacheKey = tabId && url ? `${tabId}:${url}` : null;
-    
+async function generateSummary(content: string, url?: string): Promise<string> {
+    // Generate a cache key using just the URL
+    const cacheKey = url ? url : null;
+
     // Generate the summary
     const summary = await llmService.createSummary(content);
-    
+
     // If we have a valid cache key, store the summary in the cache
     if (cacheKey) {
-        // Get existing summaries for this tab+URL combination or create a new entry
+        // Get existing summaries for this URL or create a new entry
         const existingEntries = await summaryCache.get(cacheKey) || [];
-        
+
         // Create a new summary entry with the current timestamp
         const newEntry: SummaryEntry = {
             text: summary,
             timestamp: Date.now()
         };
-        
+
         // Add the new summary to the beginning of the array (most recent first)
         existingEntries.unshift(newEntry);
-        
+
         // Keep only the latest N summaries
         if (existingEntries.length > SUMMARY_CACHE_SIZE) {
             existingEntries.length = SUMMARY_CACHE_SIZE;
         }
-        
+
         // Store the updated entries in the cache
         await summaryCache.set(cacheKey, existingEntries);
-        
+
         const cacheSize = await summaryCache.size();
         console.log(`Cached summary for ${cacheKey}. Cache now has ${cacheSize} entries.`);
     }
-    
+
     return summary;
 }
 
+
 /**
  * Retrieves the cached summaries for a specific tab and URL
+ * TODO: Return all the info from this; keywords and embeddings
  * @param tabId The ID of the tab
  * @param url The URL of the page
  * @returns An array of cached summary entries, or null if none exist
@@ -262,42 +338,38 @@ async function createSummary(content: string, tabId?: number, url?: string): Pro
 async function getCachedSummaries(tabId: number, url: string): Promise<SummaryEntry[] | null> {
     const cacheKey = `${tabId}:${url}`;
     const cachedEntries = await summaryCache.get(cacheKey);
-    
+
     if (cachedEntries && cachedEntries.length > 0) {
+        // TODO: We only need the latest?
         return cachedEntries;
     }
-    
     return null;
 }
 
-async function listKeywords(content: string): Promise<string[]> {
-    return await llmService.listKeywords(content);
+// Functions for keyword extraction and embeddings
+async function generateKeywords(text: string): Promise<string[]> {
+    try {
+        const keywords = await llmService.listKeywords(text);
+        console.log('Extracted Keywords:', keywords.join(', '));
+        return keywords;
+    } catch (error) {
+        throw new Error('Keyword extraction failed');
+    }
 }
 
-async function createEmbeddings(content: string): Promise<number[]> {
-    return await llmService.createEmbeddings(content);
+async function generateEmbeddings(text: string): Promise<number[]> {
+    try {
+        const embeddings = await llmService.generateEmbeddings(text);
+        console.log('Embeddings Created:', embeddings.length, 'dimensionality');
+        return embeddings;
+    } catch (error) {
+        throw new Error('Embedding creation failed');
+    }
 }
+
+// TODO: Implement syncing with
 // in-Memory Model and the background store.
 // Sessions (groups of tabs/URLs)
 
-// URL to embeddings cache map.
-const embeddings = {};
-
-// Bookmark folder as a Storage 
-
-
-
-// Initialization
-function init() {
-
-}
-
-function getEmbeddings(url ,text) {
-
-
-}
-
-function getSummary(url ,text) {
-
-    
-}
+// Bookmark folder as a Storage
+// TODO: Implement properly.

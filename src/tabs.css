@@ -15,12 +15,12 @@
 }
 
 #tabs_tablist th {
-  background-color: #f2f2f2;
+  background-color: #224222;
   font-weight: bold;
 }
 
 #tabs_tablist tr:nth-child(even) {
-  background-color: #f9f9f9;
+  background-color: #292949;
 }
 
 /* URL cell styles - truncate long URLs */

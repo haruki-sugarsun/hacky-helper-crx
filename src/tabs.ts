@@ -6,8 +6,10 @@ const tabs_tablist = document.querySelector<HTMLDivElement>('#tabs_tablist')!
 console.log(tabs_tablist)
 
 // Page State
-var windowIds: (number | undefined)[] = [];
-
+// TODO: Implement.
+var windowIds: (number | undefined)[] = []; // Actually this should be the current windowId??
+var state_windows;
+var state_tabs;
 
 // Page Initializer
 function init() {
@@ -43,9 +45,9 @@ function init() {
         // TODO: Show some error dialog in this case?
     });
 
-
-
-    
+    state_windows = windows;
+    state_tabs = tabs;
+    updateUI(state_windows, state_tabs);
 }
 
 // setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)

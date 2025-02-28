@@ -7,7 +7,7 @@ abstract class BaseLLMService implements LLMService {
     // TODO: Now not sure if we need this base class?
     abstract createSummary(content: string): Promise<string>;
     abstract listKeywords(content: string): Promise<string[]>;
-    abstract createEmbeddings(content: string): Promise<number[]>;
+    abstract generateEmbeddings(content: string): Promise<number[]>;
     
     // Common method to get the summary prompt
     protected getSummaryPrompt(content: string): string {
@@ -18,7 +18,7 @@ abstract class BaseLLMService implements LLMService {
 export interface LLMService {
     createSummary(content: string): Promise<string>;
     listKeywords(content: string): Promise<string[]>;
-    createEmbeddings(content: string): Promise<number[]>;
+    generateEmbeddings(content: string): Promise<number[]>;
 }
 
 export class OpenAILLMService extends BaseLLMService {
@@ -68,7 +68,7 @@ export class OpenAILLMService extends BaseLLMService {
         return ['keyword1', 'keyword2', 'keyword3'];
     }
 
-    async createEmbeddings(_content: string): Promise<number[]> {
+    async generateEmbeddings(_content: string): Promise<number[]> {
         // Implement embeddings creation logic using OpenAI or replace with actual implementation
         // Placeholder implementation
         return [0.1, 0.2, 0.3];
@@ -134,8 +134,9 @@ export class OllamaLLMService extends BaseLLMService {
         }
     }
 
-    async createEmbeddings(content: string): Promise<number[]> {
+    async generateEmbeddings(content: string): Promise<number[]> {
         try {
+            // TODO: Check if just reusing the model is OK or not.
             const response = await this.client.embeddings({
                 model: this.model,
                 prompt: content
