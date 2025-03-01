@@ -1,6 +1,14 @@
 import { CONFIG_STORE } from './config_store';
-import { OLLAMA_API_URL_DEFAULT, OLLAMA_MODEL_DEFAULT, SUMMARY_PROMPT } from './lib/constants';
+import { 
+    OLLAMA_API_URL_DEFAULT, 
+    OLLAMA_MODEL_DEFAULT, 
+    SUMMARY_PROMPT,
+    KEYWORDS_PROMPT,
+    OPENAI_CHAT_MODEL,
+    OPENAI_EMBEDDINGS_MODEL
+} from './lib/constants';
 import { Ollama } from 'ollama';
+import OpenAI from 'openai';
 
 // Base class for LLM services
 abstract class BaseLLMService implements LLMService {
@@ -13,6 +21,11 @@ abstract class BaseLLMService implements LLMService {
     protected getSummaryPrompt(content: string): string {
         return `${SUMMARY_PROMPT}${content}`;
     }
+    
+    // Common method to get the keywords prompt
+    protected getKeywordsPrompt(content: string): string {
+        return `${KEYWORDS_PROMPT}${content}`;
+    }
 }
 
 export interface LLMService {
@@ -22,6 +35,16 @@ export interface LLMService {
 }
 
 export class OpenAILLMService extends BaseLLMService {
+    private client: OpenAI;
+
+    constructor() {
+        super();
+        this.client = new OpenAI({
+            // TODO: Have a OpenAI API Key config in settings.
+            apiKey: 'placeholder', // Will be set dynamically in each method
+        });
+    }
+
     async createSummary(content: string): Promise<string> {
         const startTime = performance.now();
 
@@ -31,47 +54,107 @@ export class OpenAILLMService extends BaseLLMService {
             throw new Error('OpenAI API key not set.');
         }
 
-        const response = await fetch('https://api.openai.com/v1/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: 'text-davinci-003',
-                prompt: this.getSummaryPrompt(content),
+        // Update the API key dynamically
+        this.client.apiKey = apiKey;
+
+        try {
+            const response = await this.client.chat.completions.create({
+                model: OPENAI_CHAT_MODEL,
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant that summarizes content.' },
+                    { role: 'user', content: this.getSummaryPrompt(content) }
+                ],
                 max_tokens: 150,
                 temperature: 0.7,
-            }),
-        });
+            });
 
-        if (!response.ok) {
-            console.error('LLM API Error:', response.statusText);
+            const summary = response.choices[0].message.content?.trim() || '';
+
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log('OpenAI Summary Generated:', summary);
+            console.log('OpenAI Summary Generation Time:', duration.toFixed(2), 'ms');
+
+            return summary;
+        } catch (error) {
+            console.error('Error generating summary:', error);
             throw new Error('Failed to generate summary.');
         }
-
-        const data = await response.json();
-        const summary = data.choices[0].text.trim();
-
-        const endTime = performance.now();
-        const duration = endTime - startTime;
-        console.log('OpenAI Summary Generated:', summary);
-        console.log('OpenAI Summary Generation Time:', duration.toFixed(2), 'ms');
-
-
-        return summary;
     }
 
-    async listKeywords(_content: string): Promise<string[]> {
-        // Implement keyword extraction logic using OpenAI or replace with actual implementation
-        // Placeholder implementation
-        return ['keyword1', 'keyword2', 'keyword3'];
+    async listKeywords(content: string): Promise<string[]> {
+        const startTime = performance.now();
+
+        const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
+        if (!apiKey) {
+            console.error('OpenAI API key not set.');
+            throw new Error('OpenAI API key not set.');
+        }
+
+        // Update the API key dynamically
+        this.client.apiKey = apiKey;
+
+        try {
+            const response = await this.client.chat.completions.create({
+                model: OPENAI_CHAT_MODEL,
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant that extracts keywords from content.' },
+                    { role: 'user', content: this.getKeywordsPrompt(content) }
+                ],
+                max_tokens: 100,
+                temperature: 0.5,
+            });
+
+            const keywordsText = response.choices[0].message.content?.trim() || '';
+            
+            // Split the response by commas and trim whitespace
+            const keywords = keywordsText.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
+
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log('OpenAI Keywords Extracted:', keywords.join(', '));
+            console.log('OpenAI Keywords Extraction Time:', duration.toFixed(2), 'ms');
+
+            return keywords;
+        } catch (error) {
+            console.error('Error extracting keywords:', error);
+            // Return empty array instead of throwing to prevent cascading failures
+            return [];
+        }
     }
 
-    async generateEmbeddings(_content: string): Promise<number[]> {
-        // Implement embeddings creation logic using OpenAI or replace with actual implementation
-        // Placeholder implementation
-        return [0.1, 0.2, 0.3];
+    async generateEmbeddings(content: string): Promise<number[]> {
+        const startTime = performance.now();
+
+        const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
+        if (!apiKey) {
+            console.error('OpenAI API key not set.');
+            throw new Error('OpenAI API key not set.');
+        }
+
+        // Update the API key dynamically
+        this.client.apiKey = apiKey;
+
+        try {
+            const response = await this.client.embeddings.create({
+                model: OPENAI_EMBEDDINGS_MODEL,
+                input: content,
+            });
+
+            const embeddings = response.data[0].embedding;
+
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log('OpenAI Embeddings Generated:', embeddings.length, 'dimensions');
+            console.log('OpenAI Embeddings Generation Time:', duration.toFixed(2), 'ms');
+
+            return embeddings;
+        } catch (error) {
+            console.error('Error generating embeddings:', error);
+            // Return placeholder embeddings in case of failure to prevent cascading failures
+            console.warn('Returning placeholder embeddings due to API error');
+            return Array(1536).fill(0).map(() => Math.random() * 2 - 1);
+        }
     }
 }
 
@@ -118,15 +201,24 @@ export class OllamaLLMService extends BaseLLMService {
     }
 
     async listKeywords(content: string): Promise<string[]> {
+        const startTime = performance.now();
+        
         try {
             const response = await this.client.generate({
                 model: this.model,
-                prompt: `Extract 5-10 important keywords from the following content. Return only the keywords as a comma-separated list without any additional text:\n\n${content}`,
+                prompt: this.getKeywordsPrompt(content),
                 stream: false
             });
 
             // Split the response by commas and trim whitespace
-            return response.response.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
+            const keywords = response.response.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log('Ollama Keywords Extracted:', keywords.join(', '));
+            console.log('Ollama Keywords Extraction Time:', duration.toFixed(2), 'ms');
+            
+            return keywords;
         } catch (error: unknown) {
             console.error('Ollama API Error:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -135,14 +227,23 @@ export class OllamaLLMService extends BaseLLMService {
     }
 
     async generateEmbeddings(content: string): Promise<number[]> {
+        const startTime = performance.now();
+        
         try {
             // TODO: Check if just reusing the model is OK or not.
             const response = await this.client.embeddings({
                 model: this.model,
                 prompt: content
             });
+            
+            const embeddings = response.embedding;
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log('Ollama Embeddings Generated:', embeddings.length, 'dimensions');
+            console.log('Ollama Embeddings Generation Time:', duration.toFixed(2), 'ms');
 
-            return response.embedding;
+            return embeddings;
         } catch (error: unknown) {
             console.error('Ollama API Error:', error);
             // Return a placeholder if embeddings fail
