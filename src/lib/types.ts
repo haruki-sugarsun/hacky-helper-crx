@@ -3,8 +3,10 @@
 /**
  * Represents a cached summary entry with text content and timestamp
  */
-export interface SummaryEntry {
-    text: string;
+export interface DigestEntry {
+    summary: string;
+    keywords: string[];
+    embeddings: number[];
     timestamp: number;
 }
 
@@ -22,5 +24,5 @@ export interface TabInfo {
 export interface TabSummary {
     tabId: number;
     url: string;
-    summaries: SummaryEntry[];
+    summaries: DigestEntry[];
 }

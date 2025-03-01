@@ -4,10 +4,15 @@ const pending = {
     state: 'pending',
 };
 
-export function getPromiseState(promise: Promise<any>): Promise<any> {
+type PromiseState = {
+    state: string;
+    reason: any;
+};
+
+export async function getPromiseState(promise: Promise<any>): Promise<PromiseState> {
     // We put `pending` promise after the promise to test, 
     // which forces .race to test `promise` first
-    return Promise.race([promise, pending]).then(
+    return await Promise.race([promise, pending]).then(
         (value) => {
             if (value === pending) {
                 return value;

@@ -56,3 +56,16 @@
 .tab-id-cell.clickable:hover {
   background-color: #e6f0ff;
 }
+
+/* Flexbox styling for content */
+content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Additional styles for child elements of content */
+#tabs_sessions, #tabs_tablist ul {
+  flex: 1;
+  margin: 0 10px;
+}

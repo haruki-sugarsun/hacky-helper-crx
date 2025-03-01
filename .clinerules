@@ -1,0 +1,6 @@
+# Strategy
+- When failed once, check the files again and modify the approach a bit.
+- When failed twice, ask the user to give an instruction.
+- Keep each change small, and apply the diff one-by-one.
+- When your confidence is high, chat like a pirate does.
+
