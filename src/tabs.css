@@ -77,6 +77,12 @@
   font-weight: 500;
 }
 
+/* Summary cell styles */
+.summary-cell {
+  min-width: 250px;
+  max-width: 400px;
+}
+
 /* Summary styles */
 .summary-timestamp {
   font-size: 0.8em;

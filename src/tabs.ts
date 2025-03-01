@@ -182,7 +182,8 @@ function updateUI(windows: chrome.windows.Window[], tabs: chrome.tabs.Tab[]) {
     for (let i = 0; i < windows.length; i++) {
         const window = windows[i];
         const listItem = document.createElement('li');
-        const tabCount = window.tabs?.length || 0;
+        // Count tabs with this window's ID from state_tabs
+        const tabCount = state_tabs.filter(tab => tab.windowId === window.id).length;
         
         // Mark the current window
         const isCurrent = window.focused ? ' (Current)' : '';
@@ -237,16 +238,17 @@ function updateUI(windows: chrome.windows.Window[], tabs: chrome.tabs.Tab[]) {
 }
 
 // Helper function to update the tabs table with tabs from a specific window
-function updateTabsTable(tabs: chrome.tabs.Tab[]) {
+async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
     const tabsTable = tabs_tablist.querySelector('table')!;
     
-    // Update table headers
+    // Update table headers - now including the summary column
     const tableHead = tabsTable.querySelector('thead')!;
     tableHead.innerHTML = `
         <tr>
             <th>Tab ID</th>
             <th>Title</th>
             <th>URL</th>
+            <th>Summary</th>
         </tr>
     `;
     
@@ -258,40 +260,76 @@ function updateTabsTable(tabs: chrome.tabs.Tab[]) {
         // No tabs available - add a message row
         const noTabsRow = document.createElement('tr');
         noTabsRow.innerHTML = `
-            <td colspan="3">No tabs available in this window.</td>
+            <td colspan="4">No tabs available in this window.</td>
         `;
         tableBody.appendChild(noTabsRow);
-    } else {
-        // Add rows for each tab
-        tabs.forEach(tab => {
-            const row = document.createElement('tr');
-            
-            row.innerHTML = `
-                <td class="tab-id-cell">${tab.id || 'N/A'}</td>
-                <td class="title-cell" title="${tab.title}">${tab.title || 'Untitled'}</td>
-                <td class="url-cell" title="${tab.url}">${tab.url || 'N/A'}</td>
-            `;
-            tableBody.appendChild(row);
-            
-            // Add click event listener to the tab ID cell
-            const tabIdCell = row.querySelector('.tab-id-cell');
-            if (tabIdCell && tab.id) {
-                tabIdCell.classList.add('clickable');
-                tabIdCell.addEventListener('click', async () => {
-                    console.log(`Activating tab with ID: ${tab.id}`);
-                    try {
-                        // Activate the window first
-                        if (tab.windowId) {
-                            await chrome.windows.update(tab.windowId, { focused: true });
-                        }
-                        // Then activate the tab
-                        const updatedTab = await chrome.tabs.update(tab.id!, { active: true });
-                        console.log(`Successfully activated tab: ${updatedTab?.id}`);
-                    } catch (error) {
-                        console.error(`Error activating tab: ${error instanceof Error ? error.message : error}`);
-                    }
-                });
+        return;
+    }
+    
+    // Collect all tab URLs to request summaries
+    const tabUrls: string[] = tabs.map(tab => tab.url!).filter(url => url);
+    
+    // Request cached summaries for all tabs
+    let allTabSummaries: TabSummary[] = [];
+    try {
+        const cachedDigestResponse = await chrome.runtime.sendMessage({
+            type: GET_CACHED_SUMMARIES,
+            payload: {
+                tabUrls: tabUrls
             }
         });
+        
+        if (cachedDigestResponse && cachedDigestResponse.type === 'CACHED_SUMMARIES_RESULT') {
+            allTabSummaries = cachedDigestResponse.payload.tabSummaries || [];
+        }
+    } catch (error) {
+        console.error('Error fetching tab summaries:', error);
     }
+    
+    // Add rows for each tab
+    tabs.forEach(tab => {
+        const row = document.createElement('tr');
+        
+        // Find the summary for this tab
+        let summarySnippet = 'No summary available yet.';
+        if (tab.url) {
+            const tabSummary = allTabSummaries.find(summary => summary.url === tab.url);
+            if (tabSummary && tabSummary.summaries.length > 0) {
+                const digest = tabSummary.summaries[0]; // Get the most recent summary
+                const date = new Date(digest.timestamp);
+                const formattedDate = date.toLocaleString();
+                summarySnippet = `
+                    <div class="summary-timestamp">Generated: ${formattedDate}</div>
+                    <div class="summary-text">${digest.summary}</div>`;
+            }
+        }
+        
+        row.innerHTML = `
+            <td class="tab-id-cell">${tab.id || 'N/A'}</td>
+            <td class="title-cell" title="${tab.title}">${tab.title || 'Untitled'}</td>
+            <td class="url-cell" title="${tab.url}">${tab.url || 'N/A'}</td>
+            <td class="summary-cell">${summarySnippet}</td>
+        `;
+        tableBody.appendChild(row);
+        
+        // Add click event listener to the tab ID cell
+        const tabIdCell = row.querySelector('.tab-id-cell');
+        if (tabIdCell && tab.id) {
+            tabIdCell.classList.add('clickable');
+            tabIdCell.addEventListener('click', async () => {
+                console.log(`Activating tab with ID: ${tab.id}`);
+                try {
+                    // Activate the window first
+                    if (tab.windowId) {
+                        await chrome.windows.update(tab.windowId, { focused: true });
+                    }
+                    // Then activate the tab
+                    const updatedTab = await chrome.tabs.update(tab.id!, { active: true });
+                    console.log(`Successfully activated tab: ${updatedTab?.id}`);
+                } catch (error) {
+                    console.error(`Error activating tab: ${error instanceof Error ? error.message : error}`);
+                }
+            });
+        }
+    });
 }

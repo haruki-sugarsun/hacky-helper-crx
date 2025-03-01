@@ -154,7 +154,18 @@ function queueTaskForProcessing(url: string, content: string, title: string = ''
     processNextTask(); // Start processing immediately if no task is currently being processed
 }
 
-// TODO: Setup a perdiodic call of processNextTask(). e.g. every 1 min?
+// Setup a periodic call of processNextTask every 1 minute
+chrome.alarms.create('processTasksAlarm', {
+    periodInMinutes: 1
+});
+
+// Listen for the alarm and process tasks
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'processTasksAlarm') {
+        console.log('Periodic task processing triggered', new Date());
+        processNextTask();
+    }
+});
 async function processNextTask() {
     // Check the llmTasks if we have anything to execute:
     if (llmTasks.length == 0 || runningLlmTask && ((await getPromiseState(runningLlmTask)).state == "pending")) {
