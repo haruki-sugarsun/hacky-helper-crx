@@ -8,10 +8,9 @@ const tabs_tablist = document.querySelector<HTMLDivElement>('#tabs_tablist')!
 console.log('tabs.ts', new Date())
 
 // Page State
-// TODO: Implement.
-var windowIds: (number | undefined)[] = []; // Actually this should be the current windowId??
-var state_windows: chrome.windows.Window[];
-var state_tabs: chrome.tabs.Tab[];
+var windowIds: (number | undefined)[] = []; // IDs of all windows
+var state_windows: chrome.windows.Window[]; // All windows
+var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window
 
 // Page Initializer
 function init() {
@@ -57,6 +56,12 @@ init();
 const requestTabSummariesButton = document.querySelector<HTMLButtonElement>('#requestTabSummariesButton')!;
 requestTabSummariesButton.addEventListener('click', async () => {
     console.log('Tab summaries requested');
+
+    // Refresh the windows list
+    chrome.windows.getAll().then(windows => {
+        state_windows = windows;
+        updateUI(state_windows, state_tabs);
+    });
 
     // Get all tabs in the current window
     const tabs = await chrome.tabs.query({ currentWindow: true });
@@ -155,12 +160,138 @@ requestTabSummariesButton.addEventListener('click', async () => {
     }
 });
 function updateUI(windows: chrome.windows.Window[], tabs: chrome.tabs.Tab[]) {
+    // Log window and tab information for debugging
     windows.forEach(w => {
-        console.log(`ID: ${w.id}, Tabs: ${w.tabs}`);
+        console.log(`ID: ${w.id}, Tabs: ${w.tabs?.length || 0}`);
     });
     tabs.forEach(t => {
         console.log(`Title: ${t.title}, URL: ${t.url}`);
     });
 
-    throw new Error('Function not implemented.');
+    // Update the sessions list (windows)
+    const tabsSessionsElement = document.querySelector<HTMLDivElement>('#tabs_sessions')!;
+    const sessionsList = tabsSessionsElement.querySelector('ul')!;
+    
+    // Clear existing list items
+    sessionsList.innerHTML = '';
+    
+    // Track the current window to auto-select it
+    let currentWindowItem: HTMLLIElement | undefined = undefined;
+    
+    // Add a list item for each window
+    for (let i = 0; i < windows.length; i++) {
+        const window = windows[i];
+        const listItem = document.createElement('li');
+        const tabCount = window.tabs?.length || 0;
+        
+        // Mark the current window
+        const isCurrent = window.focused ? ' (Current)' : '';
+        
+        // Create the session name with window ID and tab count
+        listItem.textContent = `Window ${window.id}${isCurrent} - ${tabCount} tab${tabCount !== 1 ? 's' : ''}`;
+        
+        // Add a class to highlight the current window
+        if (window.focused) {
+            listItem.classList.add('current-window');
+            currentWindowItem = listItem;
+        }
+        
+        // Add click event to show tabs for this window
+        listItem.addEventListener('click', () => {
+            // Update the selected window in the UI
+            document.querySelectorAll('#tabs_sessions li').forEach(item => {
+                item.classList.remove('selected');
+            });
+            listItem.classList.add('selected');
+            
+            console.log(`Selected window: ${window.id}`);
+            
+            // For now, just query and display tabs for the selected window
+            if (window.id) {
+                chrome.tabs.query({ windowId: window.id }).then(windowTabs => {
+                    console.log(`Found ${windowTabs.length} tabs in window ${window.id}`);
+                    // Update the table with these tabs
+                    updateTabsTable(windowTabs);
+                });
+            }
+        });
+        
+        sessionsList.appendChild(listItem);
+    }
+    
+    // Auto-select the current window and show its tabs
+    if (currentWindowItem) {
+        // Simulate a click on the current window item
+        currentWindowItem.classList.add('selected');
+        
+        // Find the current window
+        const currentWindow = windows.find(w => w.focused);
+        if (currentWindow && currentWindow.id) {
+            // Load tabs for the current window
+            chrome.tabs.query({ windowId: currentWindow.id }).then(windowTabs => {
+                console.log(`Auto-loading ${windowTabs.length} tabs for current window ${currentWindow.id}`);
+                updateTabsTable(windowTabs);
+            });
+        }
+    }
+}
+
+// Helper function to update the tabs table with tabs from a specific window
+function updateTabsTable(tabs: chrome.tabs.Tab[]) {
+    const tabsTable = tabs_tablist.querySelector('table')!;
+    
+    // Update table headers
+    const tableHead = tabsTable.querySelector('thead')!;
+    tableHead.innerHTML = `
+        <tr>
+            <th>Tab ID</th>
+            <th>Title</th>
+            <th>URL</th>
+        </tr>
+    `;
+    
+    // Clear existing table rows
+    const tableBody = tabsTable.querySelector('tbody')!;
+    tableBody.innerHTML = '';
+    
+    if (tabs.length === 0) {
+        // No tabs available - add a message row
+        const noTabsRow = document.createElement('tr');
+        noTabsRow.innerHTML = `
+            <td colspan="3">No tabs available in this window.</td>
+        `;
+        tableBody.appendChild(noTabsRow);
+    } else {
+        // Add rows for each tab
+        tabs.forEach(tab => {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td class="tab-id-cell">${tab.id || 'N/A'}</td>
+                <td class="title-cell" title="${tab.title}">${tab.title || 'Untitled'}</td>
+                <td class="url-cell" title="${tab.url}">${tab.url || 'N/A'}</td>
+            `;
+            tableBody.appendChild(row);
+            
+            // Add click event listener to the tab ID cell
+            const tabIdCell = row.querySelector('.tab-id-cell');
+            if (tabIdCell && tab.id) {
+                tabIdCell.classList.add('clickable');
+                tabIdCell.addEventListener('click', async () => {
+                    console.log(`Activating tab with ID: ${tab.id}`);
+                    try {
+                        // Activate the window first
+                        if (tab.windowId) {
+                            await chrome.windows.update(tab.windowId, { focused: true });
+                        }
+                        // Then activate the tab
+                        const updatedTab = await chrome.tabs.update(tab.id!, { active: true });
+                        console.log(`Successfully activated tab: ${updatedTab?.id}`);
+                    } catch (error) {
+                        console.error(`Error activating tab: ${error instanceof Error ? error.message : error}`);
+                    }
+                });
+            }
+        });
+    }
 }

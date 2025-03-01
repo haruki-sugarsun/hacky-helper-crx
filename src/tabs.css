@@ -1,5 +1,47 @@
 /* Styles for the tabs page */
 
+/* Left Pane: Sessions list */
+#tabs_sessions {
+  margin: 0 10px;
+  width: min(15%, 30em);
+  border-right: 1px solid #444;
+  padding-right: 15px;
+}
+
+#tabs_sessions ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#tabs_sessions li {
+  padding: 8px 10px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-left: 3px solid transparent;
+}
+
+#tabs_sessions li:hover {
+  background-color: #333355;
+}
+
+#tabs_sessions li.selected {
+  background-color: #2a2a4a;
+  border-left: 3px solid #6666cc;
+}
+
+#tabs_sessions li.current-window {
+  font-weight: bold;
+  color: #aaddff;
+}
+
+/**/
+#tabs_tablist {
+  flex: 1;
+}
+
 /* Table styles */
 #tabs_tablist table {
   width: 100%;
@@ -23,12 +65,16 @@
   background-color: #292949;
 }
 
-/* URL cell styles - truncate long URLs */
-.url-cell {
+/* URL and title cell styles - truncate long text */
+.url-cell, .title-cell {
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.title-cell {
+  font-weight: 500;
 }
 
 /* Summary styles */
@@ -60,12 +106,30 @@
 /* Flexbox styling for content */
 content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 10px;
+}
+
+/* Section headers */
+#tabs_sessions h3, 
+#tabs_tablist h3 {
+  margin-top: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #555;
+  color: #aaddff;
+}
+
+/* Instructions text */
+.instructions {
+  margin: 10px 0;
+  font-style: italic;
+  color: #888;
 }
 
 /* Additional styles for child elements of content */
-#tabs_sessions, #tabs_tablist ul {
+#tabs_tablist ul {
   flex: 1;
   margin: 0 10px;
 }

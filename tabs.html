@@ -21,50 +21,32 @@
 
     <content>
       <div id="tabs_sessions">
+        <h3>Windows</h3>
         <ul>
-          <li>Session 1</li>
-          <li>Session 2</li>
-          <li>Session 3</li>
-          <li>Session 4</li>
+          <!-- Windows sessions will be populated here -->
+          <li>Loading windows...</li>
         </ul>
       </div>
 
       <div id="tabs_tablist">
+        <h3>Tabs</h3>
+        <div class="instructions">Select a window from the left to view its tabs</div>
         <table border="1">
           <thead>
               <tr>
-                  <th>Name</th>
-                  <th>Age</th>
-                  <th>City</th>
+                  <th>Tab ID</th>
+                  <th>Title</th>
+                  <th>URL</th>
               </tr>
           </thead>
           <tbody>
               <tr>
-                  <td>Alice</td>
-                  <td>30</td>
-                  <td>New York</td>
-              </tr>
-              <tr>
-                  <td>Bob</td>
-                  <td>25</td>
-                  <td>Los Angeles</td>
-              </tr>
-              <tr>
-                  <td>Charlie</td>
-                  <td>35</td>
-                  <td>Chicago</td>
+                  <td colspan="3">Select a window to view tabs</td>
               </tr>
           </tbody>
-      </table>
+        </table>
+      </div>
     </content>
-
-    <ul>
-        <li>Tab 1</li>
-        <li>Tab 2</li>
-        <li>Tab 3</li>
-        <li>Tab 4</li>
-      </ul>
-    </div>
 
     <script type="module" src="/src/tabs.ts"></script>
   </body>
