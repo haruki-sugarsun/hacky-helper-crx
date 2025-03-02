@@ -3,10 +3,19 @@
     "name": "Hacky Helper",
     "version": "0.0.1",
     "permissions": [
-        "sidePanel", "scripting", "storage", "tabs", "alarms"
+        "sidePanel",
+        "scripting",
+        "storage",
+        "tabs",
+        "alarms",
+        "bookmarks"
     ],
-    "host_permissions": ["*://*/*"],
-    "action": { "default_popup": "index.html" },
+    "host_permissions": [
+        "*://*/*"
+    ],
+    "action": {
+        "default_popup": "index.html"
+    },
     "background": {
         "service_worker": "src/service-worker.ts"
     },
@@ -15,8 +24,12 @@
     },
     "content_scripts": [
         {
-        "js": ["src/content.ts"],
-        "matches": ["*://*/*"]
+            "js": [
+                "src/content.ts"
+            ],
+            "matches": [
+                "*://*/*"
+            ]
         }
     ]
 }

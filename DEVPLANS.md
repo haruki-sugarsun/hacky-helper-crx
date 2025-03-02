@@ -6,8 +6,12 @@
 
 ## Bookmark as URL Store
 * Bookmark chooser UI in settings.html.
+* Config object in config_store.ts.
 * Named sessions will be stored as bookmarks automatically, and 
 * Structure: [Bookmark Root] > [Named Sessions] > [Opened Pages]/[Kept Pages]
+* A "Session" is a folder in Bookmark. and is a window in the browser, and a set of "Tabs".
+* A "Tab" is a bookmark in Bookmark manager. associated with a title, URL.
+* We can encode metadata in Bookmark titles as JSON.
 
 ## UI Language chooser
 * Have a selection option in settings.

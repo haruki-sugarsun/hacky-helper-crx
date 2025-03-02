@@ -64,7 +64,9 @@ Runs in the context of web pages to extract content:
 Specialized modules for specific features:
 
 - **Tab Organizer** (`features/tab_organizer.ts`): Manages tab organization and reordering
-- **Bookmark Store** (`features/groupstore_bookmark.ts`): Manages bookmark-based storage for tab groups
+- **Bookmark Store** (`features/groupstore_bookmark.ts`): Manages bookmark-based storage for tab groups and sessions
+  - **GroupStoreImpl**: Manages bookmark groups (folders) for organizing tabs
+  - **BookmarkStoreImpl**: Handles individual bookmarks within groups
 
 ## Data Flow
 
@@ -100,17 +102,18 @@ The extension uses multiple storage mechanisms:
    - Pinned tabs are excluded from the tab list UI
    - Tab counts in the window list exclude pinned tabs
 
+2. **Bookmark Integration**:
+   - Bookmark chooser UI in settings.html for selecting the parent bookmark folder
+   - Configuration to specify which bookmark folder is managed by the extension
+   - Infrastructure for storing and retrieving bookmarks using Chrome's Bookmarks API
+
 ## Planned Features
 
 As documented in DEVPLANS.md:
 
-2. **Named Sessions**:
+1. **Named Sessions**:
    - Ability to name browser windows/sessions
-
-3. **Bookmark Integration**:
-   - Using bookmarks as URL storage
-   - Automatic session storage as bookmarks
-   - Hierarchical organization of bookmarks
+   - Automatic storage of named sessions as bookmarks
 
 ## Technical Stack
 
