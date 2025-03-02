@@ -1,5 +1,8 @@
 import { LLMService, OpenAILLMService, OllamaLLMService } from './llmService';
-import { CREATE_SUMMARY, LIST_KEYWORDS, CREATE_EMBEDDINGS, GET_CACHED_SUMMARIES, OLLAMA_API_URL_DEFAULT, OLLAMA_MODEL_DEFAULT } from './lib/constants';
+import {
+    CREATE_SUMMARY, LIST_KEYWORDS, CREATE_EMBEDDINGS, GET_CACHED_SUMMARIES,
+    OLLAMA_API_URL_DEFAULT, OLLAMA_MODEL_DEFAULT, OLLAMA_EMBEDDINGS_MODEL_DEFAULT
+} from './lib/constants';
 import { CONFIG_STORE } from './config_store';
 import { DigestEntry, TabSummary } from './lib/types';
 import { PersistentCache } from './persistent-cache';
@@ -42,11 +45,13 @@ async function initializeLLMService() {
     if (useOllama) {
         const ollamaApiUrl = await CONFIG_STORE.get('OLLAMA_API_URL') || OLLAMA_API_URL_DEFAULT;
         const ollamaModel = await CONFIG_STORE.get('OLLAMA_MODEL') || OLLAMA_MODEL_DEFAULT;
-        console.log(`Using Ollama LLM service with model ${ollamaModel} at ${ollamaApiUrl}`);
-        llmService = new OllamaLLMService(ollamaApiUrl, ollamaModel);
+        const ollamaEmbeddingsModel = await CONFIG_STORE.get('OLLAMA_EMBEDDINGS_MODEL') || OLLAMA_EMBEDDINGS_MODEL_DEFAULT;
+        console.log(`Using Ollama LLM service with model ${ollamaModel} and embeddings model ${ollamaEmbeddingsModel} at ${ollamaApiUrl}`);
+        llmService = new OllamaLLMService(ollamaApiUrl, ollamaModel, ollamaEmbeddingsModel);
     } else {
         console.log('Using OpenAI LLM service');
         llmService = new OpenAILLMService();
+        // TODO: Use a OpenAI API Key config.
     }
 }
 
@@ -106,7 +111,7 @@ async function initializeTabManagement() {
                 const content = await getTabContent(tabId);
                 if (content) {
                     // Queue a task to generate and cache the summary
-                    queueTaskForProcessing(tab.url, content, tab.title || '')
+                    maybeQueueTaskForProcessing(tab.url, content, tab.title || '')
                     // TODO: Implement in the queueTaskForProcessing();
                     console.log(`Queued to generate and cache summary for tab ${tabId} at ${tab.url}`);
                 }
@@ -129,14 +134,25 @@ let llmTasks: {
 }[] = [];
 let runningLlmTask: Promise<void> | undefined = undefined;
 
-function queueTaskForProcessing(url: string, content: string, title: string = '') {
-    // Check if we already have similar tasks (typically with the same URL),
-    // and update such task instead of pushing a new one at the end. The intention is
-    const existingTask = llmTasks.find(task => task.url === url);
-    if (existingTask) {
-        existingTask.content = content;
-        existingTask.title = title;
-    } else {
+async function maybeQueueTaskForProcessing(url: string, content: string, title: string = '') {
+    try {
+        // Check if we already have similar tasks (typically with the same URL),
+        // and update such task instead of pushing a new one at the end. The intention is
+        const existingTask = llmTasks.find(task => task.url === url);
+        if (existingTask) {
+            existingTask.content = content;
+            existingTask.title = title;
+            return;
+        }
+
+        // If the cache already has digests newer than the specified time, e.g. 1 hour.
+        const oneHourAgo = new Date().getTime() - (60 * 60 * 1000);
+        const cachedDigests = await getCachedSummaries(url); // Assume this function retrieves cached digests
+        if (cachedDigests && cachedDigests.some(digest => digest.timestamp > oneHourAgo)) {
+            console.log('Skipping task as recent cache exists.');
+            return;
+        }
+
         llmTasks.push({
             url: url, content: content, title: title, timestamp: new Date().getTime(),
             resolve: function (summary: string, keywords: string[], embeddings: number[]) {
@@ -150,8 +166,9 @@ function queueTaskForProcessing(url: string, content: string, title: string = ''
                 // For example, you can store it in a cache or send it back to the content script
             }
         });
+    } finally {
+        processNextTask(); // Start processing immediately if no task is currently being processed
     }
-    processNextTask(); // Start processing immediately if no task is currently being processed
 }
 
 // Setup a periodic call of processNextTask every 1 minute
@@ -168,6 +185,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 async function processNextTask() {
     // Check the llmTasks if we have anything to execute:
+    console.log(`Number of tasks in the queue: ${llmTasks.length}`);
     if (llmTasks.length == 0 || runningLlmTask && ((await getPromiseState(runningLlmTask)).state == "pending")) {
         // Nothing to do.
         return;

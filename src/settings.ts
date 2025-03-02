@@ -2,7 +2,7 @@ import { h, init, propsModule, eventListenersModule } from 'snabbdom';
 
 import './config_store'
 import { ConfigStore, Config, BoolConfig } from './config_store';
-import { OLLAMA_API_URL_DEFAULT, OLLAMA_MODEL_DEFAULT } from './lib/constants';
+import { OLLAMA_API_URL_DEFAULT, OLLAMA_MODEL_DEFAULT, OLLAMA_EMBEDDINGS_MODEL_DEFAULT } from './lib/constants';
 
 import './style.css'
 // import './settings.css'
@@ -41,6 +41,7 @@ async function initializeForm() {
     
     await appendFormFrom(settingsLlmUl, ConfigStore.OLLAMA_API_URL, OLLAMA_API_URL_DEFAULT);
     await appendFormFrom(settingsLlmUl, ConfigStore.OLLAMA_MODEL, OLLAMA_MODEL_DEFAULT);
+    await appendFormFrom(settingsLlmUl, ConfigStore.OLLAMA_EMBEDDINGS_MODEL, OLLAMA_EMBEDDINGS_MODEL_DEFAULT);
 }
 
 // Start initialization

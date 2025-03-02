@@ -1,7 +1,8 @@
 import { CONFIG_STORE } from './config_store';
 import { 
     OLLAMA_API_URL_DEFAULT, 
-    OLLAMA_MODEL_DEFAULT, 
+    OLLAMA_MODEL_DEFAULT,
+    OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
     SUMMARY_PROMPT,
     KEYWORDS_PROMPT,
     OPENAI_CHAT_MODEL,
@@ -11,11 +12,69 @@ import { Ollama } from 'ollama';
 import OpenAI from 'openai';
 
 // Base class for LLM services
+// This base class is useful for:
+// 1. Providing common methods used by all LLM services
+// 2. Ensuring all services implement the same interface
+// 3. Making it easy to add new LLM services in the future
 abstract class BaseLLMService implements LLMService {
-    // TODO: Now not sure if we need this base class?
-    abstract createSummary(content: string): Promise<string>;
-    abstract listKeywords(content: string): Promise<string[]>;
-    abstract generateEmbeddings(content: string): Promise<number[]>;
+    // Public methods that implement the LLMService interface
+    // These methods handle common logic like timing and error handling
+    async createSummary(content: string): Promise<string> {
+        const startTime = performance.now();
+        try {
+            const summary = await this.doCreateSummary(content);
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log(`Summary Generation Time: ${duration.toFixed(2)} ms`);
+            return summary;
+        } catch (error) {
+            console.error('Error generating summary:', error);
+            throw new Error('Failed to generate summary.');
+        }
+    }
+
+    async listKeywords(content: string): Promise<string[]> {
+        const startTime = performance.now();
+        try {
+            const keywords = await this.doListKeywords(content);
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log(`Keywords Extraction Time: ${duration.toFixed(2)} ms`);
+            return keywords;
+        } catch (error) {
+            console.error('Error extracting keywords:', error);
+            // Return empty array instead of throwing to prevent cascading failures
+            return [];
+        }
+    }
+
+    async generateEmbeddings(content: string): Promise<number[]> {
+        const startTime = performance.now();
+        try {
+            const embeddings = await this.doGenerateEmbeddings(content);
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log(`Embeddings Generation Time: ${duration.toFixed(2)} ms`);
+            return embeddings;
+        } catch (error) {
+            console.error('Error generating embeddings:', error);
+            // Return placeholder embeddings in case of failure to prevent cascading failures
+            console.warn('Returning placeholder embeddings due to API error');
+            // Default to 1536 dimensions (OpenAI's standard), but allow subclasses to override
+            return this.getPlaceholderEmbeddings();
+        }
+    }
+    
+    // Method to get placeholder embeddings, can be overridden by subclasses
+    protected getPlaceholderEmbeddings(): number[] {
+        // Default to OpenAI's embedding dimensions (1536)
+        return Array(1536).fill(0).map(() => Math.random() * 2 - 1);
+    }
+    
+    // Protected methods that subclasses must implement
+    protected abstract doCreateSummary(content: string): Promise<string>;
+    protected abstract doListKeywords(content: string): Promise<string[]>;
+    protected abstract doGenerateEmbeddings(content: string): Promise<number[]>;
     
     // Common method to get the summary prompt
     protected getSummaryPrompt(content: string): string {
@@ -40,14 +99,11 @@ export class OpenAILLMService extends BaseLLMService {
     constructor() {
         super();
         this.client = new OpenAI({
-            // TODO: Have a OpenAI API Key config in settings.
             apiKey: 'placeholder', // Will be set dynamically in each method
         });
     }
 
-    async createSummary(content: string): Promise<string> {
-        const startTime = performance.now();
-
+    protected async doCreateSummary(content: string): Promise<string> {
         const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
         if (!apiKey) {
             console.error('OpenAI API key not set.');
@@ -57,34 +113,23 @@ export class OpenAILLMService extends BaseLLMService {
         // Update the API key dynamically
         this.client.apiKey = apiKey;
 
-        try {
-            const response = await this.client.chat.completions.create({
-                model: OPENAI_CHAT_MODEL,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant that summarizes content.' },
-                    { role: 'user', content: this.getSummaryPrompt(content) }
-                ],
-                max_tokens: 150,
-                temperature: 0.7,
-            });
+        const response = await this.client.chat.completions.create({
+            model: OPENAI_CHAT_MODEL,
+            messages: [
+                { role: 'system', content: 'You are a helpful assistant that summarizes content.' },
+                { role: 'user', content: this.getSummaryPrompt(content) }
+            ],
+            max_tokens: 150,
+            temperature: 0.7,
+        });
 
-            const summary = response.choices[0].message.content?.trim() || '';
-
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('OpenAI Summary Generated:', summary);
-            console.log('OpenAI Summary Generation Time:', duration.toFixed(2), 'ms');
-
-            return summary;
-        } catch (error) {
-            console.error('Error generating summary:', error);
-            throw new Error('Failed to generate summary.');
-        }
+        const summary = response.choices[0].message.content?.trim() || '';
+        console.log('OpenAI Summary Generated:', summary);
+        
+        return summary;
     }
 
-    async listKeywords(content: string): Promise<string[]> {
-        const startTime = performance.now();
-
+    protected async doListKeywords(content: string): Promise<string[]> {
         const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
         if (!apiKey) {
             console.error('OpenAI API key not set.');
@@ -94,38 +139,26 @@ export class OpenAILLMService extends BaseLLMService {
         // Update the API key dynamically
         this.client.apiKey = apiKey;
 
-        try {
-            const response = await this.client.chat.completions.create({
-                model: OPENAI_CHAT_MODEL,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant that extracts keywords from content.' },
-                    { role: 'user', content: this.getKeywordsPrompt(content) }
-                ],
-                max_tokens: 100,
-                temperature: 0.5,
-            });
+        const response = await this.client.chat.completions.create({
+            model: OPENAI_CHAT_MODEL,
+            messages: [
+                { role: 'system', content: 'You are a helpful assistant that extracts keywords from content.' },
+                { role: 'user', content: this.getKeywordsPrompt(content) }
+            ],
+            max_tokens: 100,
+            temperature: 0.5,
+        });
 
-            const keywordsText = response.choices[0].message.content?.trim() || '';
-            
-            // Split the response by commas and trim whitespace
-            const keywords = keywordsText.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
-
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('OpenAI Keywords Extracted:', keywords.join(', '));
-            console.log('OpenAI Keywords Extraction Time:', duration.toFixed(2), 'ms');
-
-            return keywords;
-        } catch (error) {
-            console.error('Error extracting keywords:', error);
-            // Return empty array instead of throwing to prevent cascading failures
-            return [];
-        }
+        const keywordsText = response.choices[0].message.content?.trim() || '';
+        
+        // Split the response by commas and trim whitespace
+        const keywords = keywordsText.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
+        console.log('OpenAI Keywords Extracted:', keywords.join(', '));
+        
+        return keywords;
     }
 
-    async generateEmbeddings(content: string): Promise<number[]> {
-        const startTime = performance.now();
-
+    protected async doGenerateEmbeddings(content: string): Promise<number[]> {
         const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
         if (!apiKey) {
             console.error('OpenAI API key not set.');
@@ -135,37 +168,32 @@ export class OpenAILLMService extends BaseLLMService {
         // Update the API key dynamically
         this.client.apiKey = apiKey;
 
-        try {
-            const response = await this.client.embeddings.create({
-                model: OPENAI_EMBEDDINGS_MODEL,
-                input: content,
-            });
+        const response = await this.client.embeddings.create({
+            model: OPENAI_EMBEDDINGS_MODEL,
+            input: content,
+        });
 
-            const embeddings = response.data[0].embedding;
-
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('OpenAI Embeddings Generated:', embeddings.length, 'dimensions');
-            console.log('OpenAI Embeddings Generation Time:', duration.toFixed(2), 'ms');
-
-            return embeddings;
-        } catch (error) {
-            console.error('Error generating embeddings:', error);
-            // Return placeholder embeddings in case of failure to prevent cascading failures
-            console.warn('Returning placeholder embeddings due to API error');
-            return Array(1536).fill(0).map(() => Math.random() * 2 - 1);
-        }
+        const embeddings = response.data[0].embedding;
+        console.log('OpenAI Embeddings Generated:', embeddings.length, 'dimensions');
+        
+        return embeddings;
     }
 }
 
 export class OllamaLLMService extends BaseLLMService {
     private model: string;
+    private embeddingsModel: string;
     private client: Ollama;
 
-    constructor(baseUrl: string = OLLAMA_API_URL_DEFAULT, model: string = OLLAMA_MODEL_DEFAULT) {
+    constructor(
+        baseUrl: string = OLLAMA_API_URL_DEFAULT, 
+        model: string = OLLAMA_MODEL_DEFAULT,
+        embeddingsModel: string = OLLAMA_EMBEDDINGS_MODEL_DEFAULT
+    ) {
         super(); // Call the parent class constructor
 
         this.model = model;
+        this.embeddingsModel = embeddingsModel;
 
         // Create a custom Ollama client instance with the specified base URL
         this.client = new Ollama({
@@ -173,82 +201,49 @@ export class OllamaLLMService extends BaseLLMService {
         });
     }
 
-    async createSummary(content: string): Promise<string> {
-        const startTime = performance.now();
+    protected async doCreateSummary(content: string): Promise<string> {
+        const response = await this.client.generate({
+            model: this.model,
+            prompt: this.getSummaryPrompt(content),
+            stream: false
+        });
 
-        // TODO: Consider if we can have a common entrypoint method and dispatch within that.
-
-        try {
-            const response = await this.client.generate({
-                model: this.model,
-                prompt: this.getSummaryPrompt(content),
-                stream: false
-            });
-
-            const summary = response.response.trim();
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('Ollama Summary Generated:', summary);
-            console.log('Ollama Summary Generation Time:', duration.toFixed(2), 'ms');
-
-
-            return summary;
-        } catch (error: unknown) {
-            console.error('Ollama API Error:', error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw new Error(`Failed to generate summary from Ollama: ${errorMessage}`);
-        }
+        const summary = response.response.trim();
+        console.log('Ollama Summary Generated:', summary);
+        
+        return summary;
     }
 
-    async listKeywords(content: string): Promise<string[]> {
-        const startTime = performance.now();
-        
-        try {
-            const response = await this.client.generate({
-                model: this.model,
-                prompt: this.getKeywordsPrompt(content),
-                stream: false
-            });
+    protected async doListKeywords(content: string): Promise<string[]> {
+        const response = await this.client.generate({
+            model: this.model,
+            prompt: this.getKeywordsPrompt(content),
+            stream: false
+        });
 
-            // Split the response by commas and trim whitespace
-            const keywords = response.response.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
-            
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('Ollama Keywords Extracted:', keywords.join(', '));
-            console.log('Ollama Keywords Extraction Time:', duration.toFixed(2), 'ms');
-            
-            return keywords;
-        } catch (error: unknown) {
-            console.error('Ollama API Error:', error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw new Error(`Failed to extract keywords from Ollama: ${errorMessage}`);
-        }
+        // Split the response by commas and trim whitespace
+        const keywords = response.response.split(',').map((keyword: string) => keyword.trim()).filter(Boolean);
+        console.log('Ollama Keywords Extracted:', keywords.join(', '));
+        
+        return keywords;
     }
 
-    async generateEmbeddings(content: string): Promise<number[]> {
-        const startTime = performance.now();
+    protected async doGenerateEmbeddings(content: string): Promise<number[]> {
+        // Use a dedicated embeddings model for better quality embeddings
+        const response = await this.client.embeddings({
+            model: this.embeddingsModel,
+            prompt: content
+        });
         
-        try {
-            // TODO: Check if just reusing the model is OK or not.
-            const response = await this.client.embeddings({
-                model: this.model,
-                prompt: content
-            });
-            
-            const embeddings = response.embedding;
-            
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('Ollama Embeddings Generated:', embeddings.length, 'dimensions');
-            console.log('Ollama Embeddings Generation Time:', duration.toFixed(2), 'ms');
-
-            return embeddings;
-        } catch (error: unknown) {
-            console.error('Ollama API Error:', error);
-            // Return a placeholder if embeddings fail
-            console.warn('Returning placeholder embeddings due to API error');
-            return Array(384).fill(0).map(() => Math.random() * 2 - 1);
-        }
+        const embeddings = response.embedding;
+        console.log('Ollama Embeddings Generated:', embeddings.length, 'dimensions');
+        
+        return embeddings;
+    }
+    
+    // Override to provide Ollama-specific placeholder embeddings
+    protected getPlaceholderEmbeddings(): number[] {
+        // Ollama embeddings typically have 384 dimensions
+        return Array(384).fill(0).map(() => Math.random() * 2 - 1);
     }
 }

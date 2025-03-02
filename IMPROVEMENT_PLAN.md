@@ -112,6 +112,34 @@ export class OpenAILLMService extends BaseLLMService {
 5. Test performance with various content sizes
 6. Compare results with the previous implementation to ensure consistency
 
+# Improvement Plan: Refactor LLM Service Architecture (Completed)
+
+## Current Issue
+
+The LLM service implementation had several TODOs and areas for improvement:
+
+1. Uncertainty about the need for the BaseLLMService class
+2. Reusing the same model for both text generation and embeddings in OllamaLLMService
+3. Lack of a common entrypoint method for handling timing and error logic
+4. Duplicate code across different LLM service implementations
+
+## Implemented Solution
+
+Refactored the LLM service architecture to improve code organization and maintainability:
+
+1. **Template Method Pattern**: Implemented the Template Method pattern in BaseLLMService to handle common logic like timing and error handling
+2. **Dedicated Embeddings Model**: Added support for a dedicated embeddings model in OllamaLLMService
+3. **Improved Error Handling**: Added fallback mechanisms for embeddings generation with appropriate dimensionality
+4. **Configuration Updates**: Added new configuration options for the Ollama embeddings model
+
+## Benefits
+
+1. **Reduced Code Duplication**: Common logic is now handled in the base class
+2. **Better Error Handling**: Consistent error handling across all LLM services
+3. **Improved Embeddings Quality**: Using dedicated models for embeddings should improve quality
+4. **More Maintainable Code**: Clearer separation of concerns and better organization
+5. **Easier to Add New LLM Services**: The base class provides a clear template for new implementations
+
 # Improvement Plan: Complete OpenAI LLM Service Implementation (Completed)
 
 [Previous implementation plan for OpenAI LLM Service - completed]

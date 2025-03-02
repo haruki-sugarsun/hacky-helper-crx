@@ -106,6 +106,12 @@ export class ConfigStore {
         'The name of the Ollama model to use (e.g., llama2, mistral, etc.).'
     );
 
+    static OLLAMA_EMBEDDINGS_MODEL = new StringConfig(
+        'OLLAMA_EMBEDDINGS_MODEL',
+        'Ollama Embeddings Model',
+        'The name of the Ollama model to use for generating embeddings (e.g., nomic-embed-text).'
+    );
+
     static BOOKMARK_PARENT_ID = new StringConfig(
         'bookmarkParentId',
         'Bookmark Parent ID',
@@ -174,6 +180,7 @@ interface ConfigRO {
     USE_OLLAMA: boolean;
     OLLAMA_API_URL: string;
     OLLAMA_MODEL: string;
+    OLLAMA_EMBEDDINGS_MODEL: string;
 }
 /**
  * Retrieves all configuration settings.
@@ -185,12 +192,14 @@ export async function getConfig(): Promise<ConfigRO> {
     const useOllama = await CONFIG_STORE.get('USE_OLLAMA');
     const ollamaApiUrl = await CONFIG_STORE.get('OLLAMA_API_URL');
     const ollamaModel = await CONFIG_STORE.get('OLLAMA_MODEL');
-    // Add other config values as needed
+    const ollamaEmbeddingsModel = await CONFIG_STORE.get('OLLAMA_EMBEDDINGS_MODEL');
+    
     return {
         bookmarkParentId,
         OPENAI_API_KEY: openaiApiKey,
         USE_OLLAMA: useOllama || false,
         OLLAMA_API_URL: ollamaApiUrl || 'http://localhost:11434',
         OLLAMA_MODEL: ollamaModel || 'llama2',
+        OLLAMA_EMBEDDINGS_MODEL: ollamaEmbeddingsModel || 'nomic-embed-text',
     };
 }
