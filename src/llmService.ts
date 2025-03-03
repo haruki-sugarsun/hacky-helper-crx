@@ -19,6 +19,20 @@ import OpenAI from 'openai';
 abstract class BaseLLMService implements LLMService {
     // Public methods that implement the LLMService interface
     // These methods handle common logic like timing and error handling
+    async chat(prompt: string): Promise<string> {
+        const startTime = performance.now();
+        try {
+            const response = await this.doChat(prompt);
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            console.log(`Chat Response Time: ${duration.toFixed(2)} ms`);
+            return response;
+        } catch (error) {
+            console.error('Error generating chat response:', error);
+            throw new Error('Failed to generate chat response.');
+        }
+    }
+    
     async createSummary(content: string): Promise<string> {
         const startTime = performance.now();
         try {
@@ -72,6 +86,7 @@ abstract class BaseLLMService implements LLMService {
     }
     
     // Protected methods that subclasses must implement
+    protected abstract doChat(prompt: string): Promise<string>;
     protected abstract doCreateSummary(content: string): Promise<string>;
     protected abstract doListKeywords(content: string): Promise<string[]>;
     protected abstract doGenerateEmbeddings(content: string): Promise<number[]>;
@@ -91,16 +106,51 @@ export interface LLMService {
     createSummary(content: string): Promise<string>;
     listKeywords(content: string): Promise<string[]>;
     generateEmbeddings(content: string): Promise<number[]>;
+    chat(prompt: string): Promise<string>;
 }
 
 export class OpenAILLMService extends BaseLLMService {
     private client: OpenAI;
+    private model: string;
 
-    constructor() {
+    constructor(model: string = OPENAI_CHAT_MODEL) {
         super();
+        this.model = model;
         this.client = new OpenAI({
             apiKey: 'placeholder', // Will be set dynamically in each method
         });
+        
+        console.log(`OpenAILLMService initialized with model: ${model}`);
+    }
+    
+    // Method to update the model
+    setModel(model: string): void {
+        this.model = model;
+        console.log(`OpenAILLMService model updated to: ${model}`);
+    }
+
+    protected async doChat(prompt: string): Promise<string> {
+        const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
+        if (!apiKey) {
+            console.error('OpenAI API key not set.');
+            throw new Error('OpenAI API key not set.');
+        }
+
+        // Update the API key dynamically
+        this.client.apiKey = apiKey;
+
+        const response = await this.client.chat.completions.create({
+            model: this.model,
+            messages: [
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+        });
+
+        const content = response.choices[0].message.content?.trim() || '';
+        console.log('OpenAI Chat Response Generated');
+        
+        return content;
     }
 
     protected async doCreateSummary(content: string): Promise<string> {
@@ -199,6 +249,26 @@ export class OllamaLLMService extends BaseLLMService {
         this.client = new Ollama({
             host: baseUrl
         });
+        
+        console.log(`OllamaLLMService initialized with model: ${model}, baseUrl: ${baseUrl}`);
+    }
+    
+    // Method to update the model
+    setModel(model: string): void {
+        this.model = model;
+        console.log(`OllamaLLMService model updated to: ${model}`);
+    }
+
+    protected async doChat(prompt: string): Promise<string> {
+        const response = await this.client.chat({
+            model: this.model,
+            messages: [{ role: 'user', content: prompt }],
+        });
+
+        const content = response.message.content.trim();
+        console.log('Ollama Chat Response Generated');
+        
+        return content;
     }
 
     protected async doCreateSummary(content: string): Promise<string> {

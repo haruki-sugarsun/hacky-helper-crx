@@ -107,6 +107,13 @@ The extension uses multiple storage mechanisms:
    - Configuration to specify which bookmark folder is managed by the extension
    - Infrastructure for storing and retrieving bookmarks using Chrome's Bookmarks API
 
+3. **Side Panel Writer Support**:
+   - Dedicated UI in sidepanel.html for choosing LLM service (Ollama or OpenAI)
+   - Model selection based on the chosen LLM service
+   - Prepared prompts for various document writing scenarios
+   - Abstracted LLM service interface for consistent interaction with different providers
+   - Support for interacting with visible page content
+
 ## Planned Features
 
 As documented in DEVPLANS.md:

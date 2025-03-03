@@ -1,4 +1,4 @@
-function component_model(elm: HTMLSelectElement) {
+export function component_model(elm: HTMLSelectElement) {
     console.log(elm)
     elm.innerHTML = `
         <option value="gemma2:2b" selected="selected">gemma2:2b</option>

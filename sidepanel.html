@@ -18,7 +18,20 @@
       <!-- Controllers -->
       <button id="reload_btn">RELOAD</button>
 
-      <select id="model" data-sickhack-component="select_model"></select>
+      <div class="llm-service-chooser">
+        <div class="service-selection">
+          <label for="llm_service">LLM Service:</label>
+          <select id="llm_service">
+            <option value="ollama">Ollama</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        
+        <div class="model-selection">
+          <label for="model">Model:</label>
+          <select id="model" data-sickhack-component="select_model"></select>
+        </div>
+      </div>
 
       <button id="inspect_page" type="button">Inspect Page</button>
       <label><input id="auto_inspecting" type="checkbox" value="false">Auto Inspecting</label>

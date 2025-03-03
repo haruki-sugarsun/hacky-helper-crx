@@ -12,6 +12,50 @@
     display: none;
 }
 
+/* LLM Service Chooser Styles */
+.llm-service-chooser {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.service-selection,
+.model-selection {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.service-selection label,
+.model-selection label {
+    font-weight: bold;
+    min-width: 90px;
+}
+
+#llm_service,
+#model {
+    padding: 4px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+}
+
+#custom_prompt_container {
+    margin-top: 10px;
+}
+
+#custom_prompt {
+    width: 100%;
+    min-height: 60px;
+    padding: 5px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    resize: vertical;
+}
+
 body, html {
     margin: 0;
     padding: 0;
