@@ -391,11 +391,11 @@ async function inspect_page() {
   // and TODO: align with https://hbr.org/2024/03/how-to-take-your-business-writing-from-average-to-great
   promptPostfixMap.set(
     "define_goal-en",
-    "We are defining the goal of this document. Ask me 5 questions. Based on my answers, summarize the goal of this document as a list. Answer in English.",
+    "The above is our current draft. We are defining the goal of this document. If the current draft is insufficient, Ask me 5 questions. Based on my answers, summarize the goal of this document as a list. Answer in English.",
   );
   promptPostfixMap.set(
     "define_goal-ja",
-    "文章作成のための「要件・ゴールの設定」をしたいです。今から私に質問して、その回答をもとに、要件とゴールを簡潔にまとめたものを箇条書きで出力してください。質問は5つ以内でお願いします。日本語で回答してください。",
+    "下書きは以上です。文章作成のための「要件・ゴールの設定」をしたいです。もし下書きが不十分なら、不十分な点を指摘し、私に質問してください。情報が十分なら、その情報をもとに、要件とゴールを簡潔にまとめたものを箇条書きで出力してください。質問は5つ以内でお願いします。日本語で回答してください。",
   );
 
   promptPostfixMap.set(

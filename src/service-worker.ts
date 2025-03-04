@@ -149,6 +149,7 @@ initializeTabManagement();
 
 // Queue of the background LLM related tasks:
 // TODO: Implement the limit for the llmTasks count.
+const LLM_TASK_QUEUE_MAX_LENGTH = 10; // or any appropriate value
 let llmTasks: {
   content: string;
   url: string;
@@ -181,6 +182,12 @@ async function maybeQueueTaskForProcessing(
       cachedDigests.some((digest) => digest.timestamp > oneHourAgo)
     ) {
       console.log("Skipping task as recent cache exists.");
+      // TODO: We may also consider re-generationg digests if we have some spare resource e.g. no pending tasks
+      return;
+    }
+
+    if (llmTasks.length >= LLM_TASK_QUEUE_MAX_LENGTH) {
+      console.log(`Skipping task as we already have ${llmTasks.length} tasks.`);
       // TODO: We may also consider re-generationg digests if we have some spare resource e.g. no pending tasks
       return;
     }
