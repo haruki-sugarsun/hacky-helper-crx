@@ -7,8 +7,6 @@ import {
 import { CONFIG_STORE } from "./config_store.ts";
 import {
   OLLAMA_API_URL_DEFAULT,
-  OLLAMA_MODEL_DEFAULT,
-  OPENAI_CHAT_MODEL,
 } from "./lib/constants.ts";
 import { component_model } from './components.ts'
 import "./sidepanel.css";
@@ -70,7 +68,7 @@ const stickyrMemo = {
 };
 
 // Initialize available models based on service
-const ollamaModels = ["llama2", "mistral", "gemma", "phi3", "mixtral"];
+// const ollamaModels = ["llama2", "mistral", "gemma", "phi3", "mixtral"];
 const openaiModels = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"];
 
 // Populate model dropdown based on selected service
