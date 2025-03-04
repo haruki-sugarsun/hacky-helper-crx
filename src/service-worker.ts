@@ -150,6 +150,7 @@ async function maybeQueueTaskForProcessing(url: string, content: string, title: 
         const cachedDigests = await getCachedSummaries(url); // Assume this function retrieves cached digests
         if (cachedDigests && cachedDigests.some(digest => digest.timestamp > oneHourAgo)) {
             console.log('Skipping task as recent cache exists.');
+            // TODO: We may also consider re-generationg digests if we have some spare resource e.g. no pending tasks
             return;
         }
 
