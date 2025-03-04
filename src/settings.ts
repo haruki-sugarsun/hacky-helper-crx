@@ -42,6 +42,7 @@ async function initializeForm() {
 
   // Add LLM settings
   await appendFormFrom(settingsLlmUl, ConfigStore.OPENAI_API_KEY);
+  await appendFormFrom(settingsLlmUl, ConfigStore.OPENAI_API_BASE_URL);
 
   // Explicitly use appendBoolFormFrom for USE_OLLAMA
   if (ConfigStore.USE_OLLAMA instanceof BoolConfig) {

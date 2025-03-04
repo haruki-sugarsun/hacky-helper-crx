@@ -92,6 +92,13 @@ export class ConfigStore {
     "The API key used to authenticate requests to the OpenAI service for tab summarization.",
   );
 
+  // TODO: Consider improving the wording.
+  static OPENAI_API_BASE_URL = new StringConfig(
+    "OPENAI_API_BASE_URL",
+    "OpenAI API Base URL",
+    "The URL of the OpenAI API endpoint (default to OpenAI client lib default).",
+  );
+
   static USE_OLLAMA = new BoolConfig(
     "USE_OLLAMA",
     "Use Ollama for LLM services",

@@ -120,6 +120,7 @@ export class OpenAILLMService extends BaseLLMService {
     this.model = model;
     this.client = new OpenAI({
       apiKey: "placeholder", // Will be set dynamically in each method
+      dangerouslyAllowBrowser: true,
     });
 
     console.log(`OpenAILLMService initialized with model: ${model}`);
@@ -131,7 +132,8 @@ export class OpenAILLMService extends BaseLLMService {
     console.log(`OpenAILLMService model updated to: ${model}`);
   }
 
-  protected async doChat(prompt: string): Promise<string> {
+  protected async setupDynamicFromConfig() {
+    // TODO: Rewrite using getConfig()
     const apiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
     if (!apiKey) {
       console.error("OpenAI API key not set.");
@@ -140,6 +142,19 @@ export class OpenAILLMService extends BaseLLMService {
 
     // Update the API key dynamically
     this.client.apiKey = apiKey;
+
+    const baseURL = await CONFIG_STORE.get("OPENAI_API_BASE_URL");
+    if (baseURL) {
+      // Update the API key dynamically
+      this.client.baseURL = baseURL;
+    } else {
+      this.client.baseURL = "";
+    }
+  }
+
+  protected async doChat(prompt: string): Promise<string> {
+    // Update the API key and base URL dynamically
+    await this.setupDynamicFromConfig();
 
     const response = await this.client.chat.completions.create({
       model: this.model,
@@ -154,14 +169,8 @@ export class OpenAILLMService extends BaseLLMService {
   }
 
   protected async doCreateSummary(content: string): Promise<string> {
-    const apiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
-    if (!apiKey) {
-      console.error("OpenAI API key not set.");
-      throw new Error("OpenAI API key not set.");
-    }
-
-    // Update the API key dynamically
-    this.client.apiKey = apiKey;
+    // Update the API key and base URL dynamically
+    await this.setupDynamicFromConfig();
 
     const response = await this.client.chat.completions.create({
       model: OPENAI_CHAT_MODEL,
@@ -183,14 +192,8 @@ export class OpenAILLMService extends BaseLLMService {
   }
 
   protected async doListKeywords(content: string): Promise<string[]> {
-    const apiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
-    if (!apiKey) {
-      console.error("OpenAI API key not set.");
-      throw new Error("OpenAI API key not set.");
-    }
-
-    // Update the API key dynamically
-    this.client.apiKey = apiKey;
+    // Update the API key and base URL dynamically
+    await this.setupDynamicFromConfig();
 
     const response = await this.client.chat.completions.create({
       model: OPENAI_CHAT_MODEL,
@@ -219,14 +222,8 @@ export class OpenAILLMService extends BaseLLMService {
   }
 
   protected async doGenerateEmbeddings(content: string): Promise<number[]> {
-    const apiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
-    if (!apiKey) {
-      console.error("OpenAI API key not set.");
-      throw new Error("OpenAI API key not set.");
-    }
-
-    // Update the API key dynamically
-    this.client.apiKey = apiKey;
+    // Update the API key and base URL dynamically
+    await this.setupDynamicFromConfig();
 
     const response = await this.client.embeddings.create({
       model: OPENAI_EMBEDDINGS_MODEL,

@@ -67,7 +67,7 @@ const stickyrMemo = {
 
 // Initialize available models based on service
 // coqnst ollamaModels = ["llama2", "mistral", "gemma", "phi3", "mixtral"];
-const openaiModels = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"];
+const openaiModels = ["gpt-3.5-turbo", "gpt-4o-mini", "gpt-4", "gpt-4-turbo"];
 
 // Populate model dropdown based on selected service
 function populateModelDropdown(service: string) {
