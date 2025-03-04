@@ -1,93 +1,96 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hacky Helper: Side Panel</title>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hacky Helper: Side Panel</title>
-</head>
+  <body>
+    <script type="module" src="/src/components.ts"></script>
 
-<body>
-  <script type="module" src="/src/components.ts"></script>
+    <div class="wrapper">
+      <div class="content">
+        <!-- <p>ページのコンテンツです。たくさんの内容を追加してみましょう。</p> -->
+        <h1>H-H: Side</h1>
+        <!-- Controllers -->
+        <button id="reload_btn">RELOAD</button>
 
-  <div class="wrapper">
-    <div class="content">
-      <!-- <p>ページのコンテンツです。たくさんの内容を追加してみましょう。</p> -->
-      <h1>H-H: Side</h1>
-      <!-- Controllers -->
-      <button id="reload_btn">RELOAD</button>
+        <div class="llm-service-chooser">
+          <div class="service-selection">
+            <label for="llm_service">LLM Service:</label>
+            <select id="llm_service">
+              <option value="ollama">Ollama</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </div>
 
-      <div class="llm-service-chooser">
-        <div class="service-selection">
-          <label for="llm_service">LLM Service:</label>
-          <select id="llm_service">
-            <option value="ollama">Ollama</option>
-            <option value="openai">OpenAI</option>
-          </select>
+          <div class="model-selection">
+            <label for="model">Model:</label>
+            <select id="model" data-sickhack-component="select_model"></select>
+          </div>
         </div>
-        
-        <div class="model-selection">
-          <label for="model">Model:</label>
-          <select id="model" data-sickhack-component="select_model"></select>
+
+        <button id="inspect_page" type="button">Inspect Page</button>
+        <label
+          ><input id="auto_inspecting" type="checkbox" value="false" />Auto
+          Inspecting</label
+        >
+        <a href="/logview.html" target="_blank">Log View</a>
+        <select id="language">
+          <option value="en">English</option>
+          <option value="ja" selected="selected">日本語</option>
+        </select>
+        <select id="mode">
+          <option value="summary">Summary</option>
+          <option value="writing">Support Writing</option>
+
+          <option value="define_goal">├ Define Goal</option>
+          <option value="define_keymsg">├ Define Key Messages</option>
+          <option value="design_struct">├ Design Structure</option>
+
+          <option value="dedup">├ Dedup</option>
+          <option value="fillcontent">└ Fill Content</option>
+
+          <option value="ideation">Ideation</option>
+
+          <option value="code_advice">Code Advice</option>
+        </select>
+        <hr />
+
+        <div id="custom_prompt_container">
+          CUSTOM:<textarea id="custom_prompt"></textarea>
         </div>
+
+        <div id="app"></div>
+
+        <!-- Feedback Display -->
+        <div id="visible_text"></div>
+
+        <!-- <p>必要に応じてさらにコンテンツを追加してください。</p> -->
+        <hr />
+        <div id="response">default response</div>
       </div>
 
-      <button id="inspect_page" type="button">Inspect Page</button>
-      <label><input id="auto_inspecting" type="checkbox" value="false">Auto Inspecting</label>
-      <a href="/logview.html" target="_blank">Log View</a>
-      <select id="language">
-        <option value="en">English</option>
-        <option value="ja" selected="selected">日本語</option>
-      </select>
-      <select id="mode">
-        <option value="summary">Summary</option>
-        <option value="writing">Support Writing</option>
+      <div class="footer">
+        <!-- <p>これは可変サイズのフッターです。</p> -->
+        <!-- Status Line -->
+        <!-- <hr> -->
+        <button id="show_pending_btn">Show Pending</button>
+        <label
+          ><input id="auto_update" type="checkbox" checked />Auto Update</label
+        >
+        <label><input id="auto_tts" type="checkbox" />Autoplay TTS</label>
 
-        <option value="define_goal"  >├ Define Goal</option>
-        <option value="define_keymsg">├ Define Key Messages</option>
-        <option value="design_struct">├ Design Structure</option>
+        <div id="status_line"></div>
+        <!-- <hr> -->
+        <textarea id="debuglog">...</textarea>
 
-        <option value="dedup"        >├ Dedup</option>
-        <option value="fillcontent"  >└ Fill Content</option>
-
-        <option value="ideation">Ideation</option>
-
-        <option value="code_advice">Code Advice</option>
-
-      </select>
-      <hr>
-
-      <div id="custom_prompt_container">CUSTOM:<textarea id="custom_prompt"></textarea></div>
-
-      <div id="app"></div>
-
-      <!-- Feedback Display -->
-      <div id="visible_text"></div>
-
-
-      <!-- <p>必要に応じてさらにコンテンツを追加してください。</p> -->
-      <hr>
-      <div id="response">default response</div>
+        <!-- <p>コンテンツの量に応じてフッターのサイズが変わります。</p> -->
+      </div>
     </div>
 
-    <div class="footer">
-      <!-- <p>これは可変サイズのフッターです。</p> -->
-      <!-- Status Line -->
-      <!-- <hr> -->
-      <button id="show_pending_btn">Show Pending</button>
-      <label><input id="auto_update" type="checkbox" checked>Auto Update</label>
-      <label><input id="auto_tts" type="checkbox">Autoplay TTS</label>
-
-      <div id="status_line"></div>
-      <!-- <hr> -->
-      <textarea id="debuglog">...</textarea>
-
-      <!-- <p>コンテンツの量に応じてフッターのサイズが変わります。</p> -->
-    </div>
-  </div>
-
-  <script type="module" src="/src/sidepanel.ts"></script>
-</body>
-
+    <script type="module" src="/src/sidepanel.ts"></script>
+  </body>
 </html>

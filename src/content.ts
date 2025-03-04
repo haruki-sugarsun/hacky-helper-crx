@@ -1,6 +1,6 @@
 // import 'chrome'
 // import src from './image.png'
-import './content.css'
+import "./content.css";
 
 // const html = `
 // <div class="crx">
@@ -13,37 +13,45 @@ import './content.css'
 // document.body.append(doc.body.firstElementChild!)
 
 function getVisibleText() {
-  return nativeTreeWalker()
+  return nativeTreeWalker();
 }
 
 function nativeTreeWalker() {
-  const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  const viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-  let visibleText = '';
+  const viewportHeight = Math.max(
+    document.documentElement.clientHeight,
+    window.innerHeight || 0,
+  );
+  const viewportWidth = Math.max(
+    document.documentElement.clientWidth,
+    window.innerWidth || 0,
+  );
+  let visibleText = "";
   var walker = document.createTreeWalker(
     document.body,
     NodeFilter.SHOW_TEXT,
-    null
+    null,
   );
   var node;
   var textNodes = [];
-  while (node = walker.nextNode()) {
+  while ((node = walker.nextNode())) {
     if (!node.parentElement) {
-      return
+      return;
     }
     const rect = node.parentElement.getBoundingClientRect();
     console.log(node, rect);
     // Check if element is within the viewport
-    if (rect.width > 0 &&
+    if (
+      rect.width > 0 &&
       rect.height > 0 &&
       rect.top >= 0 &&
       rect.left >= 0 &&
       rect.bottom <= viewportHeight &&
-      rect.right <= viewportWidth) {
-      visibleText += (node.textContent || '').trim() + ' '; // Extract text and trim whitespace
+      rect.right <= viewportWidth
+    ) {
+      visibleText += (node.textContent || "").trim() + " "; // Extract text and trim whitespace
       textNodes.push(node.parentNode);
     } else {
-      console.log("invisible node", node.parentNode)
+      console.log("invisible node", node.parentNode);
     }
   }
   console.log(textNodes);
@@ -51,10 +59,13 @@ function nativeTreeWalker() {
 }
 
 const btn = document.createElement("button");
-btn.type = "button"
-btn.innerHTML = "getVisibleText"
-console.log(btn)
-console.log(Math.random())
+btn.type = "button";
+btn.innerHTML = "getVisibleText";
+console.log(btn);
+console.log(Math.random());
 
-btn.onclick = (ev) => { console.log(ev); getVisibleText() }
+btn.onclick = (ev) => {
+  console.log(ev);
+  getVisibleText();
+};
 // document.body.append(btn)

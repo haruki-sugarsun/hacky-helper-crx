@@ -1,6 +1,6 @@
 // import { getConfig } from '../config_store';
 
-// import { chrome } from '@types/chrome'; 
+// import { chrome } from '@types/chrome';
 // import { BookmarkTreeNode } from 'chrome.bookmarks';
 
 interface GroupStore {
@@ -72,10 +72,14 @@ export class GroupStoreImpl implements GroupStore {
    * @param updatedFields - The fields to update.
    * @returns The updated BookmarkGroup.
    */
-  async updateGroup(groupId: string, updatedFields: Partial<BookmarkGroup>): Promise<BookmarkGroup> {
-    const updatedGroup: chrome.bookmarks.BookmarkTreeNode = await chrome.bookmarks.update(groupId, {
-      title: updatedFields.name,
-    });
+  async updateGroup(
+    groupId: string,
+    updatedFields: Partial<BookmarkGroup>,
+  ): Promise<BookmarkGroup> {
+    const updatedGroup: chrome.bookmarks.BookmarkTreeNode =
+      await chrome.bookmarks.update(groupId, {
+        title: updatedFields.name,
+      });
 
     return {
       id: updatedGroup.id,
@@ -153,11 +157,11 @@ export class BookmarkStoreImpl implements BookmarkStore {
   private parentId: string;
   private static readonly MAX_TITLE_LENGTH = 256;
   private static readonly BOOKMARK_ERRORS = {
-    INVALID_URL: 'Invalid bookmark URL',
-    INVALID_GROUP: 'Invalid group ID',
-    NOT_FOUND: 'Bookmark not found',
-    INVALID_TITLE: 'Title exceeds maximum length',
-    CHROME_API_ERROR: 'Chrome API error',
+    INVALID_URL: "Invalid bookmark URL",
+    INVALID_GROUP: "Invalid group ID",
+    NOT_FOUND: "Bookmark not found",
+    INVALID_TITLE: "Title exceeds maximum length",
+    CHROME_API_ERROR: "Chrome API error",
   } as const;
 
   constructor(bookmarkParentId: string) {
@@ -169,7 +173,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
    * @throws Error if validation fails
    */
   private validateBookmark(bookmark: Bookmark): void {
-    if (bookmark.title && bookmark.title.length > BookmarkStoreImpl.MAX_TITLE_LENGTH) {
+    if (
+      bookmark.title &&
+      bookmark.title.length > BookmarkStoreImpl.MAX_TITLE_LENGTH
+    ) {
       throw new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.INVALID_TITLE);
     }
     if (bookmark.url) {
@@ -179,7 +186,7 @@ export class BookmarkStoreImpl implements BookmarkStore {
         throw new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.INVALID_URL);
       }
     }
-    if (bookmark.groupId && typeof bookmark.groupId !== 'string') {
+    if (bookmark.groupId && typeof bookmark.groupId !== "string") {
       throw new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.INVALID_GROUP);
     }
   }
@@ -199,10 +206,12 @@ export class BookmarkStoreImpl implements BookmarkStore {
   /**
    * Normalizes a Chrome bookmark into our Bookmark type.
    */
-  private normalizeBookmark(chromeBookmark: chrome.bookmarks.BookmarkTreeNode): Bookmark {
+  private normalizeBookmark(
+    chromeBookmark: chrome.bookmarks.BookmarkTreeNode,
+  ): Bookmark {
     return {
       id: chromeBookmark.id,
-      url: chromeBookmark.url || '',
+      url: chromeBookmark.url || "",
       title: chromeBookmark.title,
       // keywords: [],
       // embeddings: [],
@@ -239,7 +248,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
+        error:
+          error instanceof Error
+            ? error
+            : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
       };
     }
   }
@@ -256,7 +268,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
+        error:
+          error instanceof Error
+            ? error
+            : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
       };
     }
   }
@@ -268,7 +283,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
    * @returns A Result containing the updated Bookmark or error details.
    * @throws Error if validation fails
    */
-  async updateBookmark(bookmarkId: string, updatedFields: Partial<Bookmark>): Promise<Result<Bookmark>> {
+  async updateBookmark(
+    bookmarkId: string,
+    updatedFields: Partial<Bookmark>,
+  ): Promise<Result<Bookmark>> {
     try {
       this.validateBookmark(updatedFields as Bookmark);
 
@@ -280,7 +298,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
         // updates.url = updatedFields.url;
       }
 
-      const updatedBookmark = await chrome.bookmarks.update(bookmarkId, updates);
+      const updatedBookmark = await chrome.bookmarks.update(
+        bookmarkId,
+        updates,
+      );
 
       return {
         success: true,
@@ -293,7 +314,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
+        error:
+          error instanceof Error
+            ? error
+            : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
       };
     }
   }
@@ -308,12 +332,15 @@ export class BookmarkStoreImpl implements BookmarkStore {
       const bookmarks = await chrome.bookmarks.getChildren(groupId);
       return {
         success: true,
-        data: bookmarks.map(b => this.normalizeBookmark(b)),
+        data: bookmarks.map((b) => this.normalizeBookmark(b)),
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
+        error:
+          error instanceof Error
+            ? error
+            : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
       };
     }
   }
@@ -339,7 +366,10 @@ export class BookmarkStoreImpl implements BookmarkStore {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
+        error:
+          error instanceof Error
+            ? error
+            : new Error(BookmarkStoreImpl.BOOKMARK_ERRORS.CHROME_API_ERROR),
       };
     }
   }

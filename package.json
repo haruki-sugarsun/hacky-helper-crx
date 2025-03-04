@@ -19,6 +19,7 @@
     "@types/dom-speech-recognition": "^0.0.4",
     "ollama": "^0.5.14",
     "openai": "^4.86.1",
+    "prettier": "^3.5.3",
     "snabbdom": "^3.6.2"
   }
 }

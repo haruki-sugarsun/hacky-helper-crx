@@ -66,7 +66,8 @@
 }
 
 /* URL and title cell styles - truncate long text */
-.url-cell, .title-cell {
+.url-cell,
+.title-cell {
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,7 +120,7 @@ content {
 }
 
 /* Section headers */
-#tabs_sessions h3, 
+#tabs_sessions h3,
 #tabs_tablist h3 {
   margin-top: 0;
   padding-bottom: 8px;

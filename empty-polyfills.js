@@ -1,9 +1,11 @@
-export function rm (path) { return null }
+export function rm(path) {
+  return null;
+}
 
 // fs
-export function fs () {}
-export function promises () {}
-export function createReadStream () {}
+export function fs() {}
+export function promises() {}
+export function createReadStream() {}
 
-export default fs ();
+export default fs();
 // etc...

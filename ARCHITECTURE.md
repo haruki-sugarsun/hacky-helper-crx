@@ -71,12 +71,14 @@ Specialized modules for specific features:
 ## Data Flow
 
 1. **Content Processing**:
+
    - Content script extracts text from web pages
    - Service worker queues content for processing
    - LLM service processes content (summarization, keywords, embeddings)
    - Results are cached for future use
 
 2. **Tab Management**:
+
    - Service worker tracks tab events
    - Tab organizer handles tab organization logic
    - UI components display and allow interaction with tabs
@@ -97,12 +99,14 @@ The extension uses multiple storage mechanisms:
 ## Implemented Features
 
 1. **Tab UI Improvements**:
+
    - tabs.html opens as a pinned tab for tab management
    - Duplicate tabs.html tabs are automatically closed (only one tabs.html tab per window)
    - Pinned tabs are excluded from the tab list UI
    - Tab counts in the window list exclude pinned tabs
 
 2. **Bookmark Integration**:
+
    - Bookmark chooser UI in settings.html for selecting the parent bookmark folder
    - Configuration to specify which bookmark folder is managed by the extension
    - Infrastructure for storing and retrieving bookmarks using Chrome's Bookmarks API

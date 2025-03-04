@@ -1,35 +1,29 @@
 {
-    "manifest_version": 3,
-    "name": "Hacky Helper",
-    "version": "0.0.1",
-    "permissions": [
-        "sidePanel",
-        "scripting",
-        "storage",
-        "tabs",
-        "alarms",
-        "bookmarks"
-    ],
-    "host_permissions": [
-        "*://*/*"
-    ],
-    "action": {
-        "default_popup": "index.html"
-    },
-    "background": {
-        "service_worker": "src/service-worker.ts"
-    },
-    "side_panel": {
-        "default_path": "sidepanel.html"
-    },
-    "content_scripts": [
-        {
-            "js": [
-                "src/content.ts"
-            ],
-            "matches": [
-                "*://*/*"
-            ]
-        }
-    ]
+  "manifest_version": 3,
+  "name": "Hacky Helper",
+  "version": "0.0.1",
+  "permissions": [
+    "sidePanel",
+    "scripting",
+    "storage",
+    "tabs",
+    "alarms",
+    "bookmarks"
+  ],
+  "host_permissions": ["*://*/*"],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "src/service-worker.ts"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "js": ["src/content.ts"],
+      "matches": ["*://*/*"]
+    }
+  ]
 }

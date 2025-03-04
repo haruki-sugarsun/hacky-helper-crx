@@ -1,10 +1,10 @@
 // Persistent cache implementation that extends LRU cache functionality
 // but persists data to Chrome's storage.local API
 
-import LRU from './lru-cache';
+import LRU from "./lru-cache";
 
 // Define a prefix for storage keys to avoid conflicts
-const STORAGE_PREFIX = 'hacky_helper_cache_';
+const STORAGE_PREFIX = "hacky_helper_cache_";
 
 // Interface for cache metadata
 interface CacheMetadata {
@@ -33,7 +33,7 @@ export class PersistentCache<T> {
     this.cacheId = cacheId;
     this.maxSize = maxSize;
     this.cache = new LRU<T>(maxSize);
-    
+
     // Load cache data from storage when created
     this.loading = this.loadFromStorage();
   }
@@ -60,17 +60,21 @@ export class PersistentCache<T> {
    */
   private async loadFromStorage(): Promise<void> {
     if (this.loaded) return;
-    
+
     try {
       // Check if chrome.storage is available (in extension context)
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         // Load metadata
         const metadataKey = this.getMetadataKey();
         const metadataResult = await chrome.storage.local.get(metadataKey);
-        const metadata: CacheMetadata = metadataResult[metadataKey] ? 
-          JSON.parse(metadataResult[metadataKey]) : 
-          { keys: [], maxSize: this.maxSize };
-        
+        const metadata: CacheMetadata = metadataResult[metadataKey]
+          ? JSON.parse(metadataResult[metadataKey])
+          : { keys: [], maxSize: this.maxSize };
+
         // Load each item in reverse order (least recently used first)
         // This ensures the LRU order is maintained
         for (const key of metadata.keys) {
@@ -82,13 +86,15 @@ export class PersistentCache<T> {
             this.cacheKeys.add(key);
           }
         }
-        
-        console.log(`Loaded ${metadata.keys.length} items from persistent cache ${this.cacheId}`);
+
+        console.log(
+          `Loaded ${metadata.keys.length} items from persistent cache ${this.cacheId}`,
+        );
       }
     } catch (error) {
-      console.error('Failed to load cache from storage:', error);
+      console.error("Failed to load cache from storage:", error);
     }
-    
+
     this.loaded = true;
     this.loading = null;
   }
@@ -98,22 +104,28 @@ export class PersistentCache<T> {
    */
   private async saveMetadata(): Promise<void> {
     if (!this.loaded) await this.ensureLoaded();
-    
+
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         // Get all keys from our tracked set
         const keys: string[] = Array.from(this.cacheKeys);
-        
+
         const metadata: CacheMetadata = {
           keys,
-          maxSize: this.maxSize
+          maxSize: this.maxSize,
         };
-        
+
         const metadataKey = this.getMetadataKey();
-        await chrome.storage.local.set({ [metadataKey]: JSON.stringify(metadata) });
+        await chrome.storage.local.set({
+          [metadataKey]: JSON.stringify(metadata),
+        });
       }
     } catch (error) {
-      console.error('Failed to save cache metadata:', error);
+      console.error("Failed to save cache metadata:", error);
     }
   }
 
@@ -136,20 +148,24 @@ export class PersistentCache<T> {
    */
   async set(key: string, value: T): Promise<void> {
     await this.ensureLoaded();
-    
+
     // Update in-memory cache
     this.cache.set(key, value);
     this.cacheKeys.add(key);
-    
+
     try {
       // Save to storage if available
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         const storageKey = this.getStorageKey(key);
         await chrome.storage.local.set({ [storageKey]: JSON.stringify(value) });
         await this.saveMetadata();
       }
     } catch (error) {
-      console.error('Failed to save cache item:', error);
+      console.error("Failed to save cache item:", error);
     }
   }
 
@@ -169,20 +185,24 @@ export class PersistentCache<T> {
    */
   async delete(key: string): Promise<void> {
     await this.ensureLoaded();
-    
+
     // Remove from in-memory cache
     this.cache.delete(key);
     this.cacheKeys.delete(key);
-    
+
     try {
       // Remove from storage if available
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         const storageKey = this.getStorageKey(key);
         await chrome.storage.local.remove(storageKey);
         await this.saveMetadata();
       }
     } catch (error) {
-      console.error('Failed to delete cache item:', error);
+      console.error("Failed to delete cache item:", error);
     }
   }
 
@@ -191,31 +211,35 @@ export class PersistentCache<T> {
    */
   async clear(): Promise<void> {
     await this.ensureLoaded();
-    
+
     // Clear in-memory cache
     this.cache.clear();
     this.cacheKeys.clear();
-    
+
     try {
       // Clear from storage if available
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         const metadataKey = this.getMetadataKey();
         const metadataResult = await chrome.storage.local.get(metadataKey);
-        const metadata: CacheMetadata = metadataResult[metadataKey] ? 
-          JSON.parse(metadataResult[metadataKey]) : 
-          { keys: [], maxSize: this.maxSize };
-        
+        const metadata: CacheMetadata = metadataResult[metadataKey]
+          ? JSON.parse(metadataResult[metadataKey])
+          : { keys: [], maxSize: this.maxSize };
+
         // Remove each item
         for (const key of metadata.keys) {
           const storageKey = this.getStorageKey(key);
           await chrome.storage.local.remove(storageKey);
         }
-        
+
         // Clear metadata
         await chrome.storage.local.remove(metadataKey);
       }
     } catch (error) {
-      console.error('Failed to clear cache:', error);
+      console.error("Failed to clear cache:", error);
     }
   }
 

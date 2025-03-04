@@ -5,10 +5,8 @@ import {
   LLMService,
 } from "./llmService.ts";
 import { CONFIG_STORE } from "./config_store.ts";
-import {
-  OLLAMA_API_URL_DEFAULT,
-} from "./lib/constants.ts";
-import { component_model } from './components.ts'
+import { OLLAMA_API_URL_DEFAULT } from "./lib/constants.ts";
+import { component_model } from "./components.ts";
 import "./sidepanel.css";
 
 // Initialize LLM services
@@ -25,7 +23,7 @@ async function getLLMService(serviceName: string): Promise<LLMService> {
         (await CONFIG_STORE.get("OLLAMA_API_URL")) || OLLAMA_API_URL_DEFAULT;
       ollamaService = new OllamaLLMService(
         ollamaApiUrl as string,
-        selectedModel
+        selectedModel,
       );
     } else {
       // Update the model if it has changed
@@ -68,7 +66,7 @@ const stickyrMemo = {
 };
 
 // Initialize available models based on service
-// const ollamaModels = ["llama2", "mistral", "gemma", "phi3", "mixtral"];
+// coqnst ollamaModels = ["llama2", "mistral", "gemma", "phi3", "mixtral"];
 const openaiModels = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"];
 
 // Populate model dropdown based on selected service
@@ -194,7 +192,7 @@ chrome.storage.local.get(["stickyrMemo"]).then((result) => {
     if (result.stickyrMemo.model) {
       // Check if the model exists in the current dropdown
       const modelExists = Array.from(model_choice.options).some(
-        (option) => option.value === result.stickyrMemo.model
+        (option) => option.value === result.stickyrMemo.model,
       );
       if (modelExists) {
         model_choice.value = result.stickyrMemo.model;
@@ -275,17 +273,17 @@ function reload_page() {
 function getVisibleText() {
   const viewportHeight = Math.max(
     document.documentElement.clientHeight,
-    window.innerHeight || 0
+    window.innerHeight || 0,
   );
   const viewportWidth = Math.max(
     document.documentElement.clientWidth,
-    window.innerWidth || 0
+    window.innerWidth || 0,
   );
   let visibleText = "";
   var walker = document.createTreeWalker(
     document.body,
     NodeFilter.SHOW_TEXT,
-    null
+    null,
   );
   var node;
   var textNodes = [];
@@ -314,7 +312,7 @@ function getVisibleText() {
 
 async function inspect_page_EventHandler(
   this: HTMLButtonElement,
-  _ev: MouseEvent
+  _ev: MouseEvent,
 ) {
   return inspect_page();
 }
@@ -373,19 +371,19 @@ async function inspect_page() {
   const promptPostfixMap = new Map<string, string>();
   promptPostfixMap.set(
     "summary-en",
-    "The above text is from a web page. Give the summary in English."
+    "The above text is from a web page. Give the summary in English.",
   );
   promptPostfixMap.set(
     "summary-ja",
-    "以上の文章はウェブページから取得されました。日本語で要約してください."
+    "以上の文章はウェブページから取得されました。日本語で要約してください.",
   );
   promptPostfixMap.set(
     "writing-en",
-    'Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.'
+    'Suggest an improvement for the above text, especially focusing on wording and expression, and show the revised text. If you see a text "~~~", suggest appropriate context to fill it. Please ignore some UI elements as they are included unintentionally. Give the improved text suggestions in English.',
   );
   promptPostfixMap.set(
     "writing-ja",
-    '以上の文章を改善した後の文章を提示してください。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。誤字や脱字があれば指摘してください。また、UI要素も含まれてしまっていますが、無視してください。推敲した結果の文を、日本語で回答してください。'
+    '以上の文章を改善した後の文章を提示してください。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。誤字や脱字があれば指摘してください。また、UI要素も含まれてしまっていますが、無視してください。推敲した結果の文を、日本語で回答してください。',
   );
   // Writing phases
   // Borrowed from LY AI training
@@ -393,65 +391,65 @@ async function inspect_page() {
   // and TODO: align with https://hbr.org/2024/03/how-to-take-your-business-writing-from-average-to-great
   promptPostfixMap.set(
     "define_goal-en",
-    "We are defining the goal of this document. Ask me 5 questions. Based on my answers, summarize the goal of this document as a list. Answer in English."
+    "We are defining the goal of this document. Ask me 5 questions. Based on my answers, summarize the goal of this document as a list. Answer in English.",
   );
   promptPostfixMap.set(
     "define_goal-ja",
-    "文章作成のための「要件・ゴールの設定」をしたいです。今から私に質問して、その回答をもとに、要件とゴールを簡潔にまとめたものを箇条書きで出力してください。質問は5つ以内でお願いします。日本語で回答してください。"
+    "文章作成のための「要件・ゴールの設定」をしたいです。今から私に質問して、その回答をもとに、要件とゴールを簡潔にまとめたものを箇条書きで出力してください。質問は5つ以内でお願いします。日本語で回答してください。",
   );
 
   promptPostfixMap.set(
     "define_keymsg-en",
-    "We are defining the key messages of this document. Suggest key messages to help the reader understand and accpect the document. Suggest them in a list. Answer in English."
+    "We are defining the key messages of this document. Suggest key messages to help the reader understand and accpect the document. Suggest them in a list. Answer in English.",
   );
   promptPostfixMap.set(
     "define_keymsg-ja",
-    "文章作成のための「キーメッセージ」を決定したいです。文章の読者の理解を助け、説得するためのメッセージとして何を記載するのがいいでしょうか。箇条書きで出力してください。日本語で回答してください。"
+    "文章作成のための「キーメッセージ」を決定したいです。文章の読者の理解を助け、説得するためのメッセージとして何を記載するのがいいでしょうか。箇条書きで出力してください。日本語で回答してください。",
   );
 
   promptPostfixMap.set(
     "design_struct-en",
-    'We are designing the structure of this document. Suggest a structure of the document to convey the "goal" and "key messages" of it. Show the headlines with summaries in a list. Answer in English.'
+    'We are designing the structure of this document. Suggest a structure of the document to convey the "goal" and "key messages" of it. Show the headlines with summaries in a list. Answer in English.',
   );
   promptPostfixMap.set(
     "design_struct-ja",
-    "文章の構成を提案してください。文章の「ゴール」「キーメッセージ」が伝わりやすい構成を、各見出しの下に箇条書きで内容の要点を記載して出力してください。日本語で回答してください。"
+    "文章の構成を提案してください。文章の「ゴール」「キーメッセージ」が伝わりやすい構成を、各見出しの下に箇条書きで内容の要点を記載して出力してください。日本語で回答してください。",
   );
 
   promptPostfixMap.set(
     "dedup-en",
-    "Suggest an improvement for the above text, especially focusing on deduping redundant expression, and show the revised text. Give me the improved text suggestions in English."
+    "Suggest an improvement for the above text, especially focusing on deduping redundant expression, and show the revised text. Give me the improved text suggestions in English.",
   );
   promptPostfixMap.set(
     "dedup-ja",
-    "以上の文章を改善します。重複した内容があれば、整理したあとの文章を提案してください。推敲した結果の文を、日本語で回答してください。"
+    "以上の文章を改善します。重複した内容があれば、整理したあとの文章を提案してください。推敲した結果の文を、日本語で回答してください。",
   );
 
   promptPostfixMap.set(
     "fillcontent-en",
-    'Suggest an improvement for the above text. If you see a text "~~~", suggest appropriate context to fill it. Give me the improved text suggestions in English.'
+    'Suggest an improvement for the above text. If you see a text "~~~", suggest appropriate context to fill it. Give me the improved text suggestions in English.',
   );
   promptPostfixMap.set(
     "fillcontent-ja",
-    '以上の文章を改善します。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。結果の文を、日本語で回答してください。'
+    '以上の文章を改善します。"～～～"という文字列があれば、その部分に当てはまる内容を提案してください。結果の文を、日本語で回答してください。',
   );
 
   promptPostfixMap.set(
     "ideation-en",
-    "Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English."
+    "Suggest one new idea for the above text to expand on the idea, make it more engaging, impactful or relevant? What new possibilities could be explored? Please ignore some UI elements as they are included unintentionally. Give the answer in English.",
   );
   promptPostfixMap.set(
     "ideation-ja",
-    "以上の文章に対し、新しいアイデアを提示して、より魅力的、インパクトのあるものにする方法を考えてください。追加できる新しい可能性はあるでしょうか？また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください。"
+    "以上の文章に対し、新しいアイデアを提示して、より魅力的、インパクトのあるものにする方法を考えてください。追加できる新しい可能性はあるでしょうか？また、UI要素も含まれてしまっていますが、無視してください。日本語で回答してください。",
   );
 
   promptPostfixMap.set(
     "ideation-en",
-    "Tell me about a possible issue in the program. or Suggest code snippet to complete the logic. Give the answer in English."
+    "Tell me about a possible issue in the program. or Suggest code snippet to complete the logic. Give the answer in English.",
   );
   promptPostfixMap.set(
     "ideation-ja",
-    "プログラムの潜在的な問題点を教えてください。または、ロジックを完成させるためのコードスニペットを提案してください。日本語で回答してください。"
+    "プログラムの潜在的な問題点を教えてください。または、ロジックを完成させるためのコードスニペットを提案してください。日本語で回答してください。",
   );
 
   const modeStr = mode_choice.value + "-" + language_choice.value;
@@ -529,7 +527,7 @@ async function inspection_loop() {
     auto_inspection_remaining_count,
     last_inspection_run_timestamp,
     last_inspection_promise,
-    getPromiseState(last_inspection_promise!)
+    getPromiseState(last_inspection_promise!),
   );
 
   if (pendingResponse != undefined) {
@@ -543,7 +541,7 @@ async function inspection_loop() {
     console.log(
       "Skip auto inspection as the last run was too close or is still running.",
       last_inspection_run_timestamp,
-      last_inspection_promise
+      last_inspection_promise,
     );
     return;
   }
@@ -590,7 +588,7 @@ function getPromiseState(promise: Promise<any>): Promise<any> {
         value,
       };
     },
-    (reason) => ({ state: "rejected", reason })
+    (reason) => ({ state: "rejected", reason }),
   );
 }
 

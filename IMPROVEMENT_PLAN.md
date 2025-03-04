@@ -14,6 +14,7 @@ Refactored the `OpenAILLMService` class to use the official OpenAI API library:
 
 1. Installed the OpenAI API library: `npm install openai`
 2. Updated the constants in `src/lib/constants.ts`:
+
    - Removed endpoint URLs as they're handled by the library
    - Updated to use the newer `gpt-3.5-turbo` model for chat completions
    - Kept the `text-embedding-ada-002` model for embeddings
@@ -37,61 +38,64 @@ Refactored the `OpenAILLMService` class to use the official OpenAI API library:
 
 ```typescript
 // OpenAI API Models
-export const OPENAI_CHAT_MODEL = 'gpt-3.5-turbo';
-export const OPENAI_EMBEDDINGS_MODEL = 'text-embedding-ada-002';
+export const OPENAI_CHAT_MODEL = "gpt-3.5-turbo";
+export const OPENAI_EMBEDDINGS_MODEL = "text-embedding-ada-002";
 ```
 
 ### 2. Refactored OpenAILLMService Class
 
 ```typescript
 export class OpenAILLMService extends BaseLLMService {
-    private client: OpenAI;
+  private client: OpenAI;
 
-    constructor() {
-        super();
-        this.client = new OpenAI({
-            apiKey: 'placeholder', // Will be set dynamically in each method
-        });
+  constructor() {
+    super();
+    this.client = new OpenAI({
+      apiKey: "placeholder", // Will be set dynamically in each method
+    });
+  }
+
+  async createSummary(content: string): Promise<string> {
+    const startTime = performance.now();
+
+    const apiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
+    if (!apiKey) {
+      console.error("OpenAI API key not set.");
+      throw new Error("OpenAI API key not set.");
     }
 
-    async createSummary(content: string): Promise<string> {
-        const startTime = performance.now();
+    // Update the API key dynamically
+    this.client.apiKey = apiKey;
 
-        const apiKey = await CONFIG_STORE.get('OPENAI_API_KEY');
-        if (!apiKey) {
-            console.error('OpenAI API key not set.');
-            throw new Error('OpenAI API key not set.');
-        }
+    try {
+      const response = await this.client.chat.completions.create({
+        model: OPENAI_CHAT_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that summarizes content.",
+          },
+          { role: "user", content: this.getSummaryPrompt(content) },
+        ],
+        max_tokens: 150,
+        temperature: 0.7,
+      });
 
-        // Update the API key dynamically
-        this.client.apiKey = apiKey;
+      const summary = response.choices[0].message.content?.trim() || "";
 
-        try {
-            const response = await this.client.chat.completions.create({
-                model: OPENAI_CHAT_MODEL,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant that summarizes content.' },
-                    { role: 'user', content: this.getSummaryPrompt(content) }
-                ],
-                max_tokens: 150,
-                temperature: 0.7,
-            });
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      console.log("OpenAI Summary Generated:", summary);
+      console.log("OpenAI Summary Generation Time:", duration.toFixed(2), "ms");
 
-            const summary = response.choices[0].message.content?.trim() || '';
-
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log('OpenAI Summary Generated:', summary);
-            console.log('OpenAI Summary Generation Time:', duration.toFixed(2), 'ms');
-
-            return summary;
-        } catch (error) {
-            console.error('Error generating summary:', error);
-            throw new Error('Failed to generate summary.');
-        }
+      return summary;
+    } catch (error) {
+      console.error("Error generating summary:", error);
+      throw new Error("Failed to generate summary.");
     }
+  }
 
-    // Similar refactoring for listKeywords() and generateEmbeddings() methods
+  // Similar refactoring for listKeywords() and generateEmbeddings() methods
 }
 ```
 
