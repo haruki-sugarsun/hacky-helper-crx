@@ -23,13 +23,25 @@
 
 - Use embeddings to find automatic categorization
 - Suggest reorganization of the tabs, or possible migration destination.
+- e.g. Add a button to migrate a tab to another window/sesion, and show a dialog to select the destination. We can show the possible candidates based on the summary/keywords/embeddings.
 
 ## Update the LLM prompts
 
 - to focus more on categorization, topic detection. We would like to improve the prompts
 - Ability to choose language from English or Japanese.
 
+## Provide an error indicator in popup and the extension icon.
+
+- We may collect errors in the service-worker to let the user confirm it and invest.
+- We don't need to collect the error logs themselves, as Chrome browser also provides such functionality.
+
 # Fullfilled Dev Plans
+
+## Disable heavy processing based on battery mode
+
+- Added an easy toggle for power-consuming LLM services in the popup page
+- Implemented automatic disabling of LLM services when the device is running on battery power
+- Added battery status detection and display in the popup
 
 ## service-worker to manage LLM-based digests of the pages (per URL)
 

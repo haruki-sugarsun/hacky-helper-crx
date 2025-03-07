@@ -165,6 +165,14 @@ async function maybeQueueTaskForProcessing(
   title: string = "",
 ) {
   try {
+    // Check if LLM services are enabled
+    const llmEnabled = await CONFIG_STORE.get("LLM_ENABLED");
+    if (llmEnabled === false) {
+      console.log("Skipping task as LLM services are disabled.");
+      // TODO: We can also clear the pending llmTasks.
+      return;
+    }
+
     // Check if we already have similar tasks (typically with the same URL),
     // and update such task instead of pushing a new one at the end. The intention is
     const existingTask = llmTasks.find((task) => task.url === url);

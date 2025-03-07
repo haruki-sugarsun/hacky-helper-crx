@@ -20,6 +20,32 @@
       <li><a href="/tabs.html" target="_blank">Open Tabs UI</a></li>
     </ul>
 
+    <section class="llm-toggle-section">
+      <h2>LLM Services</h2>
+
+      <div class="toggle-container">
+        <label class="switch">
+          <input type="checkbox" id="llm-toggle" checked />
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Enable LLM Services</span>
+      </div>
+
+      <div class="toggle-container">
+        <label class="switch">
+          <input type="checkbox" id="battery-toggle" />
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Disable on Battery</span>
+      </div>
+
+      <div
+        id="battery-status"
+        class="battery-status"
+        style="display: none"
+      ></div>
+    </section>
+
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

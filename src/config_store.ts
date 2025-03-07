@@ -129,6 +129,18 @@ export class ConfigStore {
     "The parent folder ID where bookmark groups are stored.",
   );
 
+  static DISABLE_LLM_ON_BATTERY = new BoolConfig(
+    "DISABLE_LLM_ON_BATTERY",
+    "Disable LLM on Battery",
+    "When enabled, LLM services will be automatically disabled when the device is running on battery power.",
+  );
+
+  static LLM_ENABLED = new BoolConfig(
+    "LLM_ENABLED",
+    "Enable LLM Services",
+    "When enabled, LLM services will be available for content processing. When disabled, no LLM processing will occur.",
+  );
+
   constructor() {
     // Initialize configurations if needed
   }
@@ -206,6 +218,8 @@ interface ConfigRO {
   OLLAMA_API_URL: string;
   OLLAMA_MODEL: string;
   OLLAMA_EMBEDDINGS_MODEL: string;
+  DISABLE_LLM_ON_BATTERY: boolean;
+  LLM_ENABLED: boolean;
 }
 /**
  * Retrieves all configuration settings.
@@ -220,6 +234,8 @@ export async function getConfig(): Promise<ConfigRO> {
   const ollamaEmbeddingsModel = await CONFIG_STORE.get(
     "OLLAMA_EMBEDDINGS_MODEL",
   );
+  const disableLlmOnBattery = await CONFIG_STORE.get("DISABLE_LLM_ON_BATTERY");
+  const llmEnabled = await CONFIG_STORE.get("LLM_ENABLED");
 
   return {
     bookmarkParentId,
@@ -228,5 +244,7 @@ export async function getConfig(): Promise<ConfigRO> {
     OLLAMA_API_URL: ollamaApiUrl || "http://localhost:11434",
     OLLAMA_MODEL: ollamaModel || "llama2",
     OLLAMA_EMBEDDINGS_MODEL: ollamaEmbeddingsModel || "nomic-embed-text",
+    DISABLE_LLM_ON_BATTERY: disableLlmOnBattery || false,
+    LLM_ENABLED: llmEnabled !== false, // Default to true if not set
   };
 }
