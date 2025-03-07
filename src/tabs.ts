@@ -1,5 +1,9 @@
-import { GET_CACHED_SUMMARIES } from "./lib/constants";
-import { TabSummary } from "./lib/types";
+import {
+  GET_CACHED_SUMMARIES,
+  CREATE_NAMED_SESSION,
+  GET_NAMED_SESSIONS,
+} from "./lib/constants";
+import { NamedSession, TabSummary } from "./lib/types";
 import "./style.css";
 import "./tabs.css";
 
@@ -11,6 +15,7 @@ console.log("tabs.ts", new Date());
 var windowIds: (number | undefined)[] = []; // IDs of all windows
 var state_windows: chrome.windows.Window[]; // All windows
 var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window
+var state_sessions: NamedSession[] = []; // Named Sessions from the service worker
 var currentTabId: number | undefined; // ID of the current tab
 
 // Check if this is a duplicate tabs.html page in the same window
@@ -222,7 +227,26 @@ requestTabSummariesButton.addEventListener("click", async () => {
     }
   }
 });
-function updateUI(windows: chrome.windows.Window[], tabs: chrome.tabs.Tab[]) {
+
+// Helper function to create a session list item with common styling and behavior.
+function createSessionListItem(
+  label: string,
+  onClick: () => void,
+  isCurrent: boolean,
+): HTMLLIElement {
+  const li = document.createElement("li");
+  li.textContent = label;
+  if (isCurrent) {
+    li.classList.add("current-window");
+  }
+  li.addEventListener("click", onClick);
+  return li;
+}
+
+async function updateUI(
+  windows: chrome.windows.Window[],
+  tabs: chrome.tabs.Tab[],
+) {
   // Log window and tab information for debugging
   windows.forEach((w) => {
     console.log(`ID: ${w.id}, Tabs: ${w.tabs?.length || 0}`);
@@ -231,70 +255,95 @@ function updateUI(windows: chrome.windows.Window[], tabs: chrome.tabs.Tab[]) {
     console.log(`Title: ${t.title}, URL: ${t.url}`);
   });
 
-  // Update the sessions list (windows)
-  const tabsSessionsElement =
-    document.querySelector<HTMLDivElement>("#tabs_sessions")!;
-  const sessionsList = tabsSessionsElement.querySelector("ul")!;
+  // ---- Fetch and update Named Sessions ----
+  await chrome.runtime
+    .sendMessage({ type: GET_NAMED_SESSIONS })
+    .then((response) => {
+      if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
+        state_sessions = response.payload;
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching named sessions:", err);
+    });
 
-  // Clear existing list items
-  sessionsList.innerHTML = "";
+  // ---- Update the UI for Named and Unnamed Sessions ----
+  // Get both containers:
+  const namedSessionsContainer =
+    document.querySelector<HTMLDivElement>("#named_sessions")!;
+  const namedList = namedSessionsContainer.querySelector("ul")!;
+  const unnamedSessionsContainer =
+    document.querySelector<HTMLDivElement>("#tabs_sessions")!;
+  const unnamedList = unnamedSessionsContainer.querySelector("ul")!;
+
+  // Clear existing items in both lists:
+  namedList.innerHTML = "";
+  unnamedList.innerHTML = "";
 
   // Track the current window to auto-select it
   let currentWindowItem: HTMLLIElement | undefined = undefined;
 
   // Add a list item for each window
   for (let i = 0; i < windows.length; i++) {
-    const window = windows[i];
-    const listItem = document.createElement("li");
-    // Count non-pinned tabs with this window's ID from state_tabs
+    const win = windows[i];
+    // Count non-pinned tabs for this window
     const tabCount = state_tabs.filter(
-      (tab) => tab.windowId === window.id && !tab.pinned,
+      (tab) => tab.windowId === win.id && !tab.pinned,
     ).length;
 
-    // Mark the current window
-    const isCurrent = window.focused ? " (Current)" : "";
+    // Determine if a named session exists for this window
+    const associatedSession = state_sessions.find(
+      (session) => session.windowId === win.id && session.name,
+    );
 
-    // Create the session name with window ID and tab count
-    listItem.textContent = `Window ${window.id}${isCurrent} - ${tabCount} tab${tabCount !== 1 ? "s" : ""}`;
-
-    // Add a class to highlight the current window
-    if (window.focused) {
-      listItem.classList.add("current-window");
-      currentWindowItem = listItem;
+    // Build the label based on whether a Named Session exists
+    let label = "";
+    if (associatedSession) {
+      label = `Named Session: ${associatedSession.name} (Window: ${win.id}, ${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
+    } else {
+      label = `Window ${win.id} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
     }
 
-    // Add click event to show tabs for this window
-    listItem.addEventListener("click", () => {
-      // Update the selected window in the UI
-      document.querySelectorAll("#tabs_sessions li").forEach((item) => {
-        item.classList.remove("selected");
-      });
-      listItem.classList.add("selected");
+    const isCurrent = win.focused;
+    const listItem = createSessionListItem(
+      label,
+      () => {
+        // Clear selection on all items and mark this one as selected
+        namedList
+          .querySelectorAll("li")
+          .forEach((item) => item.classList.remove("selected"));
+        unnamedList
+          .querySelectorAll("li")
+          .forEach((item) => item.classList.remove("selected"));
 
-      console.log(`Selected window: ${window.id}`);
+        listItem.classList.add("selected");
 
-      // For now, just query and display tabs for the selected window
-      if (window.id) {
-        chrome.tabs.query({ windowId: window.id }).then((windowTabs) => {
-          console.log(`Found ${windowTabs.length} tabs in window ${window.id}`);
-          // Update the table with these tabs
-          updateTabsTable(windowTabs);
-        });
-      }
-    });
+        console.log(`Selected window: ${win.id}`);
+        if (win.id) {
+          chrome.tabs.query({ windowId: win.id }).then((windowTabs) => {
+            console.log(`Found ${windowTabs.length} tabs in window ${win.id}`);
+            updateTabsTable(windowTabs);
+          });
+        }
+      },
+      isCurrent,
+    );
 
-    sessionsList.appendChild(listItem);
+    if (isCurrent) {
+      currentWindowItem = listItem;
+    }
+    if (associatedSession) {
+      namedList.appendChild(listItem);
+    } else {
+      unnamedList.appendChild(listItem);
+    }
   }
 
-  // Auto-select the current window and show its tabs
+  // Auto-select the current window and load its tabs
   if (currentWindowItem) {
-    // Simulate a click on the current window item
     currentWindowItem.classList.add("selected");
-
-    // Find the current window
     const currentWindow = windows.find((w) => w.focused);
     if (currentWindow && currentWindow.id) {
-      // Load tabs for the current window
       chrome.tabs.query({ windowId: currentWindow.id }).then((windowTabs) => {
         console.log(
           `Auto-loading ${windowTabs.length} tabs for current window ${currentWindow.id}`,
@@ -412,6 +461,46 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
           );
         }
       });
+    }
+  });
+}
+
+// After the existing event listener for requestTabSummariesButton (or near the end of the file),
+// add the following code to handle Named Session creation:
+
+const createNamedSessionButton = document.querySelector<HTMLButtonElement>(
+  "#createNamedSessionButton",
+);
+const namedSessionInput =
+  document.querySelector<HTMLInputElement>("#namedSessionInput");
+
+if (createNamedSessionButton && namedSessionInput) {
+  createNamedSessionButton.addEventListener("click", async () => {
+    const sessionName = namedSessionInput.value || null;
+    try {
+      const currentWindow = await chrome.windows.getCurrent();
+      const response = await chrome.runtime.sendMessage({
+        type: CREATE_NAMED_SESSION,
+        payload: {
+          windowId: currentWindow.id,
+          sessionName: sessionName,
+        },
+      });
+      if (response && response.type === "CREATE_NAMED_SESSION_RESULT") {
+        console.log("Named Session created:", response.payload);
+        // Refresh the sessions list by fetching the latest windows and tabs, then update the UI.
+        chrome.windows.getAll().then((windows) => {
+          state_windows = windows;
+          chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+            state_tabs = tabs;
+            updateUI(state_windows, state_tabs);
+          });
+        });
+      } else {
+        console.error("Error creating Named Session:", response);
+      }
+    } catch (error) {
+      console.error("Error sending create named session message:", error);
     }
   });
 }

@@ -1,9 +1,40 @@
+/* TODO: Clean up ligh/dark definitions as shared definitions. */
+
+:root {
+  --bg-color: #f9f9f9;
+  --border-color: #ddd;
+  --text-color: #000;
+  --toggle-bg-color: #ccc;
+  --slider-bg-color: #ccc;
+  --slider-knob-color: white;
+  --battery-charging-bg: #d4edda;
+  --battery-charging-text: #155724;
+  --battery-discharging-bg: #f8d7da;
+  --battery-discharging-text: #721c24;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #333;
+    --border-color: #444;
+    --text-color: #fff;
+    --toggle-bg-color: #555;
+    --slider-bg-color: #777;
+    --slider-knob-color: #bbb;
+    --battery-charging-bg: #155724;
+    --battery-charging-text: #d4edda;
+    --battery-discharging-bg: #721c24;
+    --battery-discharging-text: #f8d7da;
+  }
+}
+
 .llm-toggle-section {
   margin: 20px 0;
   padding: 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 5px;
-  background-color: #f9f9f9;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .llm-toggle-section h2 {
@@ -42,7 +73,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: var(--slider-bg-color);
   transition: 0.4s;
   border-radius: 24px;
 }
@@ -54,7 +85,7 @@
   width: 16px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
+  background-color: var(--slider-knob-color);
   transition: 0.4s;
   border-radius: 50%;
 }
@@ -75,11 +106,11 @@ input:checked + .slider:before {
 }
 
 .battery-status.charging {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: var(--battery-charging-bg);
+  color: var(--battery-charging-text);
 }
 
 .battery-status.discharging {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--battery-discharging-bg);
+  color: var(--battery-discharging-text);
 }

@@ -1,19 +1,21 @@
 /* Styles for the tabs page */
 
 /* Left Pane: Sessions list */
-#tabs_sessions {
+#sessions {
   margin: 0 10px;
   width: min(15%, 30em);
   border-right: 1px solid #444;
   padding-right: 15px;
 }
 
+#named_sessions ul,
 #tabs_sessions ul {
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
+#named_sessions li,
 #tabs_sessions li {
   padding: 8px 10px;
   margin-bottom: 5px;
@@ -23,15 +25,18 @@
   border-left: 3px solid transparent;
 }
 
+#named_sessions li:hover,
 #tabs_sessions li:hover {
   background-color: #333355;
 }
 
+#named_sessions li.selected,
 #tabs_sessions li.selected {
   background-color: #2a2a4a;
   border-left: 3px solid #6666cc;
 }
 
+#named_sessions li.current-window,
 #tabs_sessions li.current-window {
   font-weight: bold;
   color: #aaddff;

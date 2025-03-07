@@ -13,8 +13,14 @@
       <button id="requestTabSummariesButton">
         button to request the tab summaries.
       </button>
-      <button>button to request the embeddings.</button>
-      <button>button to request the tab grouping based on keywords.</button>
+      <!-- <button>button to request the embeddings.</button>
+      <button>button to request the tab grouping based on keywords.</button> -->
+      <input
+        id="namedSessionInput"
+        type="text"
+        placeholder="Enter session name"
+      />
+      <button id="createNamedSessionButton">Create Named Session</button>
 
       <div class="settings">
         <a href="settings.html" target="_blank">⚙️ settings</a>
@@ -22,12 +28,21 @@
     </header>
 
     <content>
-      <div id="tabs_sessions">
-        <h3>Windows</h3>
-        <ul>
-          <!-- Windows sessions will be populated here -->
-          <li>Loading windows...</li>
-        </ul>
+      <div id="sessions">
+        <div id="named_sessions">
+          <h3>Named Sessions</h3>
+          <ul>
+            <!-- Named sessions will be populated here -->
+            <li>Loading named sessions...</li>
+          </ul>
+        </div>
+        <div id="tabs_sessions">
+          <h3>Windows</h3>
+          <ul>
+            <!-- Windows sessions will be populated here -->
+            <li>Loading windows...</li>
+          </ul>
+        </div>
       </div>
 
       <div id="tabs_tablist">

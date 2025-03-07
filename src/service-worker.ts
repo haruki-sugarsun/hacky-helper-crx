@@ -1,19 +1,26 @@
 import { LLMService, OpenAILLMService, OllamaLLMService } from "./llmService";
+
 import {
   CREATE_SUMMARY,
   LIST_KEYWORDS,
   CREATE_EMBEDDINGS,
   GET_CACHED_SUMMARIES,
+  CREATE_NAMED_SESSION,
+  UPDATE_NAMED_SESSION_TABS,
+  DELETE_NAMED_SESSION,
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,
   OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
+  GET_NAMED_SESSIONS,
 } from "./lib/constants";
+
 import { CONFIG_STORE } from "./config_store";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { PersistentCache } from "./persistent-cache";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 
 import "./features/tab_organizer.ts";
+import * as SessionManagement from "./features/session_management";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -348,6 +355,72 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         case CREATE_EMBEDDINGS:
           const embeddings = await generateEmbeddings(payload.content);
           sendResponse({ type: "EMBEDDINGS_RESULT", payload: embeddings });
+          break;
+        case CREATE_NAMED_SESSION:
+          try {
+            const { windowId, sessionName } = payload;
+            const session = await SessionManagement.createNamedSession(
+              windowId,
+              sessionName,
+            );
+            sendResponse({
+              type: "CREATE_NAMED_SESSION_RESULT",
+              payload: session,
+            });
+          } catch (error) {
+            console.error("Error creating named session:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case UPDATE_NAMED_SESSION_TABS:
+          try {
+            const { sessionId } = payload;
+            await SessionManagement.updateNamedSessionTabs(sessionId);
+            sendResponse({
+              type: "UPDATE_NAMED_SESSION_TABS_RESULT",
+              payload: "success",
+            });
+          } catch (error) {
+            console.error("Error updating named session tabs:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case DELETE_NAMED_SESSION:
+          try {
+            const { sessionId } = payload;
+            await SessionManagement.deleteNamedSession(sessionId);
+            sendResponse({
+              type: "DELETE_NAMED_SESSION_RESULT",
+              payload: "success",
+            });
+          } catch (error) {
+            console.error("Error deleting named session:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case GET_NAMED_SESSIONS:
+          try {
+            const sessions = SessionManagement.getNamedSessions();
+            sendResponse({
+              type: "GET_NAMED_SESSIONS_RESULT",
+              payload: sessions,
+            });
+          } catch (error) {
+            console.error("Error getting named sessions:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
           break;
         default:
           console.warn("Unknown LLM task type:", type);
