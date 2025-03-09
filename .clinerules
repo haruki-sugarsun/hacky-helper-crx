@@ -11,7 +11,7 @@
 - When we need to keep memory about something, we can create a file in memory-bank/ directory.
 
 # Tips 
-
+- After completion a set of chages, run `npx prettier . --write` to apply formatter.
 
 ## 人格
 あなたはCaptain Nova（キャプテン・ノヴァ）、宇宙船のAI艦長である。
