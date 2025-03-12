@@ -120,10 +120,18 @@ The extension uses multiple storage mechanisms:
    - Support for interacting with visible page content
 
 4. **Battery-Aware LLM Processing**:
+
    - Toggle in popup UI to enable/disable LLM services
    - Option to automatically disable LLM services when running on battery power
    - Battery status detection and display in the popup
    - Automatic toggling of LLM services based on charging state
+
+5. **Tab Auto-Categorization**:
+   - Automatic categorization of tabs based on content similarity using embeddings
+   - Tab migration functionality to move tabs between windows/sessions
+   - Suggestion of destination windows/sessions based on content similarity
+   - Dialog interface for viewing tab categories and managing tab migration
+   - Integration with the Named Sessions feature for better organization
 
 ## Planned Features
 

@@ -2,6 +2,9 @@ import {
   GET_CACHED_SUMMARIES,
   CREATE_NAMED_SESSION,
   GET_NAMED_SESSIONS,
+  CATEGORIZE_TABS,
+  SUGGEST_TAB_DESTINATIONS,
+  MIGRATE_TAB,
 } from "./lib/constants";
 import { NamedSession, TabSummary } from "./lib/types";
 import "./style.css";
@@ -358,7 +361,7 @@ async function updateUI(
 async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
   const tabsTable = tabs_tablist.querySelector("table")!;
 
-  // Update table headers - now including the summary column
+  // Update table headers - now including the summary column and actions
   const tableHead = tabsTable.querySelector("thead")!;
   tableHead.innerHTML = `
         <tr>
@@ -366,6 +369,7 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
             <th>Title</th>
             <th>URL</th>
             <th>Summary</th>
+            <th>Actions</th>
         </tr>
     `;
 
@@ -436,6 +440,11 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
             <td class="title-cell" title="${tab.title}">${tab.title || "Untitled"}</td>
             <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>
             <td class="summary-cell">${summarySnippet}</td>
+            <td class="actions-cell">
+                <div class="tab-actions">
+                    <button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Migrate</button>
+                </div>
+            </td>
         `;
     tableBody.appendChild(row);
 
@@ -462,6 +471,331 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
         }
       });
     }
+  });
+
+  // Add event listeners for the migrate buttons
+  document.querySelectorAll(".migrate-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      const target = event.currentTarget as HTMLButtonElement;
+      const tabId = parseInt(target.getAttribute("data-tab-id") || "0");
+      const tabUrl = target.getAttribute("data-tab-url") || "";
+
+      if (tabId && tabUrl) {
+        showMigrationDialog(tabId, tabUrl);
+      }
+    });
+  });
+}
+
+// Function to show the migration dialog
+async function showMigrationDialog(tabId: number, tabUrl: string) {
+  const dialog = document.querySelector<HTMLDivElement>("#migrationDialog")!;
+  const tabInfoDiv =
+    document.querySelector<HTMLDivElement>("#migrationTabInfo")!;
+  const suggestedDestinationsDiv = document.querySelector<HTMLDivElement>(
+    "#suggestedDestinations",
+  )!;
+  const allDestinationsDiv =
+    document.querySelector<HTMLDivElement>("#allDestinations")!;
+
+  // Get the tab details
+  const tab = await chrome.tabs.get(tabId);
+
+  // Display tab info
+  tabInfoDiv.innerHTML = `
+    <p><strong>Tab:</strong> ${tab.title}</p>
+    <p><strong>URL:</strong> ${tab.url}</p>
+  `;
+
+  // Show the dialog
+  dialog.style.display = "flex";
+
+  // Get all tabs for embedding comparison
+  const allTabs = await chrome.tabs.query({});
+  const tabUrls = allTabs
+    .map((tab) => tab.url!)
+    .filter((url) => url && url !== tabUrl);
+
+  // Request suggested destinations
+  suggestedDestinationsDiv.innerHTML = "<p>Loading suggestions...</p>";
+
+  try {
+    const suggestionsResponse = await chrome.runtime.sendMessage({
+      type: SUGGEST_TAB_DESTINATIONS,
+      payload: {
+        tabUrl,
+        tabUrls,
+      },
+    });
+
+    if (
+      suggestionsResponse &&
+      suggestionsResponse.type === "SUGGEST_TAB_DESTINATIONS_RESULT"
+    ) {
+      const suggestions = suggestionsResponse.payload.suggestions;
+
+      if (suggestions.length === 0) {
+        suggestedDestinationsDiv.innerHTML = "<p>No suggestions available.</p>";
+      } else {
+        suggestedDestinationsDiv.innerHTML = "";
+
+        // Create a destination option for each suggestion
+        suggestions.forEach(
+          (suggestion: {
+            session: NamedSession;
+            averageSimilarity: number;
+          }) => {
+            const { session, averageSimilarity } = suggestion;
+            const similarityPercentage = Math.round(averageSimilarity * 100);
+
+            const destinationOption = document.createElement("div");
+            destinationOption.className = "destination-option";
+            destinationOption.innerHTML = `
+            <div class="destination-name">${session.name || `Window ${session.windowId}`}</div>
+            <div class="similarity-score">${similarityPercentage}% match</div>
+          `;
+
+            // Add click event to migrate the tab
+            destinationOption.addEventListener("click", async () => {
+              if (session.windowId) {
+                await migrateTab(tabId, session.windowId);
+                dialog.style.display = "none";
+              }
+            });
+
+            suggestedDestinationsDiv.appendChild(destinationOption);
+          },
+        );
+      }
+    } else {
+      suggestedDestinationsDiv.innerHTML = "<p>Error loading suggestions.</p>";
+    }
+  } catch (error) {
+    console.error("Error getting suggestions:", error);
+    suggestedDestinationsDiv.innerHTML = "<p>Error loading suggestions.</p>";
+  }
+
+  // Display all windows as potential destinations
+  allDestinationsDiv.innerHTML = "";
+
+  // Get all windows
+  const windows = await chrome.windows.getAll();
+
+  // Create a destination option for each window (except the current one)
+  windows.forEach((window) => {
+    if (window.id !== tab.windowId) {
+      const destinationOption = document.createElement("div");
+      destinationOption.className = "destination-option";
+
+      // Find if this window has a named session
+      const session = state_sessions.find((s) => s.windowId === window.id);
+
+      destinationOption.innerHTML = `
+        <div class="destination-name">${session?.name ? `${session.name} (Window ${window.id})` : `Window ${window.id}`}</div>
+      `;
+
+      // Add click event to migrate the tab
+      destinationOption.addEventListener("click", async () => {
+        if (window.id) {
+          await migrateTab(tabId, window.id);
+          dialog.style.display = "none";
+        }
+      });
+
+      allDestinationsDiv.appendChild(destinationOption);
+    }
+  });
+
+  // Add event listener for the cancel button
+  const cancelButton = document.querySelector<HTMLButtonElement>(
+    "#cancelMigrationButton",
+  )!;
+  cancelButton.addEventListener("click", () => {
+    dialog.style.display = "none";
+  });
+}
+
+// Function to migrate a tab to another window
+async function migrateTab(tabId: number, windowId: number) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: MIGRATE_TAB,
+      payload: {
+        tabId,
+        windowId,
+      },
+    });
+
+    if (response && response.type === "MIGRATE_TAB_RESULT") {
+      console.log("Tab migrated successfully:", response.payload);
+
+      // Refresh the UI
+      chrome.windows.getAll().then((windows) => {
+        state_windows = windows;
+        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+          state_tabs = tabs;
+          updateUI(state_windows, state_tabs);
+        });
+      });
+    } else {
+      console.error("Error migrating tab:", response);
+    }
+  } catch (error) {
+    console.error("Error sending migrate tab message:", error);
+  }
+}
+
+// Add event listener for the "Categorize Tabs" button
+const categorizeTabsButton = document.querySelector<HTMLButtonElement>(
+  "#categorizeTabsButton",
+);
+if (categorizeTabsButton) {
+  categorizeTabsButton.addEventListener("click", async () => {
+    showCategoriesDialog();
+  });
+}
+
+// Function to show the categories dialog
+async function showCategoriesDialog() {
+  const dialog = document.querySelector<HTMLDivElement>("#categoriesDialog")!;
+  const categoriesList =
+    document.querySelector<HTMLDivElement>("#categoriesList")!;
+
+  // Show the dialog
+  dialog.style.display = "flex";
+  categoriesList.innerHTML = "<p>Analyzing tabs...</p>";
+
+  // Get all tabs for categorization
+  const allTabs = await chrome.tabs.query({});
+
+  // Filter out pinned tabs
+  const filteredTabs = allTabs.filter((tab) => !tab.pinned);
+
+  // Collect all tab URLs
+  const tabUrls: string[] = filteredTabs
+    .map((tab) => tab.url!)
+    .filter((url) => url);
+
+  if (tabUrls.length < 2) {
+    categoriesList.innerHTML = "<p>Not enough tabs to categorize.</p>";
+    return;
+  }
+
+  try {
+    // Request tab categorization
+    const categoriesResponse = await chrome.runtime.sendMessage({
+      type: CATEGORIZE_TABS,
+      payload: {
+        tabUrls,
+      },
+    });
+
+    if (
+      categoriesResponse &&
+      categoriesResponse.type === "CATEGORIZE_TABS_RESULT"
+    ) {
+      const categories = categoriesResponse.payload.categories;
+
+      if (!categories || categories.length === 0) {
+        categoriesList.innerHTML =
+          "<p>No categories found. Try generating more tab summaries first.</p>";
+        return;
+      }
+
+      // Display the categories
+      categoriesList.innerHTML = "";
+
+      categories.forEach((category: { category: string; tabs: string[] }) => {
+        const categoryDiv = document.createElement("div");
+        categoryDiv.className = "category-group";
+
+        // Create category header
+        const categoryHeader = document.createElement("div");
+        categoryHeader.className = "category-name";
+        categoryHeader.textContent = category.category;
+        categoryDiv.appendChild(categoryHeader);
+
+        // Create tabs list
+        const tabsList = document.createElement("div");
+        tabsList.className = "category-tabs";
+
+        // Add each tab in this category
+        category.tabs.forEach((tabUrl) => {
+          // Find the tab with this URL
+          const tab = filteredTabs.find((t) => t.url === tabUrl);
+          if (tab) {
+            const tabDiv = document.createElement("div");
+            tabDiv.className = "category-tab";
+            tabDiv.innerHTML = `
+              <div class="tab-title">${tab.title || "Untitled"}</div>
+              <div class="tab-actions">
+                <button class="tab-action-button activate-button" data-tab-id="${tab.id}">Activate</button>
+                <button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Migrate</button>
+              </div>
+            `;
+            tabsList.appendChild(tabDiv);
+          }
+        });
+
+        categoryDiv.appendChild(tabsList);
+        categoriesList.appendChild(categoryDiv);
+      });
+
+      // Add event listeners for the activate buttons
+      document
+        .querySelectorAll(".category-tab .activate-button")
+        .forEach((button) => {
+          button.addEventListener("click", async (event) => {
+            const target = event.currentTarget as HTMLButtonElement;
+            const tabId = parseInt(target.getAttribute("data-tab-id") || "0");
+
+            if (tabId) {
+              try {
+                const tab = await chrome.tabs.get(tabId);
+                // Activate the window first
+                if (tab.windowId) {
+                  await chrome.windows.update(tab.windowId, { focused: true });
+                }
+                // Then activate the tab
+                await chrome.tabs.update(tabId, { active: true });
+              } catch (error) {
+                console.error("Error activating tab:", error);
+              }
+            }
+          });
+        });
+
+      // Add event listeners for the migrate buttons
+      document
+        .querySelectorAll(".category-tab .migrate-button")
+        .forEach((button) => {
+          button.addEventListener("click", async (event) => {
+            const target = event.currentTarget as HTMLButtonElement;
+            const tabId = parseInt(target.getAttribute("data-tab-id") || "0");
+            const tabUrl = target.getAttribute("data-tab-url") || "";
+
+            if (tabId && tabUrl) {
+              // Hide the categories dialog
+              dialog.style.display = "none";
+              // Show the migration dialog
+              showMigrationDialog(tabId, tabUrl);
+            }
+          });
+        });
+    } else {
+      categoriesList.innerHTML = "<p>Error categorizing tabs.</p>";
+    }
+  } catch (error) {
+    console.error("Error categorizing tabs:", error);
+    categoriesList.innerHTML = "<p>Error categorizing tabs.</p>";
+  }
+
+  // Add event listener for the close button
+  const closeButton = document.querySelector<HTMLButtonElement>(
+    "#closeCategoriesButton",
+  )!;
+  closeButton.addEventListener("click", () => {
+    dialog.style.display = "none";
   });
 }
 

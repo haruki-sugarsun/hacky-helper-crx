@@ -57,12 +57,6 @@
 - Have a selection option in settings.
 - Prepare Japanese and English prompts for necessary LLM integrations.
 
-## Auto-Categorization
-
-- Use embeddings to find automatic categorization
-- Suggest reorganization of the tabs, or possible migration destination.
-- e.g. Add a button to migrate a tab to another window/sesion, and show a dialog to select the destination. We can show the possible candidates based on the summary/keywords/embeddings.
-
 ## Update the LLM prompts
 
 - to focus more on categorization, topic detection. We would like to improve the prompts
@@ -72,6 +66,11 @@
 
 - We may collect errors in the service-worker to let the user confirm it and invest.
 - We don't need to collect the error logs themselves, as Chrome browser also provides such functionality.
+
+## Auto-Categorization
+
+- Add a function to migrate the auto-categorized tabs into a new named session.
+- UX might need improvements.
 
 # Fullfilled Dev Plans
 
@@ -97,3 +96,11 @@
 - Prepared prompts for various document writing scenarios
 - Abstracted LLM service interface for consistent interaction with different providers
 - Support for interacting with visible page content
+
+## Auto-Categorization
+
+- Implemented automatic categorization of tabs based on content similarity using embeddings
+- Added tab migration functionality to move tabs between windows/sessions
+- Added suggestion of destination windows/sessions based on content similarity
+- Created dialog interfaces for viewing tab categories and managing tab migration
+- Integrated with the Named Sessions feature for better organization

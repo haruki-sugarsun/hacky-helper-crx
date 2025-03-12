@@ -23,3 +23,9 @@ export const CREATE_NAMED_SESSION = "CREATE_NAMED_SESSION";
 export const UPDATE_NAMED_SESSION_TABS = "UPDATE_NAMED_SESSION_TABS";
 export const DELETE_NAMED_SESSION = "DELETE_NAMED_SESSION";
 export const GET_NAMED_SESSIONS = "GET_NAMED_SESSIONS";
+
+// Tab Categorization Constants
+export const CATEGORIZE_TABS = "CATEGORIZE_TABS";
+export const SUGGEST_TAB_DESTINATIONS = "SUGGEST_TAB_DESTINATIONS";
+export const MIGRATE_TAB = "MIGRATE_TAB";
+export const SIMILARITY_THRESHOLD = 0.7; // Default similarity threshold for tab categorization

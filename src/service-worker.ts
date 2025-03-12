@@ -12,6 +12,10 @@ import {
   OLLAMA_MODEL_DEFAULT,
   OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
   GET_NAMED_SESSIONS,
+  CATEGORIZE_TABS,
+  SUGGEST_TAB_DESTINATIONS,
+  MIGRATE_TAB,
+  SIMILARITY_THRESHOLD,
 } from "./lib/constants";
 
 import { CONFIG_STORE } from "./config_store";
@@ -21,6 +25,7 @@ import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 
 import "./features/tab_organizer.ts";
 import * as SessionManagement from "./features/session_management";
+import * as TabCategorization from "./features/tab_categorization";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -416,6 +421,136 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             });
           } catch (error) {
             console.error("Error getting named sessions:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case CATEGORIZE_TABS:
+          try {
+            // Get tab summaries for all tabs in the payload
+            const tabUrls = payload.tabUrls;
+            if (!tabUrls || !Array.isArray(tabUrls)) {
+              throw new Error("Invalid tab URLs provided");
+            }
+
+            // Get cached summaries for all tabs
+            const tabSummariesPromises = tabUrls.map(async (url: string) => {
+              const cachedSummaries = await getCachedSummaries(url);
+              return {
+                // TODO: If we don't need the tabId here, we may use map url->TabSummart[] or define a new type.
+                tabId: 0, // Using 0 as a placeholder since we're working with URLs, not tab IDs
+                url: url,
+                summaries: cachedSummaries || [],
+              };
+            });
+
+            const tabSummaries: TabSummary[] =
+              await Promise.all(tabSummariesPromises);
+
+            // Filter tabs that have embeddings
+            const tabsWithEmbeddings = tabSummaries.filter(
+              (tab) => tab.summaries.length > 0 && tab.summaries[0].embeddings,
+            );
+
+            if (tabsWithEmbeddings.length < 2) {
+              sendResponse({
+                type: "CATEGORIZE_TABS_RESULT",
+                payload: {
+                  categories: [],
+                  message: "Not enough tabs with embeddings to categorize",
+                },
+              });
+              return;
+            }
+
+            // Use the threshold from payload or default
+            const threshold = payload.threshold || SIMILARITY_THRESHOLD;
+
+            // Categorize tabs by similarity
+            const categories = TabCategorization.categorizeTabsBySimilarity(
+              tabsWithEmbeddings,
+              threshold,
+            );
+
+            sendResponse({
+              type: "CATEGORIZE_TABS_RESULT",
+              payload: {
+                categories,
+              },
+            });
+          } catch (error) {
+            console.error("Error categorizing tabs:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case SUGGEST_TAB_DESTINATIONS:
+          try {
+            const { tabUrl, tabUrls } = payload;
+            if (!tabUrl || !tabUrls || !Array.isArray(tabUrls)) {
+              throw new Error("Invalid tab URL or tab URLs provided");
+            }
+
+            // Get cached summaries for all tabs
+            const tabSummariesPromises = tabUrls.map(async (url: string) => {
+              const cachedSummaries = await getCachedSummaries(url);
+              return {
+                // TODO: If we don't need the tabId here, we may use map url->TabSummart[] or define a new type.
+                tabId: 0, // Using 0 as a placeholder since we're working with URLs, not tab IDs
+                url: url,
+                summaries: cachedSummaries || [],
+              };
+            });
+
+            const tabSummaries: TabSummary[] =
+              await Promise.all(tabSummariesPromises);
+
+            // Get suggested destinations
+            const suggestions = TabCategorization.suggestTabDestinations(
+              tabUrl,
+              tabSummaries,
+            );
+
+            sendResponse({
+              type: "SUGGEST_TAB_DESTINATIONS_RESULT",
+              payload: {
+                suggestions,
+              },
+            });
+          } catch (error) {
+            console.error("Error suggesting tab destinations:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case MIGRATE_TAB:
+          try {
+            const { tabId, windowId } = payload;
+            if (!tabId || !windowId) {
+              throw new Error("Tab ID and window ID are required");
+            }
+
+            // Migrate the tab to the destination window
+            const migratedTab = await TabCategorization.migrateTabToWindow(
+              tabId,
+              windowId,
+            );
+
+            sendResponse({
+              type: "MIGRATE_TAB_RESULT",
+              payload: {
+                success: true,
+                tab: migratedTab,
+              },
+            });
+          } catch (error) {
+            console.error("Error migrating tab:", error);
             sendResponse({
               type: "ERROR",
               payload: error instanceof Error ? error.message : String(error),

@@ -10,11 +10,8 @@
     <header>
       <h1>H-H: Tabs</h1>
 
-      <button id="requestTabSummariesButton">
-        button to request the tab summaries.
-      </button>
-      <!-- <button>button to request the embeddings.</button>
-      <button>button to request the tab grouping based on keywords.</button> -->
+      <button id="requestTabSummariesButton">Request Tab Summaries</button>
+      <button id="categorizeTabsButton">Auto-Categorize Tabs</button>
       <input
         id="namedSessionInput"
         type="text"
@@ -66,6 +63,42 @@
         </table>
       </div>
     </content>
+
+    <!-- Tab Migration Dialog -->
+    <div id="migrationDialog" class="dialog-overlay" style="display: none">
+      <div class="dialog-content">
+        <h3>Migrate Tab to Another Window</h3>
+        <div id="migrationTabInfo"></div>
+        <div class="dialog-section">
+          <h4>Suggested Destinations</h4>
+          <div id="suggestedDestinations">
+            <p>Loading suggestions...</p>
+          </div>
+        </div>
+        <div class="dialog-section">
+          <h4>All Windows</h4>
+          <div id="allDestinations">
+            <p>Loading windows...</p>
+          </div>
+        </div>
+        <div class="dialog-buttons">
+          <button id="cancelMigrationButton">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Categories Dialog -->
+    <div id="categoriesDialog" class="dialog-overlay" style="display: none">
+      <div class="dialog-content">
+        <h3>Tab Categories</h3>
+        <div id="categoriesList">
+          <p>Analyzing tabs...</p>
+        </div>
+        <div class="dialog-buttons">
+          <button id="closeCategoriesButton">Close</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/src/tabs.ts"></script>
   </body>
