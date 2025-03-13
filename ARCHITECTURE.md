@@ -104,6 +104,7 @@ The extension uses multiple storage mechanisms:
    - Duplicate tabs.html tabs are automatically closed (only one tabs.html tab per window)
    - Pinned tabs are excluded from the tab list UI
    - Tab counts in the window list exclude pinned tabs
+   - Global hotkey (Alt+X) to quickly open the tabs.html page from anywhere
 
 2. **Bookmark Integration**:
 

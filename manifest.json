@@ -25,5 +25,13 @@
       "js": ["src/content.ts"],
       "matches": ["*://*/*"]
     }
-  ]
+  ],
+  "commands": {
+    "open-tabs-page": {
+      "suggested_key": {
+        "default": "Alt+X"
+      },
+      "description": "Open the tabs management page"
+    }
+  }
 }

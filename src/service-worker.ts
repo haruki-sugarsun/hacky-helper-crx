@@ -30,6 +30,40 @@ import * as TabCategorization from "./features/tab_categorization";
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
 
+// Listen for keyboard commands
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "open-tabs-page") {
+    console.log("Command received: open-tabs-page");
+    openTabsPage();
+  }
+});
+
+// Function to open the tabs.html page
+async function openTabsPage() {
+  try {
+    // Check if tabs.html is already open in any window
+    const existingTabs = await chrome.tabs.query({
+      url: chrome.runtime.getURL("tabs.html"),
+    });
+
+    if (existingTabs.length > 0) {
+      // If tabs.html is already open, focus on that tab and reload it
+      const existingTab = existingTabs[0];
+      await chrome.windows.update(existingTab.windowId!, { focused: true });
+      await chrome.tabs.update(existingTab.id!, { active: true });
+      // Reload the tab to refresh its content
+      await chrome.tabs.reload(existingTab.id!);
+      console.log("Focused on existing tabs.html tab and reloaded it");
+    } else {
+      // If tabs.html is not open, create a new tab with tabs.html
+      await chrome.tabs.create({ url: chrome.runtime.getURL("tabs.html") });
+      console.log("Created new tabs.html tab");
+    }
+  } catch (error) {
+    console.error("Error opening tabs.html:", error);
+  }
+}
+
 // Information for the queued LLM-related tasks:
 // enum LLMTaskType {
 //     CREATE_SUMMARY,

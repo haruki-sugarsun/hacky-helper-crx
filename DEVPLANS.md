@@ -104,3 +104,9 @@
 - Added suggestion of destination windows/sessions based on content similarity
 - Created dialog interfaces for viewing tab categories and managing tab migration
 - Integrated with the Named Sessions feature for better organization
+
+## Global Hotkey for Tabs Management
+
+- Implemented Alt+X as the default hotkey to quickly open the tabs.html page
+- Added keyboard command handling in the service worker
+- Intelligent tab handling: focuses on existing tabs.html if already open, or creates a new one if needed
