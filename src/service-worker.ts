@@ -49,8 +49,9 @@ chrome.commands.onCommand.addListener((command) => {
 // Function to open the tabs.html page
 async function openTabsPage() {
   try {
-    // Check if tabs.html is already open in any window
+    // Check if tabs.html is already open in the active window
     const existingTabs = await chrome.tabs.query({
+      currentWindow: true,
       url: chrome.runtime.getURL("tabs.html"),
     });
 
