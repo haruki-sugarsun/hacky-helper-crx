@@ -177,13 +177,43 @@ async function initializeTabManagement() {
         if (content) {
           // Queue a task to generate and cache the summary
           maybeQueueTaskForProcessing(tab.url, content, tab.title || "");
-          // TODO: Implement in the queueTaskForProcessing();
           console.log(
             `Queued to generate and cache summary for tab ${tabId} at ${tab.url}`,
           );
         }
       } catch (error) {
         console.error(`Error generating summary for tab ${tabId}:`, error);
+      }
+    }
+  });
+
+  // Listen to tab activation
+  chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    const activeTab = await chrome.tabs.get(activeInfo.tabId);
+    console.log("Tab Activated:", activeTab);
+
+    // Conditions for task enqueue: empty task queue or no digest computed
+    const canEnqueue =
+      llmTasks.length === 0 || !(await getCachedSummaries(activeTab.url || ""));
+
+    if (canEnqueue && activeTab.url && !activeTab.url.startsWith("chrome://")) {
+      try {
+        const content = await getTabContent(activeInfo.tabId);
+        if (content) {
+          maybeQueueTaskForProcessing(
+            activeTab.url,
+            content,
+            activeTab.title || "",
+          );
+          console.log(
+            `Queued to generate and cache summary for active tab ${activeInfo.tabId} at ${activeTab.url}`,
+          );
+        }
+      } catch (error) {
+        console.error(
+          `Error generating summary for active tab ${activeInfo.tabId}:`,
+          error,
+        );
       }
     }
   });
