@@ -17,7 +17,7 @@
 - **tabs.html Behavior**
 
   - `tabs.html` is pinned per Named Session.
-  - The URL encodes the `session name` and `session ID` as query parameters.
+  - The URL encodes the `session name` and `session ID` as query parameters for the named sessions.
   - If an existing `tabs.html` for the same session is open, it is selected instead of opening a new one.
 
 - **Session Creation & Management**

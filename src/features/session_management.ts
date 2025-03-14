@@ -25,7 +25,7 @@ export async function createNamedSession(
     windowId,
     createdAt: timestamp,
     updatedAt: timestamp,
-    tabs: [],
+    tabs: [], // TODO: Here the tabs are not synced to the actual tabs in the window yet.
   };
   namedSessions[sessionId] = session;
 
@@ -37,6 +37,7 @@ export async function createNamedSession(
   console.log(`Created Named Session: ${sessionId} for window ${windowId}`);
 
   // Start auto-save timer if not already running
+  // TODO: Consider a better place to have the timer/scheduled alarm.
   startAutoSaveTimer();
 
   return session;
@@ -128,6 +129,7 @@ export async function syncSessionToBookmarks(
   if (!session.name) return false;
 
   try {
+    // TODO: We need to pass the currently opend tabs to the bookmarkStorage.
     const result = await bookmarkStorage.syncSessionToBookmarks(session);
     return !!result;
   } catch (error) {
