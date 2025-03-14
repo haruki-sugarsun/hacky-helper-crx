@@ -29,3 +29,10 @@ export const CATEGORIZE_TABS = "CATEGORIZE_TABS";
 export const SUGGEST_TAB_DESTINATIONS = "SUGGEST_TAB_DESTINATIONS";
 export const MIGRATE_TAB = "MIGRATE_TAB";
 export const SIMILARITY_THRESHOLD = 0.7; // Default similarity threshold for tab categorization
+
+// Bookmark Storage Constants
+export const SAVE_TAB_TO_BOOKMARKS = "SAVE_TAB_TO_BOOKMARKS";
+export const GET_SAVED_BOOKMARKS = "GET_SAVED_BOOKMARKS";
+export const OPEN_SAVED_BOOKMARK = "OPEN_SAVED_BOOKMARK";
+export const SYNC_SESSION_TO_BOOKMARKS = "SYNC_SESSION_TO_BOOKMARKS";
+export const GET_SYNCED_BOOKMARKS = "GET_SYNCED_BOOKMARKS";

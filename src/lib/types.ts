@@ -59,3 +59,42 @@ export interface NamedSessionTab {
   /** The URL of the tab */
   url: string;
 }
+
+/**
+ * Represents a bookmark folder structure for Named Sessions
+ */
+export interface BookmarkSessionFolder {
+  /** The bookmark folder ID */
+  id: string;
+  /** The name of the session */
+  name: string;
+  /** The session ID associated with this folder */
+  sessionId: string;
+  /** The opened pages folder ID */
+  openedPagesId: string;
+  /** The saved pages folder ID */
+  savedPagesId: string;
+}
+
+/**
+ * Represents a saved bookmark
+ */
+export interface SavedBookmark {
+  /** The bookmark ID */
+  id: string;
+  /** The title of the bookmark */
+  title: string;
+  /** The URL of the bookmark */
+  url: string;
+  /** The session ID this bookmark belongs to */
+  sessionId: string;
+  /** Optional metadata encoded in JSON */
+  metadata?: {
+    /** When the bookmark was saved */
+    savedAt?: number;
+    /** Custom tags or categories */
+    tags?: string[];
+    /** Any other custom metadata */
+    [key: string]: any;
+  };
+}

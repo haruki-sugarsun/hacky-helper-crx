@@ -16,6 +16,11 @@ import {
   SUGGEST_TAB_DESTINATIONS,
   MIGRATE_TAB,
   SIMILARITY_THRESHOLD,
+  SAVE_TAB_TO_BOOKMARKS,
+  GET_SAVED_BOOKMARKS,
+  OPEN_SAVED_BOOKMARK,
+  SYNC_SESSION_TO_BOOKMARKS,
+  GET_SYNCED_BOOKMARKS,
 } from "./lib/constants";
 
 import { CONFIG_STORE } from "./config_store";
@@ -359,6 +364,7 @@ async function processNextTask() {
 }
 
 // Handle incoming messages from content scripts
+// TODO: Define an abstraction layer to define message `type`, `params`, `results` in more organized way.
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const { type, payload } = message;
   // Return true to indicate we will send a response asynchronously
@@ -615,6 +621,162 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             });
           } catch (error) {
             console.error("Error migrating tab:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case SAVE_TAB_TO_BOOKMARKS:
+          try {
+            const { sessionId, tabId, metadata } = payload;
+            if (!sessionId || !tabId) {
+              throw new Error("Session ID and Tab ID are required");
+            }
+
+            // Get the tab details
+            const tab = await chrome.tabs.get(tabId);
+
+            // Save the tab to bookmarks
+            const success = await SessionManagement.saveTabToBookmarks(
+              sessionId,
+              tab,
+              metadata,
+            );
+
+            sendResponse({
+              type: "SAVE_TAB_TO_BOOKMARKS_RESULT",
+              payload: {
+                success,
+                tabId,
+                sessionId,
+              },
+            });
+          } catch (error) {
+            console.error("Error saving tab to bookmarks:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case GET_SAVED_BOOKMARKS:
+          try {
+            const { sessionId } = payload;
+            if (!sessionId) {
+              throw new Error("Session ID is required");
+            }
+
+            // Get saved bookmarks for the session
+            const bookmarks =
+              await SessionManagement.getSavedBookmarks(sessionId);
+
+            sendResponse({
+              type: "GET_SAVED_BOOKMARKS_RESULT",
+              payload: {
+                bookmarks,
+                sessionId,
+              },
+            });
+          } catch (error) {
+            console.error("Error getting saved bookmarks:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case OPEN_SAVED_BOOKMARK:
+          try {
+            const { bookmarkId, windowId } = payload;
+            if (!bookmarkId) {
+              throw new Error("Bookmark ID is required");
+            }
+
+            // Get the bookmark details
+            const bookmarkNodes = await chrome.bookmarks.get(bookmarkId);
+            if (
+              !bookmarkNodes ||
+              bookmarkNodes.length === 0 ||
+              !bookmarkNodes[0].url
+            ) {
+              throw new Error("Bookmark not found or has no URL");
+            }
+
+            // Open the bookmark URL in a new tab
+            const tab = await chrome.tabs.create({
+              url: bookmarkNodes[0].url,
+              windowId: windowId || undefined,
+            });
+
+            sendResponse({
+              type: "OPEN_SAVED_BOOKMARK_RESULT",
+              payload: {
+                success: true,
+                tab,
+              },
+            });
+          } catch (error) {
+            console.error("Error opening saved bookmark:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case SYNC_SESSION_TO_BOOKMARKS:
+          try {
+            const { sessionId } = payload;
+            if (!sessionId) {
+              throw new Error("Session ID is required");
+            }
+
+            // Get the session
+            const sessions = SessionManagement.getNamedSessions();
+            const session = sessions.find((s) => s.id === sessionId);
+            if (!session) {
+              throw new Error("Session not found");
+            }
+
+            // Sync the session to bookmarks
+            const success =
+              await SessionManagement.syncSessionToBookmarks(session);
+
+            sendResponse({
+              type: "SYNC_SESSION_TO_BOOKMARKS_RESULT",
+              payload: {
+                success,
+                sessionId,
+              },
+            });
+          } catch (error) {
+            console.error("Error syncing session to bookmarks:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case GET_SYNCED_BOOKMARKS:
+          try {
+            const { sessionId } = payload;
+            if (!sessionId) {
+              throw new Error("Session ID is required");
+            }
+
+            // Get synced bookmarks for the session
+            const bookmarks =
+              await SessionManagement.getSyncedBookmarks(sessionId);
+
+            sendResponse({
+              type: "GET_SYNCED_BOOKMARKS_RESULT",
+              payload: {
+                bookmarks,
+                sessionId,
+              },
+            });
+          } catch (error) {
+            console.error("Error getting synced bookmarks:", error);
             sendResponse({
               type: "ERROR",
               payload: error instanceof Error ? error.message : String(error),

@@ -46,11 +46,16 @@
 
 - Bookmark chooser UI in settings.html.
 - Config object in config_store.ts.
-- Named sessions will be stored as bookmarks automatically, and
-- Structure: [Bookmark Root] > [Named Sessions] > [Opened Pages]/[Kept Pages]
+- Named sessions will be stored as bookmarks automatically after some idle time, and expect Chrome browser syncs the data.
+- Structure: [Bookmark Root] > [Named Sessions] > [Opened Pages]/[Saved Pages]
 - A "Session" is a folder in Bookmark. and is a window in the browser, and a set of "Tabs".
 - A "Tab" is a bookmark in Bookmark manager. associated with a title, URL.
-- We can encode metadata in Bookmark titles as JSON.
+- We can also have special bookmarks associated with a named session, and store them in [Saved Pages].
+  - A "save" button is provided in the tabs UI in tabs.html.
+  - A user can open the saved page from the UI.
+- We can encode metadata in Bookmark titles using JSON.
+- This feature also supports merging the synced [Open Pages]
+  - When [Open Pages] contains some bookmarks added by other browser, offer a UI to choose pages to open in the tabs UI.
 
 ## UI Language chooser
 

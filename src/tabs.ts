@@ -5,6 +5,9 @@ import {
   CATEGORIZE_TABS,
   SUGGEST_TAB_DESTINATIONS,
   MIGRATE_TAB,
+  SAVE_TAB_TO_BOOKMARKS,
+  // GET_SAVED_BOOKMARKS,
+  // OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
 import { NamedSession, TabSummary } from "./lib/types";
 import "./style.css";
@@ -236,13 +239,19 @@ function createSessionListItem(
   label: string,
   onClick: () => void,
   isCurrent: boolean,
+  sessionId?: string,
 ): HTMLLIElement {
   const li = document.createElement("li");
   li.textContent = label;
   if (isCurrent) {
     li.classList.add("current-window");
   }
+  if (sessionId) {
+    li.setAttribute("data-session-id", sessionId);
+  }
   li.addEventListener("click", onClick);
+
+  // TODO: Add a expandable menu to trigger some sesssion-specific actions. e.g. force sync the session to bookmark.
   return li;
 }
 
@@ -330,6 +339,7 @@ async function updateUI(
         }
       },
       isCurrent,
+      associatedSession?.id,
     );
 
     if (isCurrent) {
@@ -443,6 +453,7 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
             <td class="actions-cell">
                 <div class="tab-actions">
                     <button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Migrate</button>
+                    <button class="tab-action-button save-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Save</button>
                 </div>
             </td>
         `;
@@ -482,6 +493,19 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
 
       if (tabId && tabUrl) {
         showMigrationDialog(tabId, tabUrl);
+      }
+    });
+  });
+
+  // Add event listeners for the save buttons
+  document.querySelectorAll(".save-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      const target = event.currentTarget as HTMLButtonElement;
+      const tabId = parseInt(target.getAttribute("data-tab-id") || "0");
+      const tabUrl = target.getAttribute("data-tab-url") || "";
+
+      if (tabId && tabUrl) {
+        saveTabToBookmarks(tabId);
       }
     });
   });
@@ -797,6 +821,61 @@ async function showCategoriesDialog() {
   closeButton.addEventListener("click", () => {
     dialog.style.display = "none";
   });
+}
+
+/**
+ * Saves a tab to bookmarks for the current session
+ */
+async function saveTabToBookmarks(tabId: number) {
+  try {
+    // Get the currently selected session
+    const selectedSessionItem = document.querySelector(
+      "#named_sessions li.selected",
+    );
+    if (!selectedSessionItem) {
+      alert("Please select a named session first");
+      return;
+    }
+
+    // Extract session ID from the selected item
+    // This assumes the session ID is stored in a data attribute
+    const sessionId = selectedSessionItem.getAttribute("data-session-id");
+    if (!sessionId) {
+      alert("No session ID found for the selected session");
+      return;
+    }
+
+    // Save the tab to bookmarks
+    const response = await chrome.runtime.sendMessage({
+      type: SAVE_TAB_TO_BOOKMARKS,
+      payload: {
+        sessionId,
+        tabId,
+        metadata: {
+          savedAt: Date.now(),
+          tags: ["saved-tab"],
+        },
+      },
+    });
+
+    if (
+      response &&
+      response.type === "SAVE_TAB_TO_BOOKMARKS_RESULT" &&
+      response.payload.success
+    ) {
+      console.log("Tab saved to bookmarks successfully");
+      alert("Tab saved to bookmarks successfully");
+    } else {
+      console.error("Error saving tab to bookmarks:", response);
+      alert("Error saving tab to bookmarks");
+    }
+  } catch (error) {
+    console.error("Error saving tab to bookmarks:", error);
+    alert(
+      "Error saving tab to bookmarks: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
 }
 
 // After the existing event listener for requestTabSummariesButton (or near the end of the file),

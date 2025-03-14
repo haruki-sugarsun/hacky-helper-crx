@@ -126,7 +126,14 @@ export class ConfigStore {
   static BOOKMARK_PARENT_ID = new StringConfig(
     "bookmarkParentId",
     "Bookmark Parent ID",
-    "The parent folder ID where bookmark groups are stored.",
+    "The parent folder ID where named sessions and bookmarks are stored.",
+  );
+
+  // TODO: settings.html misses a config menu for this.
+  static BOOKMARK_AUTO_SAVE_IDLE_TIME = new StringConfig(
+    "bookmarkAutoSaveIdleTime",
+    "Auto-save Idle Time (minutes)",
+    "The idle time in minutes after which named sessions will be automatically saved to bookmarks.",
   );
 
   static DISABLE_LLM_ON_BATTERY = new BoolConfig(
@@ -213,6 +220,7 @@ export const CONFIG_STORE = new ConfigStore();
 
 interface ConfigRO {
   bookmarkParentId: string;
+  bookmarkAutoSaveIdleTime: string;
   OPENAI_API_KEY: string;
   USE_OLLAMA: boolean;
   OLLAMA_API_URL: string;
@@ -226,7 +234,11 @@ interface ConfigRO {
  * @returns An object containing all configuration settings.
  */
 export async function getConfig(): Promise<ConfigRO> {
+  // TODO: Make the field names consistent.
   const bookmarkParentId = await CONFIG_STORE.get("bookmarkParentId");
+  const bookmarkAutoSaveIdleTime = await CONFIG_STORE.get(
+    "bookmarkAutoSaveIdleTime",
+  );
   const openaiApiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
   const useOllama = await CONFIG_STORE.get("USE_OLLAMA");
   const ollamaApiUrl = await CONFIG_STORE.get("OLLAMA_API_URL");
@@ -239,6 +251,7 @@ export async function getConfig(): Promise<ConfigRO> {
 
   return {
     bookmarkParentId,
+    bookmarkAutoSaveIdleTime: bookmarkAutoSaveIdleTime || "5",
     OPENAI_API_KEY: openaiApiKey,
     USE_OLLAMA: useOllama || false,
     OLLAMA_API_URL: ollamaApiUrl || "http://localhost:11434",
