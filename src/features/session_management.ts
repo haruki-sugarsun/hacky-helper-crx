@@ -175,6 +175,7 @@ export async function getSyncedBookmarks(sessionId: string) {
  * Starts the auto-save timer for syncing sessions to bookmarks
  * TODO: We also would like to reset the timer on some activity in the session.
  * TODO: setTimer might not work as expected in service-worker. replace it with proper alarm triggers.
+ *       We see `Error starting auto-save timer: ReferenceError: window is not defined`.
  */
 export async function startAutoSaveTimer() {
   // If timer is already running, don't start another one

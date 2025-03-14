@@ -11,6 +11,7 @@ import {
  */
 export class BookmarkStorage {
   private static instance: BookmarkStorage;
+  // TODO: parentForlderId is not set properly. Set it in service-worker.
   private parentFolderId: string | null = null;
   private sessionFolders: Map<string, BookmarkSessionFolder> = new Map();
   private initialized = false;

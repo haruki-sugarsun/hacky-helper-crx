@@ -77,6 +77,10 @@
 - Add a function to migrate the auto-categorized tabs into a new named session.
 - UX might need improvements.
 
+## Add unittests
+
+- Tests! Tests! Tests!
+
 # Fullfilled Dev Plans
 
 ## Disable heavy processing based on battery mode

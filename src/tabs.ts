@@ -6,6 +6,9 @@ import {
   SUGGEST_TAB_DESTINATIONS,
   MIGRATE_TAB,
   SAVE_TAB_TO_BOOKMARKS,
+  SYNC_SESSION_TO_BOOKMARKS,
+  UPDATE_NAMED_SESSION_TABS,
+  DELETE_NAMED_SESSION,
   // GET_SAVED_BOOKMARKS,
   // OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
@@ -242,17 +245,255 @@ function createSessionListItem(
   sessionId?: string,
 ): HTMLLIElement {
   const li = document.createElement("li");
-  li.textContent = label;
+
+  // Create a container for the label to allow for flex layout
+  const labelContainer = document.createElement("div");
+  labelContainer.className = "session-label";
+  labelContainer.textContent = label;
+  li.appendChild(labelContainer);
+
+  // Add action menu button for sessions
+  const menuButton = document.createElement("button");
+  menuButton.className = "session-menu-button";
+  menuButton.innerHTML = "⋮"; // Vertical ellipsis
+  menuButton.title = "Session actions";
+  li.appendChild(menuButton);
+
+  // Create dropdown menu (hidden by default)
+  const dropdownMenu = document.createElement("div");
+  dropdownMenu.className = "session-dropdown-menu";
+
+  // Add menu items based on whether this is a named session or not
+  if (sessionId) {
+    // Actions for named sessions
+    const syncAction = document.createElement("div");
+    syncAction.className = "session-menu-item";
+    syncAction.textContent = "Force Sync to Bookmarks";
+    syncAction.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent triggering the li click event
+      forceSyncSession(sessionId);
+    });
+    dropdownMenu.appendChild(syncAction);
+
+    const updateAction = document.createElement("div");
+    updateAction.className = "session-menu-item";
+    updateAction.textContent = "Update Tabs";
+    updateAction.addEventListener("click", (e) => {
+      e.stopPropagation();
+      updateSessionTabs(sessionId);
+    });
+    dropdownMenu.appendChild(updateAction);
+
+    const deleteAction = document.createElement("div");
+    deleteAction.className = "session-menu-item";
+    deleteAction.textContent = "Delete Session";
+    deleteAction.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteSession(sessionId);
+    });
+    dropdownMenu.appendChild(deleteAction);
+  } else {
+    // Actions for unnamed sessions (windows)
+    const createNamedAction = document.createElement("div");
+    createNamedAction.className = "session-menu-item";
+    createNamedAction.textContent = "Create Named Session";
+    createNamedAction.addEventListener("click", (e) => {
+      e.stopPropagation();
+      promptCreateNamedSession();
+    });
+    dropdownMenu.appendChild(createNamedAction);
+  }
+
+  li.appendChild(dropdownMenu);
+
+  // Toggle dropdown menu when clicking the menu button
+  menuButton.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent triggering the li click event
+    dropdownMenu.classList.toggle("show");
+
+    // Close other open menus
+    document.querySelectorAll(".session-dropdown-menu.show").forEach((menu) => {
+      if (menu !== dropdownMenu) {
+        menu.classList.remove("show");
+      }
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", () => {
+    dropdownMenu.classList.remove("show");
+  });
+
   if (isCurrent) {
     li.classList.add("current-window");
   }
   if (sessionId) {
     li.setAttribute("data-session-id", sessionId);
   }
-  li.addEventListener("click", onClick);
 
-  // TODO: Add a expandable menu to trigger some sesssion-specific actions. e.g. force sync the session to bookmark.
+  // Make the label clickable to select the session
+  labelContainer.addEventListener("click", onClick);
+
   return li;
+}
+
+/**
+ * Force syncs a session to bookmarks
+ */
+async function forceSyncSession(sessionId: string) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: SYNC_SESSION_TO_BOOKMARKS,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "SYNC_SESSION_TO_BOOKMARKS_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Session ${sessionId} synced to bookmarks successfully`);
+      alert("Session synced to bookmarks successfully");
+    } else {
+      console.error("Error syncing session to bookmarks:", response);
+      alert("Error syncing session to bookmarks");
+    }
+  } catch (error) {
+    console.error("Error syncing session to bookmarks:", error);
+    alert(
+      "Error syncing session to bookmarks: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Updates a session's tabs
+ */
+async function updateSessionTabs(sessionId: string) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: UPDATE_NAMED_SESSION_TABS,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "UPDATE_NAMED_SESSION_TABS_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Session ${sessionId} tabs updated successfully`);
+      alert("Session tabs updated successfully");
+
+      // Refresh the UI
+      chrome.windows.getAll().then((windows) => {
+        state_windows = windows;
+        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+          state_tabs = tabs;
+          updateUI(state_windows, state_tabs);
+        });
+      });
+    } else {
+      console.error("Error updating session tabs:", response);
+      alert("Error updating session tabs");
+    }
+  } catch (error) {
+    console.error("Error updating session tabs:", error);
+    alert(
+      "Error updating session tabs: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Deletes a session
+ */
+async function deleteSession(sessionId: string) {
+  // Confirm deletion
+  if (
+    !confirm(
+      "Are you sure you want to delete this session? This will remove the session from the list but not close any windows or tabs.",
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: DELETE_NAMED_SESSION,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "DELETE_NAMED_SESSION_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Session ${sessionId} deleted successfully`);
+
+      // Refresh the UI
+      chrome.windows.getAll().then((windows) => {
+        state_windows = windows;
+        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+          state_tabs = tabs;
+          updateUI(state_windows, state_tabs);
+        });
+      });
+    } else {
+      console.error("Error deleting session:", response);
+      alert("Error deleting session");
+    }
+  } catch (error) {
+    console.error("Error deleting session:", error);
+    alert(
+      "Error deleting session: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Prompts the user to create a named session for the current window
+ */
+function promptCreateNamedSession() {
+  const sessionName = prompt("Enter a name for this session:");
+  if (sessionName === null) return; // User cancelled
+
+  chrome.windows.getCurrent().then(async (window) => {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: CREATE_NAMED_SESSION,
+        payload: {
+          windowId: window.id,
+          sessionName: sessionName,
+        },
+      });
+
+      if (response && response.type === "CREATE_NAMED_SESSION_RESULT") {
+        console.log("Named Session created:", response.payload);
+
+        // Refresh the UI
+        chrome.windows.getAll().then((windows) => {
+          state_windows = windows;
+          chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+            state_tabs = tabs;
+            updateUI(state_windows, state_tabs);
+          });
+        });
+      } else {
+        console.error("Error creating Named Session:", response);
+      }
+    } catch (error) {
+      console.error("Error sending create named session message:", error);
+    }
+  });
 }
 
 async function updateUI(
