@@ -11,7 +11,7 @@ import {
  */
 export class BookmarkStorage {
   private static instance: BookmarkStorage;
-  // TODO: parentForlderId is not set properly. Set it in service-worker.
+  // parentFolderId is set in service-worker.ts via initializeBookmarkParentFolder()
   private parentFolderId: string | null = null;
   private sessionFolders: Map<string, BookmarkSessionFolder> = new Map();
   private initialized = false;
@@ -395,4 +395,5 @@ export class BookmarkStorage {
 }
 
 // Export a singleton instance
+// TODO: a singleton instance is not an ideal approach. Replace it with proper factory/DI pattern.
 export const bookmarkStorage = BookmarkStorage.getInstance();

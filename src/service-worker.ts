@@ -23,7 +23,7 @@ import {
   GET_SYNCED_BOOKMARKS,
 } from "./lib/constants";
 
-import { CONFIG_STORE } from "./config_store";
+import { CONFIG_STORE, getConfig } from "./config_store";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { PersistentCache } from "./persistent-cache";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
@@ -31,6 +31,7 @@ import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 import "./features/tab_organizer.ts";
 import * as SessionManagement from "./features/session_management";
 import * as TabCategorization from "./features/tab_categorization";
+import { bookmarkStorage } from "./features/bookmark_storage";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -152,6 +153,7 @@ async function initializeTabManagement() {
     currentTabs.push(tab);
     console.log("Updated currentTabs:", currentTabs);
     // Add your logic here
+    // TODO: Implement sessions sync based on the events. or we may just rely on querying by tabs API.
   });
 
   chrome.tabs.onRemoved.addListener((tabId, _removeInfo) => {
@@ -901,5 +903,51 @@ async function updateCache(url: string, digestEntry: DigestEntry) {
 // Sessions (groups of tabs/URLs)
 
 // Bookmark folder as a Storage
-// TODO: Implement properly.
-// TODO: Implement properly.
+// Initialize bookmark parent folder
+async function initializeBookmarkParentFolder() {
+  try {
+    // Check if we already have a parent folder ID in config
+    const config = await getConfig();
+    if (config.bookmarkParentId) {
+      // Verify the folder still exists
+      try {
+        await chrome.bookmarks.get(config.bookmarkParentId);
+        console.log(
+          "Bookmark parent folder already exists:",
+          config.bookmarkParentId,
+        );
+        return;
+      } catch (error) {
+        console.warn(
+          "Configured bookmark parent folder no longer exists, will create a new one",
+        );
+      }
+    }
+
+    // Create a parent folder for our bookmarks
+    const parentFolder = await chrome.bookmarks.create({
+      title: "Hacky Helper Sessions",
+    });
+
+    // Save the folder ID to config
+    CONFIG_STORE.set("bookmarkParentId", parentFolder.id);
+    console.log("Created bookmark parent folder:", parentFolder.id);
+  } catch (error) {
+    console.error("Error initializing bookmark parent folder:", error);
+  }
+}
+
+// Call the initialization function when the service worker starts
+initializeBookmarkParentFolder().then(async () => {
+  try {
+    // Initialize the bookmark storage system after the parent folder is set up
+    const initialized = await bookmarkStorage.initialize();
+    if (initialized) {
+      console.log("Bookmark storage system initialized successfully");
+    } else {
+      console.warn("Failed to initialize bookmark storage system");
+    }
+  } catch (error) {
+    console.error("Error initializing bookmark storage:", error);
+  }
+});
