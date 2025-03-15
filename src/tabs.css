@@ -3,20 +3,22 @@
 /* Left Pane: Sessions list */
 #sessions {
   margin: 0 10px;
-  width: min(15%, 30em);
+  width: max(15%, 30em);
   border-right: 1px solid #444;
   padding-right: 15px;
 }
 
 #named_sessions ul,
-#tabs_sessions ul {
+#tabs_sessions ul,
+#closed_sessions ul {
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
 #named_sessions li,
-#tabs_sessions li {
+#tabs_sessions li,
+#closed_sessions li {
   padding: 8px 10px;
   margin-bottom: 5px;
   border-radius: 4px;

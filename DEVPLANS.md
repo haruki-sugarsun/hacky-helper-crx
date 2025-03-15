@@ -19,6 +19,7 @@
   - `tabs.html` is pinned per Named Session.
   - The URL encodes the `session name` and `session ID` as query parameters for the named sessions.
   - If an existing `tabs.html` for the same session is open, it is selected instead of opening a new one.
+  - We also provide access to the known named sessions stored in the BookmarkStorage, and we can open the named session.
 
 - **Session Creation & Management**
 

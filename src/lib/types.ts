@@ -38,7 +38,7 @@ export interface NamedSession {
   id: string;
   /** The user-defined name of the session; can be null if the window is unnamed */
   name: string | null;
-  /** The associated Chrome window ID; null if not assigned or during restoration */
+  /** The associated Chrome window ID; null if not assigned, during restoration, or if the session is closed */
   windowId: number | null;
   /** Timestamp when the session was created */
   createdAt: number;
@@ -97,4 +97,19 @@ export interface SavedBookmark {
     /** Any other custom metadata */
     [key: string]: any;
   };
+}
+
+/**
+ * Represents a closed Named Session that is stored in bookmarks but not currently open in a window.
+ * This is a subset of the information stored in BookmarkSessionFolder.
+ */
+export interface ClosedNamedSession {
+  /** A unique identifier for the session (UUID) */
+  id: string;
+  /** The user-defined name of the session */
+  name: string;
+  /** Timestamp when the session was last updated (if available) */
+  updatedAt?: number;
+  /** List of tabs associated with the session */
+  tabs: NamedSessionTab[];
 }

@@ -1,8 +1,9 @@
-import { NamedSession } from "../lib/types";
+import { ClosedNamedSession, NamedSession } from "../lib/types";
 import { bookmarkStorage } from "./bookmark_storage";
 import { getConfig } from "../config_store";
 
 // In-memory storage for Named Sessions
+// TODO: This namedSessions is not loading from the backend bookmarkStorage on startup.
 let namedSessions: Record<string, NamedSession> = {};
 
 // Auto-save timer
@@ -235,4 +236,86 @@ async function autoSaveAllSessions() {
 }
 export function getNamedSessions() {
   return Object.values(namedSessions);
+}
+
+/**
+ * Gets closed named sessions from bookmarks
+ * These are sessions that exist in bookmarks but don't have an active window
+ */
+export async function getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
+  try {
+    // Get all active session IDs
+    const activeSessionIds = Object.keys(namedSessions);
+
+    // Get closed sessions from bookmark storage
+    // TODO: We should filter in the session_management since that represents better separation of responsibilities.
+    return await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+  } catch (error) {
+    console.error("Error getting closed named sessions:", error);
+    return [];
+  }
+}
+
+/**
+ * Restores a closed named session by creating a new window with the saved tabs
+ */
+export async function restoreClosedSession(
+  sessionId: string,
+): Promise<NamedSession | null> {
+  try {
+    // Get the closed session from bookmarks
+    const activeSessionIds = Object.keys(namedSessions);
+    const closedSessions =
+      await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+    const closedSession = closedSessions.find(
+      (session) => session.id === sessionId,
+    );
+
+    if (!closedSession) {
+      console.error(`Closed session with ID ${sessionId} not found`);
+      return null;
+    }
+
+    // Create a new window with the first tab
+    const firstTab = closedSession.tabs[0];
+    if (!firstTab || !firstTab.url) {
+      console.error("No tabs found in closed session");
+      return null;
+    }
+
+    const newWindow = await chrome.windows.create({
+      url: firstTab.url,
+      focused: true,
+    });
+
+    if (!newWindow || !newWindow.id) {
+      console.error("Failed to create new window");
+      return null;
+    }
+
+    // Create a named session for the new window
+    const newSession = await createNamedSession(
+      newWindow.id,
+      closedSession.name,
+    );
+
+    // Add the remaining tabs to the window
+    for (let i = 1; i < closedSession.tabs.length; i++) {
+      const tab = closedSession.tabs[i];
+      if (tab.url) {
+        await chrome.tabs.create({
+          windowId: newWindow.id,
+          url: tab.url,
+        });
+      }
+    }
+
+    // Update the session tabs
+    await updateNamedSessionTabs(newSession.id);
+
+    return newSession;
+  } catch (error) {
+    console.error("Error restoring closed session:", error);
+    return null;
+  }
 }

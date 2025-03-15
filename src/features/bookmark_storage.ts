@@ -1,6 +1,7 @@
 import { getConfig } from "../config_store";
 import {
   BookmarkSessionFolder,
+  ClosedNamedSession,
   NamedSession,
   NamedSessionTab,
   SavedBookmark,
@@ -390,6 +391,54 @@ export class BookmarkStorage {
     } catch (error) {
       console.error("Error deleting session folder:", error);
       return false;
+    }
+  }
+
+  /**
+   * Gets all closed named sessions from bookmarks
+   * A closed session is one that exists in bookmarks but doesn't have an active window
+   * @param activeSessionIds Array of session IDs that are currently active (have open windows)
+   */
+  public async getClosedNamedSessions(
+    activeSessionIds: string[],
+  ): Promise<ClosedNamedSession[]> {
+    try {
+      await this.initialize();
+
+      const closedSessions: ClosedNamedSession[] = [];
+
+      // Iterate through all session folders
+      for (const [sessionId, folder] of this.sessionFolders.entries()) {
+        // Skip if this session is active
+        if (activeSessionIds.includes(sessionId)) continue;
+
+        // Get the tabs from the "Opened Pages" folder
+        const bookmarks = await chrome.bookmarks.getChildren(
+          folder.openedPagesId,
+        );
+
+        const tabs: NamedSessionTab[] = bookmarks
+          .filter((bookmark) => bookmark.url)
+          .map((bookmark) => ({
+            tabId: null, // Closed sessions don't have active tab IDs
+            title: bookmark.title,
+            url: bookmark.url!,
+          }));
+
+        // Create a closed session object
+        const closedSession: ClosedNamedSession = {
+          id: sessionId,
+          name: folder.name,
+          tabs: tabs,
+        };
+
+        closedSessions.push(closedSession);
+      }
+
+      return closedSessions;
+    } catch (error) {
+      console.error("Error getting closed named sessions:", error);
+      return [];
     }
   }
 }

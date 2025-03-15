@@ -21,6 +21,8 @@ import {
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
   GET_SYNCED_BOOKMARKS,
+  GET_CLOSED_NAMED_SESSIONS,
+  RESTORE_CLOSED_SESSION,
 } from "./lib/constants";
 
 import { CONFIG_STORE, getConfig } from "./config_store";
@@ -371,6 +373,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const { type, payload } = message;
   // Return true to indicate we will send a response asynchronously
   const handleAsync = async () => {
+    // TODO: Consider organize the switch-case and try-catch structures for readability.
     try {
       switch (type) {
         case CREATE_SUMMARY: // TODO: Consider if we really need this or not.
@@ -779,6 +782,62 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             });
           } catch (error) {
             console.error("Error getting synced bookmarks:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case GET_CLOSED_NAMED_SESSIONS:
+          try {
+            // Get closed named sessions
+            const closedSessions =
+              await SessionManagement.getClosedNamedSessions();
+
+            sendResponse({
+              type: "GET_CLOSED_NAMED_SESSIONS_RESULT",
+              payload: {
+                closedSessions,
+              },
+            });
+          } catch (error) {
+            console.error("Error getting closed named sessions:", error);
+            sendResponse({
+              type: "ERROR",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          }
+          break;
+        case RESTORE_CLOSED_SESSION:
+          try {
+            const { sessionId } = payload;
+            if (!sessionId) {
+              throw new Error("Session ID is required");
+            }
+
+            // Restore the closed session
+            const restoredSession =
+              await SessionManagement.restoreClosedSession(sessionId);
+
+            if (restoredSession) {
+              sendResponse({
+                type: "RESTORE_CLOSED_SESSION_RESULT",
+                payload: {
+                  success: true,
+                  session: restoredSession,
+                },
+              });
+            } else {
+              sendResponse({
+                type: "RESTORE_CLOSED_SESSION_RESULT",
+                payload: {
+                  success: false,
+                  error: "Failed to restore session",
+                },
+              });
+            }
+          } catch (error) {
+            console.error("Error restoring closed session:", error);
             sendResponse({
               type: "ERROR",
               payload: error instanceof Error ? error.message : String(error),

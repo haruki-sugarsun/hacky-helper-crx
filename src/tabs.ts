@@ -9,10 +9,12 @@ import {
   SYNC_SESSION_TO_BOOKMARKS,
   UPDATE_NAMED_SESSION_TABS,
   DELETE_NAMED_SESSION,
+  GET_CLOSED_NAMED_SESSIONS,
+  RESTORE_CLOSED_SESSION,
   // GET_SAVED_BOOKMARKS,
   // OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
-import { NamedSession, TabSummary } from "./lib/types";
+import { ClosedNamedSession, NamedSession, TabSummary } from "./lib/types";
 import "./style.css";
 import "./tabs.css";
 
@@ -496,6 +498,192 @@ function promptCreateNamedSession() {
   });
 }
 
+// Helper function to create a closed session list item
+function createClosedSessionListItem(
+  closedSession: ClosedNamedSession,
+): HTMLLIElement {
+  const li = document.createElement("li");
+
+  // Create a container for the label to allow for flex layout
+  const labelContainer = document.createElement("div");
+  labelContainer.className = "session-label";
+  const tabCount = closedSession.tabs.length;
+  labelContainer.textContent = `${closedSession.name} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
+  li.appendChild(labelContainer);
+
+  // Add action menu button for sessions
+  const menuButton = document.createElement("button");
+  menuButton.className = "session-menu-button";
+  menuButton.innerHTML = "⋮"; // Vertical ellipsis
+  menuButton.title = "Session actions";
+  li.appendChild(menuButton);
+
+  // Create dropdown menu (hidden by default)
+  const dropdownMenu = document.createElement("div");
+  dropdownMenu.className = "session-dropdown-menu";
+
+  // Add restore action
+  const restoreAction = document.createElement("div");
+  restoreAction.className = "session-menu-item";
+  restoreAction.textContent = "Restore Session";
+  restoreAction.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent triggering the li click event
+    restoreClosedSession(closedSession.id);
+  });
+  dropdownMenu.appendChild(restoreAction);
+
+  // Add delete action
+  const deleteAction = document.createElement("div");
+  deleteAction.className = "session-menu-item";
+  deleteAction.textContent = "Delete Session";
+  deleteAction.addEventListener("click", (e) => {
+    e.stopPropagation();
+    deleteSession(closedSession.id);
+  });
+  dropdownMenu.appendChild(deleteAction);
+
+  li.appendChild(dropdownMenu);
+
+  // Toggle dropdown menu when clicking the menu button
+  menuButton.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent triggering the li click event
+    dropdownMenu.classList.toggle("show");
+
+    // Close other open menus
+    document.querySelectorAll(".session-dropdown-menu.show").forEach((menu) => {
+      if (menu !== dropdownMenu) {
+        menu.classList.remove("show");
+      }
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", () => {
+    dropdownMenu.classList.remove("show");
+  });
+
+  li.setAttribute("data-session-id", closedSession.id);
+
+  // Make the label clickable to view the session's tabs
+  labelContainer.addEventListener("click", () => {
+    // Clear selection on all items
+    document
+      .querySelectorAll("#sessions li")
+      .forEach((item) => item.classList.remove("selected"));
+
+    li.classList.add("selected");
+
+    // Display the tabs for this closed session
+    displayClosedSessionTabs(closedSession);
+  });
+
+  return li;
+}
+
+/**
+ * Restores a closed session
+ */
+async function restoreClosedSession(sessionId: string) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: RESTORE_CLOSED_SESSION,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "RESTORE_CLOSED_SESSION_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Session ${sessionId} restored successfully`);
+      alert("Session restored successfully");
+
+      // Refresh the UI
+      chrome.windows.getAll().then((windows) => {
+        state_windows = windows;
+        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+          state_tabs = tabs;
+          updateUI(state_windows, state_tabs);
+        });
+      });
+    } else {
+      console.error("Error restoring session:", response);
+      alert("Error restoring session");
+    }
+  } catch (error) {
+    console.error("Error restoring session:", error);
+    alert(
+      "Error restoring session: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Displays the tabs for a closed session in the tabs table
+ */
+function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
+  const tabsTable = tabs_tablist.querySelector("table")!;
+
+  // Update table headers
+  const tableHead = tabsTable.querySelector("thead")!;
+  tableHead.innerHTML = `
+    <tr>
+      <th>Title</th>
+      <th>URL</th>
+      <th>Actions</th>
+    </tr>
+  `;
+
+  // Clear existing table rows
+  const tableBody = tabsTable.querySelector("tbody")!;
+  tableBody.innerHTML = "";
+
+  if (closedSession.tabs.length === 0) {
+    // No tabs available - add a message row
+    const noTabsRow = document.createElement("tr");
+    noTabsRow.innerHTML = `
+      <td colspan="3">No tabs available in this closed session.</td>
+    `;
+    tableBody.appendChild(noTabsRow);
+    return;
+  }
+
+  // Add rows for each tab in the closed session
+  closedSession.tabs.forEach((tab) => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td class="title-cell" title="${tab.title}">${tab.title || "Untitled"}</td>
+      <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>
+      <td class="actions-cell">
+        <div class="tab-actions">
+          <button class="tab-action-button open-button" data-url="${tab.url}">Open</button>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+
+  // Add event listeners for the open buttons
+  document.querySelectorAll(".open-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      const target = event.currentTarget as HTMLButtonElement;
+      const url = target.getAttribute("data-url") || "";
+
+      if (url) {
+        try {
+          await chrome.tabs.create({ url });
+        } catch (error) {
+          console.error("Error opening tab:", error);
+        }
+      }
+    });
+  });
+}
+
 async function updateUI(
   windows: chrome.windows.Window[],
   tabs: chrome.tabs.Tab[],
@@ -520,18 +708,35 @@ async function updateUI(
       console.error("Error fetching named sessions:", err);
     });
 
-  // ---- Update the UI for Named and Unnamed Sessions ----
-  // Get both containers:
+  // ---- Fetch and update Closed Named Sessions ----
+  let closedSessions: ClosedNamedSession[] = [];
+  await chrome.runtime
+    .sendMessage({ type: GET_CLOSED_NAMED_SESSIONS })
+    .then((response) => {
+      if (response && response.type === "GET_CLOSED_NAMED_SESSIONS_RESULT") {
+        closedSessions = response.payload.closedSessions || [];
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching closed named sessions:", err);
+    });
+
+  // ---- Update the UI for Named, Unnamed, and Closed Sessions ----
+  // Get all containers:
   const namedSessionsContainer =
     document.querySelector<HTMLDivElement>("#named_sessions")!;
   const namedList = namedSessionsContainer.querySelector("ul")!;
   const unnamedSessionsContainer =
     document.querySelector<HTMLDivElement>("#tabs_sessions")!;
   const unnamedList = unnamedSessionsContainer.querySelector("ul")!;
+  const closedSessionsContainer =
+    document.querySelector<HTMLDivElement>("#closed_sessions")!;
+  const closedList = closedSessionsContainer.querySelector("ul")!;
 
-  // Clear existing items in both lists:
+  // Clear existing items in all lists:
   namedList.innerHTML = "";
   unnamedList.innerHTML = "";
+  closedList.innerHTML = "";
 
   // Track the current window to auto-select it
   let currentWindowItem: HTMLLIElement | undefined = undefined;
@@ -591,6 +796,20 @@ async function updateUI(
     } else {
       unnamedList.appendChild(listItem);
     }
+  }
+
+  // Add closed sessions to the UI
+  if (closedSessions.length === 0) {
+    // No closed sessions available - add a message
+    const noSessionsItem = document.createElement("li");
+    noSessionsItem.textContent = "No closed sessions available";
+    closedList.appendChild(noSessionsItem);
+  } else {
+    // Add each closed session
+    closedSessions.forEach((session) => {
+      const listItem = createClosedSessionListItem(session);
+      closedList.appendChild(listItem);
+    });
   }
 
   // Auto-select the current window and load its tabs
