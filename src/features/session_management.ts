@@ -4,6 +4,7 @@ import { getConfig } from "../config_store";
 
 // In-memory storage for Named Sessions
 // TODO: This namedSessions is not loading from the backend bookmarkStorage on startup.
+// TODO: Also the backend bookmarkStorage can be update asynchronously. We can update the in-memory sessions if we find a difference.
 let namedSessions: Record<string, NamedSession> = {};
 
 // Auto-save timer
@@ -277,6 +278,7 @@ export async function restoreClosedSession(
     }
 
     // Create a new window with the first tab
+    // TODO: We can create a window even without opening a existing tab, and instead we can open tabs.html.
     const firstTab = closedSession.tabs[0];
     if (!firstTab || !firstTab.url) {
       console.error("No tabs found in closed session");
