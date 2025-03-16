@@ -6,21 +6,64 @@ import { getConfig } from "../config_store";
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
 
 /**
- * Gets all named sessions from storage
- * TODO: We also need to actually the window exist or not, and update the storage accordingly.
+ * Gets all named sessions from storage and verifies window existence
  */
 async function getNamedSessionsFromStorage(): Promise<
   Record<string, NamedSession>
 > {
   try {
     const result = await chrome.storage.local.get(NAMED_SESSIONS_STORAGE_KEY);
+    let sessions: Record<string, NamedSession> = {};
+
     if (result[NAMED_SESSIONS_STORAGE_KEY]) {
-      return JSON.parse(result[NAMED_SESSIONS_STORAGE_KEY]);
+      sessions = JSON.parse(result[NAMED_SESSIONS_STORAGE_KEY]);
+
+      // Check if windows still exist and update sessions accordingly
+      let hasUpdates = false;
+
+      for (const sessionId in sessions) {
+        const session = sessions[sessionId];
+
+        if (session.windowId === null) {
+          // Remove sessions with null windowId
+          console.log(
+            `Session ${sessionId} has null windowId, removing from storage`,
+          );
+
+          // Delete the session from the sessions object
+          delete sessions[sessionId];
+          hasUpdates = true;
+        } else {
+          try {
+            // Try to get the window - if it doesn't exist, this will throw an error
+            await chrome.windows.get(session.windowId);
+          } catch (windowError) {
+            // Window doesn't exist anymore, remove the session from storage
+            console.log(
+              `Window ${session.windowId} for session ${sessionId} no longer exists, removing session from storage`,
+            );
+
+            // Delete the session from the sessions object
+            delete sessions[sessionId];
+            hasUpdates = true;
+          }
+        }
+      }
+
+      // If any sessions were updated, save them back to storage
+      if (hasUpdates) {
+        await chrome.storage.local.set({
+          [NAMED_SESSIONS_STORAGE_KEY]: JSON.stringify(sessions),
+        });
+        console.log("Updated sessions storage after window existence check");
+      }
     }
+
+    return sessions;
   } catch (error) {
     console.error("Error loading named sessions from storage:", error);
+    return {};
   }
-  return {};
 }
 
 /**
