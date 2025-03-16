@@ -512,6 +512,7 @@ async function updateSessionTabs(sessionId: string) {
 
 /**
  * Deletes a session
+ * TODO: We also need to update the URL, so that the associated sessinoId is removed.
  */
 async function deleteSession(sessionId: string) {
   // Confirm deletion

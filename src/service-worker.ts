@@ -53,7 +53,7 @@ async function openTabsPage() {
     const currentWindow = await chrome.windows.getCurrent();
 
     // Check if this window has a named session
-    const sessions = SessionManagement.getNamedSessions();
+    const sessions = await SessionManagement.getNamedSessions();
     const currentSession = sessions.find(
       (session) => session.windowId === currentWindow.id && session.name,
     );
@@ -516,7 +516,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           break;
         case GET_NAMED_SESSIONS:
           try {
-            const sessions = SessionManagement.getNamedSessions();
+            const sessions = await SessionManagement.getNamedSessions();
             sendResponse({
               type: "GET_NAMED_SESSIONS_RESULT",
               payload: sessions,
@@ -612,7 +612,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               await Promise.all(tabSummariesPromises);
 
             // Get suggested destinations
-            const suggestions = TabCategorization.suggestTabDestinations(
+            const suggestions = await TabCategorization.suggestTabDestinations(
               tabUrl,
               tabSummaries,
             );
@@ -764,7 +764,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             }
 
             // Get the session
-            const sessions = SessionManagement.getNamedSessions();
+            const sessions = await SessionManagement.getNamedSessions();
             const session = sessions.find((s) => s.id === sessionId);
             if (!session) {
               throw new Error("Session not found");

@@ -101,15 +101,15 @@ export function findSimilarTabs(
  * Suggests possible session destinations for a tab based on content similarity
  * @param tabUrl URL of the tab to find destinations for
  * @param tabSummaries Array of tab summaries with embeddings
- * @returns Array of session suggestions with similarity scores
+ * @returns Promise that resolves with array of session suggestions with similarity scores
  */
-export function suggestTabDestinations(
+export async function suggestTabDestinations(
   tabUrl: string,
   tabSummaries: TabSummary[],
-): { session: NamedSession; averageSimilarity: number }[] {
+): Promise<{ session: NamedSession; averageSimilarity: number }[]> {
   // Get all named sessions
   // TODO: Consider Prioritizing Named Sessions. For now we don't distinguish named or not.
-  const sessions = getNamedSessions();
+  const sessions = await getNamedSessions();
   if (!sessions.length) {
     return [];
   }

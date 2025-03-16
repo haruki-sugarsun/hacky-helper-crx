@@ -2,10 +2,69 @@ import { ClosedNamedSession, NamedSession } from "../lib/types";
 import { bookmarkStorage } from "./bookmark_storage";
 import { getConfig } from "../config_store";
 
-// In-memory storage for Named Sessions
-// TODO: This namedSessions is not loading from the backend bookmarkStorage on startup.
-// TODO: Also the backend bookmarkStorage can be update asynchronously. We can update the in-memory sessions if we find a difference.
-let namedSessions: Record<string, NamedSession> = {};
+// Storage key for named sessions
+const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
+
+/**
+ * Gets all named sessions from storage
+ */
+async function getNamedSessionsFromStorage(): Promise<
+  Record<string, NamedSession>
+> {
+  try {
+    const result = await chrome.storage.local.get(NAMED_SESSIONS_STORAGE_KEY);
+    if (result[NAMED_SESSIONS_STORAGE_KEY]) {
+      return JSON.parse(result[NAMED_SESSIONS_STORAGE_KEY]);
+    }
+  } catch (error) {
+    console.error("Error loading named sessions from storage:", error);
+  }
+  return {};
+}
+
+/**
+ * Gets a specific named session from storage by ID
+ */
+async function getNamedSessionFromStorage(
+  sessionId: string,
+): Promise<NamedSession | null> {
+  const sessions = await getNamedSessionsFromStorage();
+  return sessions[sessionId] || null;
+}
+
+/**
+ * Saves a named session to storage
+ */
+async function saveNamedSessionToStorage(session: NamedSession): Promise<void> {
+  try {
+    const sessions = await getNamedSessionsFromStorage();
+    sessions[session.id] = session;
+    await chrome.storage.local.set({
+      [NAMED_SESSIONS_STORAGE_KEY]: JSON.stringify(sessions),
+    });
+    console.log(`Saved session ${session.id} to storage`);
+  } catch (error) {
+    console.error("Error saving session to storage:", error);
+  }
+}
+
+/**
+ * Deletes a named session from storage
+ */
+async function deleteNamedSessionFromStorage(sessionId: string): Promise<void> {
+  try {
+    const sessions = await getNamedSessionsFromStorage();
+    if (sessions[sessionId]) {
+      delete sessions[sessionId];
+      await chrome.storage.local.set({
+        [NAMED_SESSIONS_STORAGE_KEY]: JSON.stringify(sessions),
+      });
+      console.log(`Deleted session ${sessionId} from storage`);
+    }
+  } catch (error) {
+    console.error("Error deleting session from storage:", error);
+  }
+}
 
 // Auto-save timer
 let autoSaveTimer: number | null = null;
@@ -29,7 +88,9 @@ export async function createNamedSession(
     updatedAt: timestamp,
     tabs: [], // TODO: Here the tabs are not synced to the actual tabs in the window yet.
   };
-  namedSessions[sessionId] = session;
+
+  // Save to persistent storage
+  await saveNamedSessionToStorage(session);
 
   // Save session to Bookmark API for syncing if it has a name
   if (sessionName) {
@@ -53,7 +114,7 @@ export async function updateNamedSessionTabs(
   sessionId: string,
   windowId?: number,
 ) {
-  const session = namedSessions[sessionId];
+  const session = await getNamedSessionFromStorage(sessionId);
   if (!session) {
     console.warn(
       `Cannot update Named Session tabs: Session not found for session ${sessionId}`,
@@ -76,6 +137,7 @@ export async function updateNamedSessionTabs(
   }
 
   try {
+    // TODO: We don't sync pinned tabs. So we query for only un-pinned tabs.
     const tabs = await chrome.tabs.query({ windowId: session.windowId });
     session.tabs = tabs.map((tab) => ({
       tabId: tab.id || null,
@@ -83,6 +145,9 @@ export async function updateNamedSessionTabs(
       url: tab.url || "",
     }));
     session.updatedAt = Date.now();
+
+    // Save updated session to storage
+    await saveNamedSessionToStorage(session);
 
     // Update Bookmark API to reflect new tabs if the session has a name
     if (session.name) {
@@ -101,24 +166,26 @@ export async function updateNamedSessionTabs(
 
 /**
  * Deletes a Named Session by its sessionId.
- * Checks both in-memory sessions and bookmark storage for closed sessions.
+ * Checks both storage and bookmark storage for closed sessions.
  */
 export async function deleteNamedSession(sessionId: string) {
-  // Check if the session exists in memory
-  if (namedSessions[sessionId]) {
-    const session = namedSessions[sessionId];
-
+  // Check if the session exists in storage
+  const session = await getNamedSessionFromStorage(sessionId);
+  if (session) {
     // Remove corresponding Bookmark folder if the session has a name
     if (session.name) {
       await bookmarkStorage.deleteSessionFolder(sessionId);
     }
 
-    delete namedSessions[sessionId];
+    // Remove from storage
+    await deleteNamedSessionFromStorage(sessionId);
+
     console.log(`Deleted Named Session ${sessionId}`);
     return true;
   } else {
     // Check if this is a closed session in bookmark storage
-    const activeSessionIds = Object.keys(namedSessions);
+    const activeSessions = await getNamedSessionsFromStorage();
+    const activeSessionIds = Object.keys(activeSessions);
     const closedSessions =
       await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
     const closedSession = closedSessions.find(
@@ -164,7 +231,7 @@ export async function restoreNamedSessionsFromBookmarks() {
     // This would involve:
     // 1. Getting all session folders
     // 2. Creating NamedSession objects for each folder
-    // 3. Adding them to namedSessions
+    // 3. Saving them to storage using saveNamedSessionToStorage
 
     console.log("Restoring Named Sessions from Bookmarks...");
   } catch (error) {
@@ -267,8 +334,8 @@ async function autoSaveAllSessions() {
   try {
     console.log("Auto-saving all named sessions to bookmarks");
 
-    // Get all named sessions
-    const sessions = Object.values(namedSessions);
+    // Get all named sessions from storage
+    const sessions = Object.values(await getNamedSessionsFromStorage());
 
     // Filter to only include sessions with names
     const namedSessionsOnly = sessions.filter((session) => session.name);
@@ -289,8 +356,9 @@ async function autoSaveAllSessions() {
 /**
  * Gets all named sessions
  */
-export function getNamedSessions() {
-  return Object.values(namedSessions);
+export async function getNamedSessions() {
+  const sessions = await getNamedSessionsFromStorage();
+  return Object.values(sessions);
 }
 
 /**
@@ -299,8 +367,9 @@ export function getNamedSessions() {
  */
 export async function getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
   try {
-    // Get all active session IDs
-    const activeSessionIds = Object.keys(namedSessions);
+    // Get all active session IDs from storage
+    const sessions = await getNamedSessionsFromStorage();
+    const activeSessionIds = Object.keys(sessions);
 
     // Get closed sessions from bookmark storage
     // TODO: We should filter in the session_management since that represents better separation of responsibilities.
@@ -319,7 +388,8 @@ export async function restoreClosedSession(
 ): Promise<NamedSession | null> {
   try {
     // Get the closed session from bookmarks
-    const activeSessionIds = Object.keys(namedSessions);
+    const sessions = await getNamedSessionsFromStorage();
+    const activeSessionIds = Object.keys(sessions);
     const closedSessions =
       await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
     const closedSession = closedSessions.find(
