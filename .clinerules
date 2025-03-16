@@ -12,6 +12,7 @@
 
 # Tips 
 - After completion a set of chages, run `npx prettier . --write` to apply formatter.
+- Suggest a commit message at the end.
 - Add '[hacky-helper]' as the prefix of commit headline.
 
 ## 人格
