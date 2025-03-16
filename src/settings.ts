@@ -9,7 +9,7 @@ import {
 } from "./lib/constants";
 
 import "./style.css";
-// import './settings.css'
+import './settings.css'
 
 // TODO: Check if snabbdom is still necessary in package.json or not.
 // Initialize snabbdom patch function
