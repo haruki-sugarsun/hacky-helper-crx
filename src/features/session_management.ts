@@ -47,14 +47,32 @@ export async function createNamedSession(
 
 /**
  * Updates the Named Session's tab list with the current tabs from the window.
+ * If windowId is provided, it will also update the session's windowId.
  */
-export async function updateNamedSessionTabs(sessionId: string) {
+export async function updateNamedSessionTabs(
+  sessionId: string,
+  windowId?: number,
+) {
   const session = namedSessions[sessionId];
-  if (!session || session.windowId === null) {
+  if (!session) {
     console.warn(
-      `Cannot update Named Session tabs: Session not found or windowId is null for session ${sessionId}`,
+      `Cannot update Named Session tabs: Session not found for session ${sessionId}`,
     );
-    return;
+    return false;
+  }
+
+  // Update windowId if provided
+  if (windowId !== undefined) {
+    session.windowId = windowId;
+    console.log(`Updated windowId for session ${sessionId} to ${windowId}`);
+  }
+
+  // If windowId is still null, we can't update tabs
+  if (session.windowId === null) {
+    console.warn(
+      `Cannot update Named Session tabs: windowId is null for session ${sessionId}`,
+    );
+    return false;
   }
 
   try {
@@ -74,8 +92,10 @@ export async function updateNamedSessionTabs(sessionId: string) {
     console.log(
       `Updated Named Session ${sessionId} tabs: ${session.tabs.length} tabs found.`,
     );
+    return true;
   } catch (error) {
     console.error(`Error updating tabs for Named Session ${sessionId}:`, error);
+    return false;
   }
 }
 

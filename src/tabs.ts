@@ -64,6 +64,97 @@ async function checkForDuplicates() {
   return false; // No duplicates found
 }
 
+// Extract session parameters from URL
+function getSessionParamsFromUrl(): {
+  sessionId?: string;
+  sessionName?: string;
+} {
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionId = urlParams.get("sessionId") || undefined;
+  const sessionName = urlParams.get("sessionName") || undefined;
+
+  if (sessionId) {
+    console.log(
+      `Found session parameters in URL: sessionId=${sessionId}, sessionName=${sessionName}`,
+    );
+  }
+
+  return { sessionId, sessionName };
+}
+
+// Restore session-window association if needed
+async function restoreSessionWindowAssociation() {
+  const { sessionId, sessionName } = getSessionParamsFromUrl();
+
+  if (!sessionId) return;
+
+  try {
+    // Get current window
+    const currentWindow = await chrome.windows.getCurrent();
+
+    // Get all named sessions
+    const response = await chrome.runtime.sendMessage({
+      type: GET_NAMED_SESSIONS,
+    });
+    if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
+      const sessions = response.payload;
+
+      // Check if this session exists but has a null windowId (lost association)
+      const session = sessions.find((s: NamedSession) => s.id === sessionId);
+
+      if (session) {
+        if (session.windowId === null) {
+          console.log(
+            `Restoring session-window association for session ${sessionId} with window ${currentWindow.id}`,
+          );
+
+          // Update the session with the current window ID
+          const updateResponse = await chrome.runtime.sendMessage({
+            type: UPDATE_NAMED_SESSION_TABS,
+            payload: {
+              sessionId: sessionId,
+              windowId: currentWindow.id,
+            },
+          });
+
+          if (
+            updateResponse &&
+            updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
+          ) {
+            console.log("Successfully restored session-window association");
+          }
+        } else {
+          console.log(
+            `Session ${sessionId} already associated with window ${session.windowId}`,
+          );
+        }
+      } else if (sessionName) {
+        // If the session doesn't exist but we have a name, create it
+        console.log(
+          `Creating new named session ${sessionName} for window ${currentWindow.id}`,
+        );
+
+        const createResponse = await chrome.runtime.sendMessage({
+          type: CREATE_NAMED_SESSION,
+          payload: {
+            windowId: currentWindow.id,
+            sessionName: sessionName,
+          },
+        });
+
+        if (
+          createResponse &&
+          createResponse.type === "CREATE_NAMED_SESSION_RESULT"
+        ) {
+          console.log("Successfully created named session");
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error restoring session-window association:", error);
+  }
+}
+
 // Page Initializer
 async function init() {
   console.log("init");
@@ -74,6 +165,9 @@ async function init() {
     // If this is a duplicate, stop initialization as this tab will be closed
     return;
   }
+
+  // Check for session parameters in URL and restore session-window association if needed
+  await restoreSessionWindowAssociation();
 
   const windowsGetAll = chrome.windows.getAll().then((results) => {
     state_windows = results;
@@ -376,10 +470,14 @@ async function forceSyncSession(sessionId: string) {
  */
 async function updateSessionTabs(sessionId: string) {
   try {
+    // Get the current window ID
+    const currentWindow = await chrome.windows.getCurrent();
+
     const response = await chrome.runtime.sendMessage({
       type: UPDATE_NAMED_SESSION_TABS,
       payload: {
         sessionId,
+        windowId: currentWindow.id,
       },
     });
 

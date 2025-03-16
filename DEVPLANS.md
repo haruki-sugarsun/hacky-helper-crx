@@ -5,7 +5,7 @@
 - A session/window can be named.
 - A window remains "unnamed" unless explicitly named by the user.
 - A named session must have a tabs.html as a pinned tab.
-- and the tabs.html has the session name and ID encoded in the URL (TODO: Implement this.)
+- The tabs.html has the session name and ID encoded in the URL as query parameters.
 
 - **Session Management**
 

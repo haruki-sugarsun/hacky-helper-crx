@@ -202,6 +202,8 @@ export class BookmarkStorage {
       });
 
       // Process each tab
+      // TODO: This won't work as expected if the `tabs` have multiple elements with the same URL.
+      //       Consider ignore duplicates in `tabs`.
       for (const tab of tabs) {
         if (!tab.url) continue;
 

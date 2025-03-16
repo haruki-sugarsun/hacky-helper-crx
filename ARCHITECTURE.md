@@ -143,6 +143,8 @@ The extension uses multiple storage mechanisms:
    - Bookmark-based persistence for session data
    - Support for closed session management (deletion and restoration)
    - Auto-save functionality to sync sessions to bookmarks after idle time
+   - Session-window association persistence via URL query parameters
+   - Automatic restoration of session-window associations when service worker is reloaded
 
 ## Technical Stack
 
