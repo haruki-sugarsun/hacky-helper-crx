@@ -102,6 +102,7 @@ export interface SavedBookmark {
 /**
  * Represents a closed Named Session that is stored in bookmarks but not currently open in a window.
  * This is a subset of the information stored in BookmarkSessionFolder.
+ * TODO: Merge this type into NamedSession, or consider introducing sub-typing of Active/Closed Named Sessions.
  */
 export interface ClosedNamedSession {
   /** A unique identifier for the session (UUID) */

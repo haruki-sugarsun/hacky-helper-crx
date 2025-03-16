@@ -7,6 +7,7 @@ const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
 
 /**
  * Gets all named sessions from storage
+ * TODO: We also need to actually the window exist or not, and update the storage accordingly.
  */
 async function getNamedSessionsFromStorage(): Promise<
   Record<string, NamedSession>
@@ -354,11 +355,33 @@ async function autoSaveAllSessions() {
 }
 
 /**
- * Gets all named sessions
+ * Gets all named sessions, both active and closed.
+ * Returns a combined array of named sessions.
  */
-export async function getNamedSessions() {
-  const sessions = await getNamedSessionsFromStorage();
-  return Object.values(sessions);
+export async function getNamedSessions(): Promise<NamedSession[]> {
+  // Get active sessions from storage
+  const activeSessions = await getNamedSessionsFromStorage();
+  const activeSessionsArray = Object.values(activeSessions);
+
+  // Get closed sessions from bookmarks
+  const activeSessionIds = Object.keys(activeSessions);
+  const closedSessions =
+    await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+
+  // Convert closed sessions to NamedSession format
+  const convertedClosedSessions: NamedSession[] = closedSessions.map(
+    (closedSession) => ({
+      id: closedSession.id,
+      name: closedSession.name,
+      windowId: null, // Closed sessions have no window
+      createdAt: closedSession.updatedAt || Date.now(), // Use updatedAt as createdAt if available, or current time
+      updatedAt: closedSession.updatedAt || Date.now(),
+      tabs: closedSession.tabs,
+    }),
+  );
+
+  // Combine and return both active and closed sessions
+  return [...activeSessionsArray, ...convertedClosedSessions];
 }
 
 /**

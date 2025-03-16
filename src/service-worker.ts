@@ -1024,6 +1024,8 @@ async function initializeBookmarkParentFolder() {
 }
 
 // Call the initialization function when the service worker starts
+// TODO: Ask before creating a folder, or let the user choose the bookmark folder to use.
+// TODO: And better to kick initialization via SessionManager instead of direcly calling bookmarkStorage here.
 initializeBookmarkParentFolder().then(async () => {
   try {
     // Initialize the bookmark storage system after the parent folder is set up
