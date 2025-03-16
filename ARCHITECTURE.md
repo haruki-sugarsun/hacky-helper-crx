@@ -134,13 +134,15 @@ The extension uses multiple storage mechanisms:
    - Dialog interface for viewing tab categories and managing tab migration
    - Integration with the Named Sessions feature for better organization
 
-## Planned Features
+## Implemented Features (continued)
 
-As documented in DEVPLANS.md:
-
-1. **Named Sessions**:
+6. **Named Sessions**:
    - Ability to name browser windows/sessions
    - Automatic storage of named sessions as bookmarks
+   - Session management with unique session IDs
+   - Bookmark-based persistence for session data
+   - Support for closed session management (deletion and restoration)
+   - Auto-save functionality to sync sessions to bookmarks after idle time
 
 ## Technical Stack
 

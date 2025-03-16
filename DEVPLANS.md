@@ -13,6 +13,7 @@
   - The session data is temporarily stored in the `service-worker` in-memory storage.
   - The `Bookmark API` is used to persist session data in Chrome bookmarks for synchronization.
   - `session ID` is assigned as a UUID.
+  - `sessions_management.ts` manages the `windowId` and `sessionId` maaping for the opened sessions.
 
 - **tabs.html Behavior**
 
@@ -20,6 +21,7 @@
   - The URL encodes the `session name` and `session ID` as query parameters for the named sessions.
   - If an existing `tabs.html` for the same session is open, it is selected instead of opening a new one.
   - We also provide access to the known named sessions stored in the BookmarkStorage, and we can open the named session.
+  - `tabs.ts` handles the Tabs UI and interacts with the service-worker via messages.
 
 - **Session Creation & Management**
 
@@ -32,6 +34,11 @@
   - A `Named Sessions` bookmark folder is created to store session data.
   - **Folder name format**: `<session name> (<session ID>)`
   - Each tab is stored as a bookmark inside the session folder (including title and URL).
+  - `bookmark_storage.ts` is one implementation of the session sync backend, and this can by synced by Chrome browser.
+    - So the responsibilities of the components can be described as follows:
+      - Tabs UI (`tabs.ts`) offers the UI and interacts with other components via messages to the service-worker.
+      - `sessions_management.ts` managed the associations of `sessionId` and `windowId`.
+      - `bookmark_storage.ts` managed the Open/Saved tabs of named sessions using bookmark API.
 
 - **Session Restoration**
 

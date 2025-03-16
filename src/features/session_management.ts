@@ -81,8 +81,10 @@ export async function updateNamedSessionTabs(sessionId: string) {
 
 /**
  * Deletes a Named Session by its sessionId.
+ * Checks both in-memory sessions and bookmark storage for closed sessions.
  */
 export async function deleteNamedSession(sessionId: string) {
+  // Check if the session exists in memory
   if (namedSessions[sessionId]) {
     const session = namedSessions[sessionId];
 
@@ -93,8 +95,36 @@ export async function deleteNamedSession(sessionId: string) {
 
     delete namedSessions[sessionId];
     console.log(`Deleted Named Session ${sessionId}`);
+    return true;
   } else {
-    console.warn(`Attempted to delete non-existent Named Session ${sessionId}`);
+    // Check if this is a closed session in bookmark storage
+    const activeSessionIds = Object.keys(namedSessions);
+    const closedSessions =
+      await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+    const closedSession = closedSessions.find(
+      (session) => session.id === sessionId,
+    );
+
+    if (closedSession) {
+      // Delete the closed session from bookmark storage
+      const result = await bookmarkStorage.deleteSessionFolder(sessionId);
+      if (result) {
+        console.log(
+          `Deleted closed Named Session ${sessionId} from bookmark storage`,
+        );
+        return true;
+      } else {
+        console.error(
+          `Failed to delete closed Named Session ${sessionId} from bookmark storage`,
+        );
+        return false;
+      }
+    } else {
+      console.warn(
+        `Attempted to delete non-existent Named Session ${sessionId}`,
+      );
+      return false;
+    }
   }
 }
 
@@ -235,6 +265,10 @@ async function autoSaveAllSessions() {
     console.error("Error auto-saving sessions:", error);
   }
 }
+
+/**
+ * Gets all named sessions
+ */
 export function getNamedSessions() {
   return Object.values(namedSessions);
 }

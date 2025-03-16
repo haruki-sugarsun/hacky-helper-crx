@@ -436,7 +436,7 @@ async function deleteSession(sessionId: string) {
     if (
       response &&
       response.type === "DELETE_NAMED_SESSION_RESULT" &&
-      response.payload.success
+      response.payload === "success"
     ) {
       console.log(`Session ${sessionId} deleted successfully`);
 
