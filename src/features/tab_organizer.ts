@@ -1,4 +1,4 @@
-import { ConfigStore } from "../config_store.ts";
+import { ConfigStore } from "./config_store.ts";
 
 console.log("tab_organizer");
 

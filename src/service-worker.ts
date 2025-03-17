@@ -1,4 +1,28 @@
-import { LLMService, OpenAILLMService, OllamaLLMService } from "./llmService";
+/**
+ * @file service-worker.ts
+ *
+ * This file serves as the service worker for the Hacky Helper Chrome extension.
+ * The service worker listens for various Chrome extension events such as tab creation, removal, and updates,
+ * and processes tasks related to LLM services or session management in the background.
+ * It also sets up periodic task triggers to process related tasks.
+ *
+ * The file imports various modules and features required for its functionality, including:
+ * - LLM services (OpenAI and Ollama)
+ * - Constants and configuration store
+ * - Helper functions and types
+ * - Features for tab organization, session management, tab categorization, digest management, and bookmark storage
+ *
+ * The service worker initializes the LLM service based on configuration settings and sets up event listeners
+ * for tab management and task processing. It also handles incoming messages from content scripts and performs
+ * actions such as generating summaries, extracting keywords, creating embeddings, and managing sessions and bookmarks.
+ *
+ * @module service-worker
+ */
+import {
+  LLMService,
+  OpenAILLMService,
+  OllamaLLMService,
+} from "./features/llm_service.ts";
 
 import {
   CREATE_SUMMARY,
@@ -25,7 +49,7 @@ import {
   RESTORE_CLOSED_SESSION,
 } from "./lib/constants";
 
-import { CONFIG_STORE, getConfig } from "./config_store";
+import { CONFIG_STORE, getConfig } from "./features/config_store.ts";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 

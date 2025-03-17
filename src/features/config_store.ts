@@ -77,7 +77,10 @@ export class StringConfig extends Config {
   }
 }
 
-export class ConfigStore {
+export class ConfigStore implements ConfigStoreRO {
+  asConfigStoreRO() {
+    return this;
+  }
   private config: Record<string, any> = {};
 
   static SORT_ON_TAB_SWITCH = new BoolConfig(
@@ -151,6 +154,9 @@ export class ConfigStore {
   constructor() {
     // Initialize configurations if needed
   }
+  OPENAI_API_KEY(): string {
+    return ConfigStore.OPENAI_API_KEY.get();
+  }
 
   set(key: string, value: any) {
     this.config[key] = value;
@@ -216,7 +222,14 @@ export class ConfigStore {
   }
 }
 
+// This is only used by settings UI.
 export const CONFIG_STORE = new ConfigStore();
+
+// Other pages/features should use this interface.
+export interface ConfigStoreRO {
+  OPENAI_API_KEY(): string;
+}
+export const CONFIG_RO = CONFIG_STORE.asConfigStoreRO();
 
 interface ConfigRO {
   bookmarkParentId: string;

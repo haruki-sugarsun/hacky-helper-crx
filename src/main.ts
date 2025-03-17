@@ -1,6 +1,6 @@
 import "./style.css";
 import "./popup.css";
-import { CONFIG_STORE } from "./config_store";
+import { CONFIG_STORE } from "./features/config_store";
 
 // Function to initialize the toggle states from configuration
 async function initializeToggles() {

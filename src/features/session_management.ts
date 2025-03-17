@@ -1,6 +1,6 @@
 import { ClosedNamedSession, NamedSession } from "../lib/types";
 import { bookmarkStorage } from "./bookmark_storage";
-import { getConfig } from "../config_store";
+import { getConfig } from "./config_store";
 
 // Storage key for named sessions
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";

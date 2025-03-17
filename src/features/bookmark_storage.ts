@@ -1,4 +1,4 @@
-import { getConfig } from "../config_store";
+import { getConfig } from "./config_store";
 import {
   BookmarkSessionFolder,
   ClosedNamedSession,

@@ -89,6 +89,11 @@
 
 - Tests! Tests! Tests!
 
+## Directory structures
+
+- src/lib contains common implementations designed to be shared among the ts files.
+- src/features contains modules designed to encapsulate functionalities per feature. Typically files in features may include each other.
+
 # Fullfilled Dev Plans
 
 ## Disable heavy processing based on battery mode

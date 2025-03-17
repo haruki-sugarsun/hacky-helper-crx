@@ -7,7 +7,7 @@ import {
   KEYWORDS_PROMPT,
   OPENAI_CHAT_MODEL,
   OPENAI_EMBEDDINGS_MODEL,
-} from "./lib/constants";
+} from "../lib/constants";
 import { Ollama } from "ollama";
 import OpenAI from "openai";
 
