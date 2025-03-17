@@ -27,12 +27,12 @@ import {
 
 import { CONFIG_STORE, getConfig } from "./config_store";
 import { DigestEntry, TabSummary } from "./lib/types";
-import { PersistentCache } from "./persistent-cache";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 
 import "./features/tab_organizer.ts";
 import * as SessionManagement from "./features/session_management";
 import * as TabCategorization from "./features/tab_categorization";
+import * as DigestManagement from "./features/digest_management";
 import { bookmarkStorage } from "./features/bookmark_storage";
 import { openTabsPage } from "./features/tabs_helpers";
 
@@ -55,14 +55,7 @@ chrome.commands.onCommand.addListener((command) => {
 //     CREATE_EMBEDDINGS
 // }
 
-// Constants for cache configuration
-const SUMMARY_CACHE_SIZE = 5; // Store the latest 5 summaries per tab+URL
-
-// Cache for storing summaries
-// Cache to store the latest N summary results for each tabID and URL combination
-// The key is a combination of tabID and URL, and the value is an array of summary results with timestamps
-const digestCache = new PersistentCache<DigestEntry[]>("tab_digest", 100); // Caches up to 100 unique tab+URL entries
-// TODO: Consider removing tabID from the caching key, as only URL might be sufficient?
+// Digest management has been moved to features/digest_management.ts
 // TODO: If we have a summary cache here, we might not need the caching layer in llmService?
 // TODO: Implement a cache for embeddings as well.
 // URL to embeddings cache map.
@@ -244,7 +237,7 @@ async function maybeQueueTaskForProcessing(
 
     // If the cache already has digests newer than the specified time, e.g. 1 hour.
     const oneHourAgo = new Date().getTime() - 60 * 60 * 1000;
-    const cachedDigests = await getCachedSummaries(url); // Assume this function retrieves cached digests
+    const cachedDigests = await DigestManagement.getCachedSummaries(url); // Assume this function retrieves cached digests
     if (
       cachedDigests &&
       cachedDigests.some((digest) => digest.timestamp > oneHourAgo)
@@ -891,21 +884,13 @@ async function generateSummary(
 }
 
 /**
- * Retrieves the cached summaries for a specific tab and URL
- * TODO: Return all the info from this; keywords and embeddings
- * @param tabId The ID of the tab
+ * Wrapper for DigestManagement.getCachedSummaries
+ * TODO: This can be inlined?
  * @param url The URL of the page
  * @returns An array of cached summary entries, or null if none exist
  */
 async function getCachedSummaries(url: string): Promise<DigestEntry[] | null> {
-  const cacheKey = url;
-  const cachedEntries = await digestCache.get(cacheKey);
-
-  if (cachedEntries && cachedEntries.length > 0) {
-    // TODO: We only need the latest?
-    return cachedEntries;
-  }
-  return null;
+  return DigestManagement.getCachedSummaries(url);
 }
 
 // Functions for keyword extraction and embeddings
@@ -929,18 +914,14 @@ async function generateEmbeddings(text: string): Promise<number[]> {
   }
 }
 
+/**
+ * Wrapper for DigestManagement.updateCache
+ * TODO: This can be inlined?
+ * @param url The URL of the page
+ * @param digestEntry The digest entry to add to the cache
+ */
 async function updateCache(url: string, digestEntry: DigestEntry) {
-  const existingEntries = (await digestCache.get(url)) || [];
-  existingEntries.unshift(digestEntry);
-
-  if (existingEntries.length > SUMMARY_CACHE_SIZE) {
-    existingEntries.length = SUMMARY_CACHE_SIZE;
-  }
-
-  await digestCache.set(url, existingEntries);
-  console.log(
-    `Cached summary for ${url}. Cache now has ${existingEntries.length} entries.`,
-  );
+  return DigestManagement.updateCache(url, digestEntry);
 }
 // TODO: Implement syncing with
 // in-Memory Model and the background store.

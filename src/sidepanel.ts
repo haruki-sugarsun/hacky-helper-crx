@@ -1,4 +1,4 @@
-import LRU from "./lru-cache.ts";
+import LRU from "./lib/lru-cache.ts";
 import {
   OpenAILLMService,
   OllamaLLMService,
