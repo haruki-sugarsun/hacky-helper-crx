@@ -115,17 +115,33 @@ let autoSaveTimer: number | null = null;
 
 /**
  * Creates a new Named Session for the given window.
- * If the window is not explicitly named, its name will be null.
  * Returns the created NamedSession.
+ * @param windowId - The ID of the window to create a session for
+ * @param sessionName - The name of the session (required, cannot be empty)
+ * @param sessionId - Optional ID to use for the session. If not provided, a new UUID will be generated
+ * @param isRestoringFromBookmarks - Whether this session is being restored from bookmarks. Default is false.
+ * @throws Error if sessionName is not provided or empty
  */
 export async function createNamedSession(
   windowId: number,
-  sessionName: string | null,
+  sessionName: string,
+  sessionId?: string,
+  isRestoringFromBookmarks: boolean = false,
 ): Promise<NamedSession> {
-  const sessionId = crypto.randomUUID();
+  // Check if sessionName is not provided or empty
+  if (!sessionName || sessionName.trim() === "") {
+    console.error(
+      `Creating a session without a valid name for window ${windowId}. This session won't be synced to bookmarks.`,
+    );
+    throw new Error(
+      `Session name is required but not provided or empty for window ${windowId}`,
+    );
+  }
+
+  const finalSessionId = sessionId || crypto.randomUUID();
   const timestamp = Date.now();
   const session: NamedSession = {
-    id: sessionId,
+    id: finalSessionId,
     name: sessionName,
     windowId,
     createdAt: timestamp,
@@ -136,12 +152,14 @@ export async function createNamedSession(
   // Save to persistent storage
   await saveNamedSessionToStorage(session);
 
-  // Save session to Bookmark API for syncing if it has a name
-  if (sessionName) {
+  // Save session to Bookmark API for syncing if it has a name and is not being restored from bookmarks
+  if (sessionName && !isRestoringFromBookmarks) {
     await syncSessionToBookmarks(session);
   }
 
-  console.log(`Created Named Session: ${sessionId} for window ${windowId}`);
+  console.log(
+    `Created Named Session: ${finalSessionId} for window ${windowId}`,
+  );
 
   // Start auto-save timer if not already running
   // TODO: Consider a better place to have the timer/scheduled alarm.
@@ -194,6 +212,7 @@ export async function updateNamedSessionTabs(
     await saveNamedSessionToStorage(session);
 
     // Update Bookmark API to reflect new tabs if the session has a name
+    // TODO: We don't need to sync back if restoring the session.
     if (session.name) {
       await syncSessionToBookmarks(session);
     }
@@ -485,10 +504,12 @@ export async function restoreClosedSession(
       return null;
     }
 
-    // Create a named session for the new window
+    // Create a named session for the new window with the same ID as the closed session
     const newSession = await createNamedSession(
       newWindow.id,
       closedSession.name,
+      sessionId, // Pass the original sessionId to maintain identity
+      true, // Indicate that this session is being restored from bookmarks
     );
 
     // Add the remaining tabs to the window
