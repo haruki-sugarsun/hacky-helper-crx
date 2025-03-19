@@ -305,6 +305,7 @@ async function maybeQueueTaskForProcessing(
       return;
     }
 
+    // TODO: Consider splitting the tasks into 3 dedicated tasks for each.
     llmTasks.push({
       url: url,
       content: content,
@@ -343,6 +344,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 async function processNextTask() {
+  // TODO: Check if we enable the LLM service via LLM_ENABLED config. and clear the queue if disabled.
+
   // Check the llmTasks if we have anything to execute:
   console.log(`Number of tasks in the queue: ${llmTasks.length}`);
   if (

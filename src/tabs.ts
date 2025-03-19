@@ -816,6 +816,7 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
 async function updateUI(
   windows: chrome.windows.Window[],
   tabs: chrome.tabs.Tab[],
+  selectedSessionByWindowId?: number /* Optionally specify the session to be opened after the UI refresh by windowId. Select the current if undefined. */,
 ) {
   // Log window and tab information for debugging
   windows.forEach((w) => {
@@ -869,6 +870,9 @@ async function updateUI(
 
   // Track the current window to auto-select it
   let currentWindowItem: HTMLLIElement | undefined = undefined;
+  // Auto-select the specified window and load its tabs
+  let selectedWindowId: number | undefined;
+  let selectedWindowItem: HTMLLIElement | undefined = undefined;
 
   // Add a list item for each window
   for (let i = 0; i < windows.length; i++) {
@@ -907,9 +911,10 @@ async function updateUI(
 
         console.log(`Selected window: ${win.id}`);
         if (win.id) {
-          chrome.tabs.query({ windowId: win.id }).then((windowTabs) => {
+          const winId = win.id;
+          chrome.tabs.query({ windowId: winId }).then((windowTabs) => {
             console.log(`Found ${windowTabs.length} tabs in window ${win.id}`);
-            updateTabsTable(windowTabs);
+            updateTabsTable(winId, windowTabs);
           });
 
           // If this is a named session, fetch and display saved bookmarks
@@ -932,6 +937,10 @@ async function updateUI(
     if (isCurrent) {
       currentWindowItem = listItem;
     }
+    if (selectedSessionByWindowId && selectedSessionByWindowId == win.id) {
+      selectedWindowId = selectedSessionByWindowId;
+      selectedWindowItem = listItem;
+    }
     if (associatedSession) {
       namedList.appendChild(listItem);
     } else {
@@ -953,23 +962,29 @@ async function updateUI(
     });
   }
 
-  // Auto-select the current window and load its tabs
-  if (currentWindowItem) {
-    currentWindowItem.classList.add("selected");
-    const currentWindow = windows.find((w) => w.focused);
-    if (currentWindow && currentWindow.id) {
-      chrome.tabs.query({ windowId: currentWindow.id }).then((windowTabs) => {
+  // OVerride the selected window with the current window is not yet specified.
+  if (!selectedWindowItem) {
+    selectedWindowId = windows.find((w) => w.focused)?.id;
+    selectedWindowItem = currentWindowItem;
+  }
+
+  // If a window item is found, select it and load its tabs
+  // TODO: if we can skip this defined check.
+  if (selectedWindowItem) {
+    selectedWindowItem.classList.add("selected");
+    if (selectedWindowId) {
+      chrome.tabs.query({ windowId: selectedWindowId }).then((windowTabs) => {
         console.log(
-          `Auto-loading ${windowTabs.length} tabs for current window ${currentWindow.id}`,
+          `Auto-loading ${windowTabs.length} tabs for selected window ${selectedWindowId}`,
         );
-        updateTabsTable(windowTabs);
+        updateTabsTable(selectedWindowId, windowTabs);
       });
 
       // If this is a named session, fetch and display saved bookmarks
       const associatedSession = state_sessions.find(
-        (session) => session.windowId === currentWindow.id && session.name,
+        (session) => session.windowId === selectedWindowId && session.name,
       );
-      // TODO: We have similar code snippet in this method. Consider refactoring.
+      // TODO: We have similar code snippet in this method. Consider refactoring them into renderSessionTabsPane() or something.
       if (associatedSession) {
         fetchAndDisplaySavedBookmarks(associatedSession.id);
         // Update session metadata
@@ -978,14 +993,14 @@ async function updateUI(
         // Clear saved bookmarks if this is not a named session
         clearSavedBookmarks();
         // Update session metadata for unnamed window
-        updateSessionMetadata(null, currentWindow.id);
+        updateSessionMetadata(null, selectedWindowId);
       }
     }
   }
 }
 
 // Helper function to update the tabs table with tabs from a specific window
-async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
+async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
   const tabsTable = tabs_tablist.querySelector("table")!;
 
   // Update table headers - now including the summary column and actions
@@ -1061,7 +1076,6 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
                     <div class="summary-text">${digest.summary}</div>`;
       }
     }
-
     row.innerHTML = `
             <td class="tab-id-cell">${tab.id || "N/A"}</td>
             <td class="title-cell" title="${tab.title}">${tab.title || "Untitled"}</td>
@@ -1071,9 +1085,9 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
                 <div class="tab-actions">
                     <button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Migrate</button>
                     <button class="tab-action-button save-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Save</button>
+                    <button class="tab-action-button close-button" data-tab-id="${tab.id}">Close</button>
                 </div>
-            </td>
-        `;
+            </td>`;
     tableBody.appendChild(row);
 
     // Add click event listener to the tab ID cell
@@ -1123,6 +1137,27 @@ async function updateTabsTable(tabs: chrome.tabs.Tab[]) {
 
       if (tabId && tabUrl) {
         saveTabToBookmarks(tabId);
+      }
+    });
+  });
+
+  // Add event listener for the close button
+  document.querySelectorAll(".close-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      const target = event.currentTarget as HTMLButtonElement;
+      const tabId = parseInt(target.getAttribute("data-tab-id") || "0");
+
+      if (tabId) {
+        try {
+          await chrome.tabs.remove(tabId);
+          state_tabs = state_tabs.filter((t) => t.id !== tabId);
+          // TODO: This updateUI should show the UI for the currently selected window panel.
+          updateUI(state_windows, state_tabs, windowId);
+        } catch (error) {
+          console.error(
+            `Error closing tab: ${error instanceof Error ? error.message : error}`,
+          );
+        }
       }
     });
   });

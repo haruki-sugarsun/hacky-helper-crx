@@ -468,6 +468,7 @@ content {
 .tab-actions {
   display: flex;
   gap: 5px;
+  flex-direction: column;
 }
 
 .tab-action-button {
