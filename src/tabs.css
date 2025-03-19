@@ -106,14 +106,143 @@
 
 /**/
 #tabs_tablist {
+  position: relative;
   flex: 1;
+}
+
+/* Container for tabs table and saved bookmarks */
+#tabs_container {
+  display: flex;
+  position: relative;
+  margin-top: 20px;
 }
 
 /* Table styles */
 #tabs_tablist table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  z-index: 1;
+}
+
+/* Saved bookmarks styles */
+#saved_bookmarks {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 66%; /* Two-thirds of the container */
+  background-color: #2a2a3a;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid #444;
+}
+
+/* Bookmark header with toggle button */
+.bookmark-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  text-wrap-mode: nowrap;
+}
+
+#saved_bookmarks h3 {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: #aaddff;
+}
+
+.toggle-button {
+  background-color: #444466;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toggle-button:hover {
+  background-color: #5555aa;
+}
+
+/* Hidden state for bookmarks panel */
+#saved_bookmarks.collapsed {
+  width: auto;
+  min-width: auto;
+}
+
+#saved_bookmarks.collapsed .instructions,
+#saved_bookmarks.collapsed ul {
+  display: none;
+}
+
+#saved_bookmarks.collapsed .bookmark-header {
+  border: none;
+  padding: 0;
+}
+
+#saved_bookmarks.collapsed h3 {
+  width: 0;
+  overflow: hidden;
+}
+
+#saved_bookmarks ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#saved_bookmarks li {
+  padding: 8px 10px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  background-color: #333344;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#saved_bookmarks li:hover {
+  background-color: #444466;
+}
+
+.bookmark-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.bookmark-action-button {
+  background-color: #444466;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bookmark-action-button:hover {
+  background-color: #5555aa;
+}
+
+.bookmark-metadata {
+  font-size: 0.8em;
+  color: #888;
+  margin-top: 3px;
 }
 
 #tabs_tablist th,
@@ -193,6 +322,14 @@ content {
   padding-bottom: 8px;
   border-bottom: 1px solid #555;
   color: #aaddff;
+}
+
+/* Metadata note for session information */
+.metadata-note {
+  font-size: 0.8em;
+  color: #888;
+  margin: 5px 0;
+  font-style: italic;
 }
 
 /* Instructions text */

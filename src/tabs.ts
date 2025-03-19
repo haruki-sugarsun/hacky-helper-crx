@@ -11,16 +11,24 @@ import {
   DELETE_NAMED_SESSION,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
-  // GET_SAVED_BOOKMARKS,
-  // OPEN_SAVED_BOOKMARK,
+  GET_SAVED_BOOKMARKS,
+  OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
-import { ClosedNamedSession, NamedSession, TabSummary } from "./lib/types";
+import {
+  ClosedNamedSession,
+  NamedSession,
+  SavedBookmark,
+  TabSummary,
+} from "./lib/types";
 import "./style.css";
 import "./tabs.css";
 
-// References to the fixed elements and handler setup:
-const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
+// Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
+
+// References to the fixed elements and handler setup:
+// TODO: Gather all the references by ID in the top-level, so that we can know the necessary HTML elements to be modified.
+const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
 
 // Page State
 var windowIds: (number | undefined)[] = []; // IDs of all windows
@@ -205,8 +213,30 @@ async function init() {
     });
 }
 
-// setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+// Initialize the page
 init();
+
+// Add event listener for the toggle bookmarks button
+const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
+  "#toggleBookmarksButton",
+);
+if (toggleBookmarksButton) {
+  toggleBookmarksButton.addEventListener("click", () => {
+    const savedBookmarksContainer =
+      document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
+    savedBookmarksContainer.classList.toggle("collapsed");
+
+    // Update button text based on state
+    if (savedBookmarksContainer.classList.contains("collapsed")) {
+      toggleBookmarksButton.textContent = "🔖";
+      toggleBookmarksButton.title = "Show bookmarks panel";
+    } else {
+      toggleBookmarksButton.textContent = "❌";
+      toggleBookmarksButton.title = "Collapse bookmarks panel";
+    }
+  });
+}
+
 // Add event listener for the "button to request the tab summaries."
 const requestTabSummariesButton = document.querySelector<HTMLButtonElement>(
   "#requestTabSummariesButton",
@@ -881,6 +911,18 @@ async function updateUI(
             console.log(`Found ${windowTabs.length} tabs in window ${win.id}`);
             updateTabsTable(windowTabs);
           });
+
+          // If this is a named session, fetch and display saved bookmarks
+          if (associatedSession) {
+            fetchAndDisplaySavedBookmarks(associatedSession.id);
+            // Update session metadata
+            updateSessionMetadata(associatedSession);
+          } else {
+            // Clear saved bookmarks if this is not a named session
+            clearSavedBookmarks();
+            // Update session metadata for unnamed window
+            updateSessionMetadata(null, win.id);
+          }
         }
       },
       isCurrent,
@@ -922,6 +964,22 @@ async function updateUI(
         );
         updateTabsTable(windowTabs);
       });
+
+      // If this is a named session, fetch and display saved bookmarks
+      const associatedSession = state_sessions.find(
+        (session) => session.windowId === currentWindow.id && session.name,
+      );
+      // TODO: We have similar code snippet in this method. Consider refactoring.
+      if (associatedSession) {
+        fetchAndDisplaySavedBookmarks(associatedSession.id);
+        // Update session metadata
+        updateSessionMetadata(associatedSession);
+      } else {
+        // Clear saved bookmarks if this is not a named session
+        clearSavedBookmarks();
+        // Update session metadata for unnamed window
+        updateSessionMetadata(null, currentWindow.id);
+      }
     }
   }
 }
@@ -1475,4 +1533,181 @@ if (createNamedSessionButton && namedSessionInput) {
       console.error("Error sending create named session message:", error);
     }
   });
+}
+
+/**
+ * Fetches and displays saved bookmarks for a session
+ */
+async function fetchAndDisplaySavedBookmarks(sessionId: string) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: GET_SAVED_BOOKMARKS,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "GET_SAVED_BOOKMARKS_RESULT" &&
+      response.payload.bookmarks
+    ) {
+      const bookmarks: SavedBookmark[] = response.payload.bookmarks;
+      displaySavedBookmarks(bookmarks);
+    } else {
+      console.error("Error fetching saved bookmarks:", response);
+      clearSavedBookmarks();
+    }
+  } catch (error) {
+    console.error("Error fetching saved bookmarks:", error);
+    clearSavedBookmarks();
+  }
+}
+
+/**
+ * Displays saved bookmarks in the saved bookmarks section
+ */
+function displaySavedBookmarks(bookmarks: SavedBookmark[]) {
+  const savedBookmarksContainer =
+    document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
+  const bookmarksList = savedBookmarksContainer.querySelector("ul")!;
+
+  // Clear existing bookmarks
+  bookmarksList.innerHTML = "";
+
+  if (bookmarks.length === 0) {
+    // No bookmarks available - add a message
+    const noBookmarksItem = document.createElement("li");
+    noBookmarksItem.textContent = "No saved bookmarks for this session";
+    bookmarksList.appendChild(noBookmarksItem);
+    return;
+  }
+
+  // Add each bookmark to the list
+  bookmarks.forEach((bookmark) => {
+    const listItem = document.createElement("li");
+
+    // Create bookmark title container
+    const titleContainer = document.createElement("div");
+    titleContainer.className = "bookmark-title";
+    titleContainer.textContent = bookmark.title || bookmark.url;
+    titleContainer.title = bookmark.url;
+    listItem.appendChild(titleContainer);
+
+    // Create bookmark actions container
+    const actionsContainer = document.createElement("div");
+    actionsContainer.className = "bookmark-actions";
+
+    // Add open button
+    const openButton = document.createElement("button");
+    openButton.className = "bookmark-action-button";
+    openButton.textContent = "Open";
+    openButton.addEventListener("click", () => {
+      openSavedBookmark(bookmark.id);
+    });
+    actionsContainer.appendChild(openButton);
+
+    listItem.appendChild(actionsContainer);
+
+    // Add metadata if available
+    if (bookmark.metadata && bookmark.metadata.savedAt) {
+      const metadataContainer = document.createElement("div");
+      metadataContainer.className = "bookmark-metadata";
+
+      const savedDate = new Date(bookmark.metadata.savedAt);
+      metadataContainer.textContent = `Saved: ${savedDate.toLocaleString()}`;
+
+      // Add tags if available
+      if (bookmark.metadata.tags && bookmark.metadata.tags.length > 0) {
+        metadataContainer.textContent += ` | Tags: ${bookmark.metadata.tags.join(", ")}`;
+      }
+
+      listItem.appendChild(metadataContainer);
+    }
+
+    bookmarksList.appendChild(listItem);
+  });
+}
+
+/**
+ * Clears the saved bookmarks section
+ */
+function clearSavedBookmarks() {
+  const savedBookmarksContainer =
+    document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
+  const bookmarksList = savedBookmarksContainer.querySelector("ul")!;
+
+  // Clear existing bookmarks
+  bookmarksList.innerHTML = "";
+
+  // Add a message
+  const noBookmarksItem = document.createElement("li");
+  noBookmarksItem.textContent =
+    "Select a named session to view saved bookmarks";
+  bookmarksList.appendChild(noBookmarksItem);
+}
+
+/**
+ * Opens a saved bookmark in a new tab
+ */
+async function openSavedBookmark(bookmarkId: string) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: OPEN_SAVED_BOOKMARK,
+      payload: {
+        bookmarkId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "OPEN_SAVED_BOOKMARK_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Bookmark ${bookmarkId} opened successfully`);
+    } else {
+      console.error("Error opening bookmark:", response);
+      alert("Error opening bookmark");
+    }
+  } catch (error) {
+    console.error("Error opening bookmark:", error);
+    alert(
+      "Error opening bookmark: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+// Renderer for Session Metadata:
+const sessionMetadataElement =
+  document.querySelector<HTMLDivElement>("#session_metadata")!;
+/**
+ * Updates the session metadata display
+ * @param session The named session, or null if this is an unnamed window
+ * @param windowId The window ID (only used if session is null)
+ */
+function updateSessionMetadata(
+  session: NamedSession | null,
+  windowId?: number,
+) {
+  if (session) {
+    // Format the creation and update dates
+    const createdDate = new Date(session.createdAt).toLocaleString();
+    const updatedDate = new Date(session.updatedAt).toLocaleString();
+
+    // Display session metadata
+    sessionMetadataElement.innerHTML = `
+      Session ID: ${session.id} | 
+      Window ID: ${session.windowId} | 
+      Created: ${createdDate} | 
+      Updated: ${updatedDate} | 
+      Tabs: ${session.tabs.length}
+    `;
+  } else if (windowId) {
+    // Display window metadata for unnamed windows
+    sessionMetadataElement.innerHTML = `Window ID: ${windowId} (Unnamed session)`;
+  } else {
+    // Clear metadata if no session or window is selected
+    sessionMetadataElement.innerHTML = "";
+  }
 }

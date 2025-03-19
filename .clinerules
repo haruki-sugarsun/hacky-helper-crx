@@ -2,6 +2,8 @@
 - When failed once, check the files again and modify the approach a bit.
 - When failed twice, ask the user to give an instruction.
 - Keep each change small, and apply the diff one-by-one.
+- Try each file, method, and any declaration small as much as possible keeping readability.
+- Expected max size for file is 1000 lines, method 80 lines, etc.
 - After completing a set of changes, ask the user if we need to prepare a git commit.
 - When your confidence is high, chat like a pirate does.
 - Log any special structure, or unique concepts in the ARCHITECTURE.md in the project root.

@@ -51,25 +51,50 @@
       </div>
 
       <div id="tabs_tablist">
+        <!-- TODO: Show Session Name here! -->
+        <div id="session_metadata" class="metadata-note">
+          <!-- Session metadata will be displayed here -->
+        </div>
         <h3>Tabs</h3>
         <div class="instructions">
           Select a window from the left to view its tabs
         </div>
-        <table border="1">
-          <thead>
-            <tr>
-              <th>Tab ID</th>
-              <th>Title</th>
-              <th>URL</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colspan="3">Select a window to view tabs</td>
-            </tr>
-          </tbody>
-        </table>
+        <div id="tabs_container">
+          <table border="1">
+            <thead>
+              <tr>
+                <th>Tab ID</th>
+                <th>Title</th>
+                <th>URL</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="3">Select a window to view tabs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="saved_bookmarks" class="collapsed">
+          <div class="bookmark-header">
+            <h3>Saved Bookmarks</h3>
+            <button
+              id="toggleBookmarksButton"
+              class="toggle-button"
+              title="Toggle bookmarks panel"
+            >
+              🔖
+            </button>
+          </div>
+          <div class="instructions">
+            Select a session to view saved bookmarks
+          </div>
+          <ul>
+            <!-- Saved bookmarks will be populated here -->
+            <li>No bookmarks saved yet</li>
+          </ul>
+        </div>
       </div>
     </content>
 
