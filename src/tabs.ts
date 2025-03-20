@@ -459,7 +459,7 @@ function createSessionListItem(
   }
 
   // Make the label clickable to select the session
-  labelContainer.addEventListener("click", onClick);
+  li.addEventListener("click", onClick);
 
   return li;
 }
@@ -898,6 +898,7 @@ async function updateUI(
     }
 
     const isCurrent = win.focused;
+    // TODO: Add handler for double-click, and trigger switching to the corresponding window.
     const listItem = createSessionListItem(
       label,
       () => {

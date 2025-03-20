@@ -26,7 +26,8 @@ a:hover {
 }
 
 body {
-  margin: 1em;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   place-items: start;
@@ -37,6 +38,11 @@ body {
 header {
   display: flex;
   flex-direction: row;
+  margin: 1em;
+}
+
+content {
+  width: 100%;
 }
 
 .settings {

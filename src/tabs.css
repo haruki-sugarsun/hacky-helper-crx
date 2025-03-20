@@ -108,6 +108,7 @@
 #tabs_tablist {
   position: relative;
   flex: 1;
+  width: 100%;
 }
 
 /* Container for tabs table and saved bookmarks */
@@ -337,7 +338,8 @@ content {
   justify-content: flex-start;
   align-items: flex-start;
   gap: 20px;
-  padding: 10px;
+  margin: 0;
+  padding: 0;
 }
 
 /* Section headers */
