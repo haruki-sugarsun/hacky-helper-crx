@@ -367,7 +367,6 @@ requestTabSummariesButton.addEventListener("click", async () => {
 // Helper function to create a session list item with common styling and behavior.
 function createSessionListItem(
   label: string,
-  onClick: () => void,
   isCurrent: boolean,
   sessionId?: string,
 ): HTMLLIElement {
@@ -457,9 +456,6 @@ function createSessionListItem(
   if (sessionId) {
     li.setAttribute("data-session-id", sessionId);
   }
-
-  // Make the label clickable to select the session
-  li.addEventListener("click", onClick);
 
   return li;
 }
@@ -898,44 +894,64 @@ async function updateUI(
     }
 
     const isCurrent = win.focused;
-    // TODO: Add handler for double-click, and trigger switching to the corresponding window.
+    // Create the list item with single-click handler to select the window
     const listItem = createSessionListItem(
       label,
-      () => {
-        // Clear selection on all items and mark this one as selected
-        namedList
-          .querySelectorAll("li")
-          .forEach((item) => item.classList.remove("selected"));
-        unnamedList
-          .querySelectorAll("li")
-          .forEach((item) => item.classList.remove("selected"));
-
-        listItem.classList.add("selected");
-
-        console.log(`Selected window: ${win.id}`);
-        if (win.id) {
-          const winId = win.id;
-          chrome.tabs.query({ windowId: winId }).then((windowTabs) => {
-            console.log(`Found ${windowTabs.length} tabs in window ${win.id}`);
-            updateTabsTable(winId, windowTabs);
-          });
-
-          // If this is a named session, fetch and display saved bookmarks
-          if (associatedSession) {
-            fetchAndDisplaySavedBookmarks(associatedSession.id);
-            // Update session metadata
-            updateSessionMetadata(associatedSession);
-          } else {
-            // Clear saved bookmarks if this is not a named session
-            clearSavedBookmarks();
-            // Update session metadata for unnamed window
-            updateSessionMetadata(null, win.id);
-          }
-        }
-      },
       isCurrent,
       associatedSession?.id,
     );
+
+    // Make the label clickable to select the session
+    listItem.addEventListener("click", () => {
+      // Clear selection on all items and mark this one as selected
+      namedList
+        .querySelectorAll("li")
+        .forEach((item) => item.classList.remove("selected"));
+      unnamedList
+        .querySelectorAll("li")
+        .forEach((item) => item.classList.remove("selected"));
+
+      listItem.classList.add("selected");
+
+      console.log(`Selected window: ${win.id}`);
+      if (win.id) {
+        const winId = win.id;
+        chrome.tabs.query({ windowId: winId }).then((windowTabs) => {
+          console.log(`Found ${windowTabs.length} tabs in window ${win.id}`);
+          updateTabsTable(winId, windowTabs);
+        });
+
+        // If this is a named session, fetch and display saved bookmarks
+        if (associatedSession) {
+          fetchAndDisplaySavedBookmarks(associatedSession.id);
+          // Update session metadata
+          updateSessionMetadata(associatedSession);
+        } else {
+          // Clear saved bookmarks if this is not a named session
+          clearSavedBookmarks();
+          // Update session metadata for unnamed window
+          updateSessionMetadata(null, win.id);
+        }
+      }
+    });
+
+    // Add double-click handler to switch to the window
+    if (win.id) {
+      listItem.addEventListener("dblclick", async () => {
+        console.log(
+          `Double-clicked window: ${win.id}. Switching to this window.`,
+        );
+        try {
+          await chrome.windows.update(win.id!, { focused: true });
+          console.log(`Successfully switched to window: ${win.id}`);
+        } catch (error) {
+          console.error(
+            `Error switching to window: ${error instanceof Error ? error.message : error}`,
+          );
+        }
+      });
+    }
+    // TODO: For Closed Named Sessions, add dbclick handler to restore the session.
 
     if (isCurrent) {
       currentWindowItem = listItem;

@@ -4,7 +4,7 @@
 
 ```
 $ npm run dev
-$ find *.html src/ | entr -r sh -c 'npx prettier . --write; npx tsc --noEmit'
+$ find *.html src/ | entr -r sh -c 'clear; npx prettier . --write; npx tsc --noEmit; echo ===DONE==='
 ```
 
 ## Config
