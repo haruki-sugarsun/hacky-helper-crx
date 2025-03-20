@@ -1700,8 +1700,7 @@ function updateSessionMetadata(
       Session ID: ${session.id} | 
       Window ID: ${session.windowId} | 
       Created: ${createdDate} | 
-      Updated: ${updatedDate} | 
-      Tabs: ${session.tabs.length}
+      Updated: ${updatedDate}
     `;
   } else if (windowId) {
     // Display window metadata for unnamed windows

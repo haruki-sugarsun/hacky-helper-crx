@@ -130,14 +130,17 @@ export async function suggestTabDestinations(
 
   // Calculate average similarity with tabs in each session
   for (const session of sessions) {
+    // TODO: Fetch the actual open tabs using tabs API.
+    const sessionTabs = await chrome.tabs.query({ windowId: session.windowId });
+
     // Skip sessions without tabs or with only the source tab
-    if (!session.tabs.length) continue;
+    if (!sessionTabs.length) continue;
 
     let totalSimilarity = 0;
     let validTabCount = 0;
 
     // Calculate similarity with each tab in the session
-    for (const sessionTab of session.tabs) {
+    for (const sessionTab of sessionTabs) {
       // Skip the source tab itself
       if (sessionTab.url === tabUrl) continue;
 
@@ -145,12 +148,14 @@ export async function suggestTabDestinations(
       const tabSummary = tabSummaries.find(
         (summary) => summary.url === sessionTab.url,
       );
+
       if (
         !tabSummary ||
         !tabSummary.summaries.length ||
         !tabSummary.summaries[0].embeddings
-      )
+      ) {
         continue;
+      }
 
       const targetEmbeddings = tabSummary.summaries[0].embeddings;
       const similarity = calculateCosineSimilarity(
@@ -170,6 +175,7 @@ export async function suggestTabDestinations(
         averageSimilarity,
       });
     }
+    throw new Error("Not yet implemented.");
   }
 
   // Sort by average similarity (highest first)

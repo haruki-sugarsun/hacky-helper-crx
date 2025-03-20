@@ -39,6 +39,7 @@
       - Tabs UI (`tabs.ts`) offers the UI and interacts with other components via messages to the service-worker.
       - `sessions_management.ts` managed the associations of `sessionId` and `windowId`.
       - `bookmark_storage.ts` managed the Open/Saved tabs of named sessions using bookmark API.
+      - The primary data for Open tabs is the browser window, and the Saved tabs is the bookmark.
 
 - **Session Restoration**
 
@@ -47,8 +48,7 @@
   - When the user restores a session, the saved tabs are reopened.
 
 - **Tab Synchronization**
-  - Any tab addition/removal is reflected in the `service-worker` in-memory storage.
-  - The bookmark folder is updated in real-time to maintain synchronization.
+  - The bookmark folder is updated by a timer of manual trigger.
 
 ## Bookmark as URL Store
 

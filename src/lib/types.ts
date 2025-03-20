@@ -36,16 +36,14 @@ export interface TabSummary {
 export interface NamedSession {
   /** A unique identifier for the session (UUID) */
   id: string;
-  /** The user-defined name of the session; can be null if the window is unnamed */
-  name: string | null;
-  /** The associated Chrome window ID; null if not assigned, during restoration, or if the session is closed */
-  windowId: number | null;
+  /** The user-defined name of the session */
+  name: string;
+  /** The associated Chrome window ID; undefined if not assigned, during restoration, or if the session is closed */
+  windowId: number | undefined;
   /** Timestamp when the session was created */
   createdAt: number;
   /** Timestamp when the session was last updated */
   updatedAt: number;
-  /** List of tabs associated with the session */
-  tabs: NamedSessionTab[];
 }
 
 /**

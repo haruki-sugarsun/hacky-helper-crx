@@ -168,7 +168,8 @@ export class BookmarkStorage {
       }
 
       // Sync the tabs in the "Opened Pages" folder
-      await this.syncOpenedPages(sessionFolder, session.tabs);
+      // TODO: Fetch the tabs from tabs API.
+      await this.syncOpenedPages(sessionFolder, []);
 
       return sessionFolder;
     } catch (error) {

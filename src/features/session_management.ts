@@ -24,7 +24,7 @@ async function getNamedSessionsFromStorage(): Promise<
       for (const sessionId in sessions) {
         const session = sessions[sessionId];
 
-        if (session.windowId === null) {
+        if (!session.windowId) {
           // Remove sessions with null windowId
           console.log(
             `Session ${sessionId} has null windowId, removing from storage`,
@@ -146,7 +146,6 @@ export async function createNamedSession(
     windowId,
     createdAt: timestamp,
     updatedAt: timestamp,
-    tabs: [], // TODO: Here the tabs are not synced to the actual tabs in the window yet.
   };
 
   // Save to persistent storage
@@ -200,12 +199,6 @@ export async function updateNamedSessionTabs(
 
   try {
     // TODO: We don't sync pinned tabs. So we query for only un-pinned tabs.
-    const tabs = await chrome.tabs.query({ windowId: session.windowId });
-    session.tabs = tabs.map((tab) => ({
-      tabId: tab.id || null,
-      title: tab.title || "",
-      url: tab.url || "",
-    }));
     session.updatedAt = Date.now();
 
     // Save updated session to storage
@@ -217,9 +210,7 @@ export async function updateNamedSessionTabs(
       await syncSessionToBookmarks(session);
     }
 
-    console.log(
-      `Updated Named Session ${sessionId} tabs: ${session.tabs.length} tabs found.`,
-    );
+    console.log(`Updated Named Session ${sessionId} ${session.name}.`);
     return true;
   } catch (error) {
     console.error(`Error updating tabs for Named Session ${sessionId}:`, error);
@@ -435,10 +426,9 @@ export async function getNamedSessions(): Promise<NamedSession[]> {
     (closedSession) => ({
       id: closedSession.id,
       name: closedSession.name,
-      windowId: null, // Closed sessions have no window
+      windowId: undefined, // Closed sessions have no window
       createdAt: closedSession.updatedAt || Date.now(), // Use updatedAt as createdAt if available, or current time
       updatedAt: closedSession.updatedAt || Date.now(),
-      tabs: closedSession.tabs,
     }),
   );
 
