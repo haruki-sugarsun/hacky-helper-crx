@@ -274,6 +274,31 @@
   font-weight: 500;
 }
 
+/* Sync status cell styles */
+.sync-status-cell {
+  text-align: center;
+  width: 60px;
+}
+
+.sync-status {
+  display: inline-block;
+  font-size: 1.2em;
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.sync-status.synced {
+  color: #4caf50; /* Green */
+}
+
+.sync-status.not-synced {
+  color: #ffc107; /* Amber/Yellow */
+}
+
+.sync-status.no-session {
+  color: #9e9e9e; /* Gray */
+}
+
 /* Summary cell styles */
 .summary-cell {
   min-width: 250px;

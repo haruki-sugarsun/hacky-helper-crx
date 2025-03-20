@@ -44,7 +44,7 @@ import {
   GET_SAVED_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
-  GET_SYNCED_BOOKMARKS,
+  GET_SYNCED_OPENTABS,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
 } from "./lib/constants";
@@ -764,7 +764,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             });
           }
           break;
-        case GET_SYNCED_BOOKMARKS:
+        case GET_SYNCED_OPENTABS:
           try {
             const { sessionId } = payload;
             if (!sessionId) {
@@ -776,7 +776,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               await SessionManagement.getSyncedBookmarks(sessionId);
 
             sendResponse({
-              type: "GET_SYNCED_BOOKMARKS_RESULT",
+              // TODO: Have constants for these "RESULT" types, e.g. GET_SYNCED_OPENTABS_RESULT
+              type: "GET_SYNCED_OPENTABS_RESULT",
               payload: {
                 bookmarks,
                 sessionId,

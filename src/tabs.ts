@@ -13,6 +13,7 @@ import {
   RESTORE_CLOSED_SESSION,
   GET_SAVED_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
+  GET_SYNCED_OPENTABS,
 } from "./lib/constants";
 import {
   ClosedNamedSession,
@@ -1004,12 +1005,14 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
   const tabsTable = tabs_tablist.querySelector("table")!;
 
   // Update table headers - now including the summary column and actions
+  // TODO: Show the tabs found in the bookmark backend but not-opened in the current window.
   const tableHead = tabsTable.querySelector("thead")!;
   tableHead.innerHTML = `
         <tr>
             <th>Tab ID</th>
             <th>Title</th>
             <th>URL</th>
+            <th>Status</th>
             <th>Summary</th>
             <th>Actions</th>
         </tr>
@@ -1026,11 +1029,44 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
     // No tabs available - add a message row
     const noTabsRow = document.createElement("tr");
     noTabsRow.innerHTML = `
-            <td colspan="4">No tabs available in this window (excluding pinned tabs).</td>
+            <td colspan="6">No tabs available in this window (excluding pinned tabs).</td>
         `;
     tableBody.appendChild(noTabsRow);
     return;
   }
+
+  // Get the current session if it's a named session
+  const currentWindow = tabs[0]?.windowId;
+  const currentSession = state_sessions.find(
+    (session) => session.windowId === currentWindow && session.name,
+  );
+
+  // Get synced bookmarks for the current session if it exists
+  let syncedBookmarks: SavedBookmark[] = [];
+  if (currentSession) {
+    try {
+      // Get synced bookmarks via session_management abstraction
+      const response = await chrome.runtime.sendMessage({
+        type: GET_SYNCED_OPENTABS,
+        payload: {
+          sessionId: currentSession.id,
+        },
+      });
+
+      if (
+        response &&
+        response.type === "GET_SYNCED_OPENTABS_RESULT" &&
+        response.payload.bookmarks
+      ) {
+        syncedBookmarks = response.payload.bookmarks;
+      }
+    } catch (error) {
+      console.error("Error fetching synced bookmarks:", error);
+    }
+  }
+
+  // Create a set of synced URLs for quick lookup
+  const syncedUrls = new Set(syncedBookmarks.map((bookmark) => bookmark.url));
 
   // Collect all tab URLs to request summaries (only from non-pinned tabs)
   const tabUrls: string[] = filteredTabs
@@ -1076,10 +1112,25 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
                     <div class="summary-text">${digest.summary}</div>`;
       }
     }
+
+    // Determine sync status
+    // TODO: We may add these indicator in the title cell instead of building a dedicated column.
+    let syncStatus = "";
+    if (currentSession && tab.url) {
+      if (syncedUrls.has(tab.url)) {
+        syncStatus = `<span class="sync-status synced" title="Tab is synced to bookmarks">✓</span>`;
+      } else {
+        syncStatus = `<span class="sync-status not-synced" title="Tab exists in window but is not synced to bookmarks">⚠️</span>`;
+      }
+    } else if (!currentSession) {
+      syncStatus = `<span class="sync-status no-session" title="No named session for this window">-</span>`;
+    }
+
     row.innerHTML = `
             <td class="tab-id-cell">${tab.id || "N/A"}</td>
             <td class="title-cell" title="${tab.title}">${tab.title || "Untitled"}</td>
             <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>
+            <td class="sync-status-cell">${syncStatus}</td>
             <td class="summary-cell">${summarySnippet}</td>
             <td class="actions-cell">
                 <div class="tab-actions">

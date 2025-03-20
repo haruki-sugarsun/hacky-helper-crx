@@ -478,6 +478,8 @@ export async function restoreClosedSession(
 
     // Create a new window with tabs.html first
     const newWindow = await chrome.windows.create({
+      // TODO: Consider adding sessionId and sessionName encoded in URL as we do in tabs_helper.ts.
+      //       We might want to have a common helper function tabs_helper.ts.
       url: chrome.runtime.getURL("tabs.html"),
       focused: true,
     });
