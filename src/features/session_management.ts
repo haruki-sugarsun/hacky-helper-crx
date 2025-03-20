@@ -476,16 +476,9 @@ export async function restoreClosedSession(
       return null;
     }
 
-    // Create a new window with the first tab
-    // TODO: We can create a window even without opening a existing tab, and instead we can open tabs.html.
-    const firstTab = closedSession.tabs[0];
-    if (!firstTab || !firstTab.url) {
-      console.error("No tabs found in closed session");
-      return null;
-    }
-
+    // Create a new window with tabs.html first
     const newWindow = await chrome.windows.create({
-      url: firstTab.url,
+      url: chrome.runtime.getURL("tabs.html"),
       focused: true,
     });
 
@@ -502,8 +495,8 @@ export async function restoreClosedSession(
       true, // Indicate that this session is being restored from bookmarks
     );
 
-    // Add the remaining tabs to the window
-    for (let i = 1; i < closedSession.tabs.length; i++) {
+    // Add all the saved tabs to the window
+    for (let i = 0; i < closedSession.tabs.length; i++) {
       const tab = closedSession.tabs[i];
       if (tab.url) {
         await chrome.tabs.create({
