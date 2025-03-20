@@ -154,8 +154,8 @@ export class ConfigStore implements ConfigStoreRO {
   constructor() {
     // Initialize configurations if needed
   }
-  OPENAI_API_KEY(): string {
-    return ConfigStore.OPENAI_API_KEY.get();
+  async OPENAI_API_KEY(): Promise<string> {
+    return await ConfigStore.OPENAI_API_KEY.get();
   }
 
   set(key: string, value: any) {
@@ -227,7 +227,7 @@ export const CONFIG_STORE = new ConfigStore();
 
 // Other pages/features should use this interface.
 export interface ConfigStoreRO {
-  OPENAI_API_KEY(): string;
+  OPENAI_API_KEY(): Promise<string>;
 }
 export const CONFIG_RO = CONFIG_STORE.asConfigStoreRO();
 

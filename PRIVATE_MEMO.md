@@ -3,7 +3,8 @@
 ## Tips
 
 ```
-$ find *.html src/ | entr -r sh -c 'npx prettier . --write; npm run build'
+$ npm run dev
+$ find *.html src/ | entr -r sh -c 'npx prettier . --write; npx tsc --noEmit'
 ```
 
 ## Config
