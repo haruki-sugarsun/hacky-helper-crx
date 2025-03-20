@@ -483,6 +483,7 @@ async function forceSyncSession(sessionId: string) {
     ) {
       console.log(`Session ${sessionId} synced to bookmarks successfully`);
       alert("Session synced to bookmarks successfully");
+      // TODO: Rerender the tabs UI.
     } else {
       console.error("Error syncing session to bookmarks:", response);
       alert("Error syncing session to bookmarks");

@@ -120,6 +120,7 @@ export class BookmarkStorage {
    */
   public async syncSessionToBookmarks(
     session: NamedSession,
+    sessionTabs: NamedSessionTab[],
   ): Promise<BookmarkSessionFolder | null> {
     if (!this.parentFolderId || !session.name) return null;
 
@@ -169,7 +170,7 @@ export class BookmarkStorage {
 
       // Sync the tabs in the "Opened Pages" folder
       // TODO: Fetch the tabs from tabs API.
-      await this.syncOpenedPages(sessionFolder, []);
+      await this.syncOpenedPages(sessionFolder, sessionTabs);
 
       return sessionFolder;
     } catch (error) {
@@ -420,12 +421,15 @@ export class BookmarkStorage {
           folder.openedPagesId,
         );
 
+        // TODO: Store the metadata (updated and owner) encoded in the bookmark title.
         const tabs: NamedSessionTab[] = bookmarks
           .filter((bookmark) => bookmark.url)
           .map((bookmark) => ({
             tabId: null, // Closed sessions don't have active tab IDs
             title: bookmark.title,
             url: bookmark.url!,
+            updatedAt: Date.now(), // Provide a default timestamp
+            owner: "unknown", // Provide a default owner
           }));
 
         // Create a closed session object

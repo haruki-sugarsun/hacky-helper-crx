@@ -1,4 +1,8 @@
-import { ClosedNamedSession, NamedSession } from "../lib/types";
+import {
+  ClosedNamedSession,
+  NamedSession,
+  NamedSessionTab,
+} from "../lib/types";
 import { bookmarkStorage } from "./bookmark_storage";
 import { getConfig } from "./config_store";
 
@@ -302,8 +306,33 @@ export async function syncSessionToBookmarks(
   if (!session.name) return false;
 
   try {
-    // TODO: We need to pass the currently opend tabs to the bookmarkStorage.
-    const result = await bookmarkStorage.syncSessionToBookmarks(session);
+    // Get the current tabs for the session's window
+    if (!session.windowId) {
+      console.warn(
+        `Cannot sync session ${session.id} without a valid windowId`,
+      );
+      return false;
+    }
+
+    // Query for non-pinned tabs in the window
+    const tabs = await chrome.tabs.query({
+      windowId: session.windowId,
+      pinned: false,
+    });
+
+    // Convert tabs to NamedSessionTab format
+    const sessionTabs: NamedSessionTab[] = tabs.map((tab) => ({
+      tabId: tab.id || null,
+      title: tab.title || "Untitled",
+      url: tab.url || "",
+      updatedAt: Date.now(),
+      owner: "current", // Default owner, could be configurable in the future
+    }));
+
+    const result = await bookmarkStorage.syncSessionToBookmarks(
+      session,
+      sessionTabs,
+    );
     return !!result;
   } catch (error) {
     console.error("Error syncing session to bookmarks:", error);

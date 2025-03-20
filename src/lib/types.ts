@@ -50,12 +50,21 @@ export interface NamedSession {
  * Represents an individual tab within a Named Session.
  */
 export interface NamedSessionTab {
-  /** The unique identifier of the tab; may be null if not assigned during restoration */
+  /** The unique identifier of the tab; may be null if not assigned during restoration
+   * TODO: Check if we really need tabId here.
+   */
   tabId: number | null;
   /** The title of the tab */
   title: string;
   /** The URL of the tab */
   url: string;
+  /** Timestamp when the tab was last updated */
+  updatedAt: number;
+
+  /** The owner client (browser instance) of the tab
+   *  TODO: Add the ownerId config in config_store.ts and settings.ts/html. So that our implementation can read it and the user can modify it on demand.
+   */
+  owner: string;
 }
 
 /**
