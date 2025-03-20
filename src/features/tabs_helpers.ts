@@ -1,6 +1,62 @@
 import * as SessionManagement from "./session_management";
 
 /**
+ * Ensures a tabs.html tab exists in the specified window.
+ * If a tabs.html tab already exists, it will be reloaded.
+ * If no tabs.html tab exists, a new one will be created.
+ * @param windowId The ID of the window to ensure tabs.html in
+ */
+export async function ensureTabsHtmlInWindow(windowId: number): Promise<void> {
+  try {
+    // Check if this window has a named session
+    const sessions = await SessionManagement.getNamedSessions();
+    const associatedSession = sessions.find(
+      (session) => session.windowId === windowId && session.name,
+    );
+
+    // Use a more specific pattern to match only our tabs.html page
+    const tabsInWindow = await chrome.tabs.query({
+      windowId: windowId,
+      url: [
+        chrome.runtime.getURL("tabs.html"),
+        chrome.runtime.getURL("tabs.html?*"),
+      ],
+    });
+
+    if (tabsInWindow.length > 0) {
+      // Tabs.html exists in this window, reload it without activating
+      console.log(`Found tabs.html in window ${windowId}, reloading it`);
+      await chrome.tabs.reload(tabsInWindow[0].id!);
+    } else {
+      // No tabs.html in this window, create a new one
+      console.log(
+        `No tabs.html found in window ${windowId}, opening a new one`,
+      );
+
+      // Build the URL with session parameters if this is a named session
+      let tabUrl = chrome.runtime.getURL("tabs.html");
+      if (associatedSession) {
+        const queryParams = new URLSearchParams();
+        queryParams.set("sessionId", associatedSession.id);
+        if (associatedSession.name) {
+          queryParams.set("sessionName", associatedSession.name);
+        }
+        tabUrl = `${tabUrl}?${queryParams.toString()}`;
+      }
+
+      await chrome.tabs.create({
+        windowId: windowId,
+        url: tabUrl,
+        active: false, // Don't activate the new tab
+      });
+    }
+  } catch (error) {
+    console.error(`Error ensuring tabs.html in window ${windowId}:`, error);
+    throw error; // Re-throw to allow caller to handle the error
+  }
+}
+
+/**
  * Opens the tabs.html page in the current window.
  * If the current window has a named session, the tabs.html page will be opened with session parameters.
  * If tabs.html is already open in the current window, it will be focused and reloaded.

@@ -15,6 +15,7 @@ import {
   OPEN_SAVED_BOOKMARK,
   GET_SYNCED_OPENTABS,
 } from "./lib/constants";
+import { ensureTabsHtmlInWindow } from "./features/tabs_helpers";
 import {
   ClosedNamedSession,
   NamedSession,
@@ -942,6 +943,14 @@ async function updateUI(
           `Double-clicked window: ${win.id}. Switching to this window.`,
         );
         try {
+          // Additionally reload the tabs.html in that window or open it if not yet opened
+          try {
+            await ensureTabsHtmlInWindow(win.id!);
+          } catch (error) {
+            console.error(
+              `Error managing tabs.html in window ${win.id}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
           await chrome.windows.update(win.id!, { focused: true });
           console.log(`Successfully switched to window: ${win.id}`);
         } catch (error) {
