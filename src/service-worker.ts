@@ -432,7 +432,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           sendResponse({ type: "EMBEDDINGS_RESULT", payload: embeddings });
           break;
         case CREATE_NAMED_SESSION:
-          try {
+          {
             const { windowId, sessionName } = payload;
             const session = await SessionManagement.createNamedSession(
               windowId,
@@ -442,16 +442,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               type: "CREATE_NAMED_SESSION_RESULT",
               payload: session,
             });
-          } catch (error) {
-            console.error("Error creating named session:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case UPDATE_NAMED_SESSION_TABS:
-          try {
+          {
             const { sessionId, windowId } = payload;
             const success = await SessionManagement.updateNamedSessionTabs(
               sessionId,
@@ -465,47 +459,30 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 windowId,
               },
             });
-          } catch (error) {
-            console.error("Error updating named session tabs:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case DELETE_NAMED_SESSION:
-          try {
+          {
             const { sessionId } = payload;
             await SessionManagement.deleteNamedSession(sessionId);
             sendResponse({
               type: "DELETE_NAMED_SESSION_RESULT",
               payload: "success",
             });
-          } catch (error) {
-            console.error("Error deleting named session:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case GET_NAMED_SESSIONS:
-          try {
+          {
             const sessions = await SessionManagement.getNamedSessions();
             sendResponse({
               type: "GET_NAMED_SESSIONS_RESULT",
               payload: sessions,
             });
-          } catch (error) {
-            console.error("Error getting named sessions:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case CATEGORIZE_TABS:
-          try {
+          // TODO: Factor out to a method.
+          {
             // Get tab summaries for all tabs in the payload
             const tabUrls = payload.tabUrls;
             if (!tabUrls || !Array.isArray(tabUrls)) {
@@ -557,16 +534,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 categories,
               },
             });
-          } catch (error) {
-            console.error("Error categorizing tabs:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case SUGGEST_TAB_DESTINATIONS:
-          try {
+          {
             const { tabUrl, tabUrls } = payload;
             if (!tabUrl || !tabUrls || !Array.isArray(tabUrls)) {
               throw new Error("Invalid tab URL or tab URLs provided");
@@ -598,16 +569,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 suggestions,
               },
             });
-          } catch (error) {
-            console.error("Error suggesting tab destinations:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case MIGRATE_TAB:
-          try {
+          {
             const { tabId, windowId } = payload;
             if (!tabId || !windowId) {
               throw new Error("Tab ID and window ID are required");
@@ -626,16 +591,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 tab: migratedTab,
               },
             });
-          } catch (error) {
-            console.error("Error migrating tab:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case SAVE_TAB_TO_BOOKMARKS:
-          try {
+          {
             const { sessionId, tabId, metadata } = payload;
             if (!sessionId || !tabId) {
               throw new Error("Session ID and Tab ID are required");
@@ -659,16 +618,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 sessionId,
               },
             });
-          } catch (error) {
-            console.error("Error saving tab to bookmarks:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case GET_SAVED_BOOKMARKS:
-          try {
+          {
             const { sessionId } = payload;
             if (!sessionId) {
               throw new Error("Session ID is required");
@@ -685,16 +638,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 sessionId,
               },
             });
-          } catch (error) {
-            console.error("Error getting saved bookmarks:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case OPEN_SAVED_BOOKMARK:
-          try {
+          {
             const { bookmarkId, windowId } = payload;
             if (!bookmarkId) {
               throw new Error("Bookmark ID is required");
@@ -723,16 +670,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 tab,
               },
             });
-          } catch (error) {
-            console.error("Error opening saved bookmark:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case SYNC_SESSION_TO_BOOKMARKS:
-          try {
+          {
             const { sessionId } = payload;
             if (!sessionId) {
               throw new Error("Session ID is required");
@@ -756,22 +697,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 sessionId,
               },
             });
-          } catch (error) {
-            console.error("Error syncing session to bookmarks:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case GET_SYNCED_OPENTABS:
-          try {
+          {
             const { sessionId } = payload;
             if (!sessionId) {
               throw new Error("Session ID is required");
             }
 
             // Get synced bookmarks for the session
+            // TODO: Rename the method to getSyncedOpenTabs().
             const bookmarks =
               await SessionManagement.getSyncedBookmarks(sessionId);
 
@@ -783,77 +719,51 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 sessionId,
               },
             });
-          } catch (error) {
-            console.error("Error getting synced bookmarks:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
           }
           break;
         case GET_CLOSED_NAMED_SESSIONS:
-          try {
-            // Get closed named sessions
-            const closedSessions =
-              await SessionManagement.getClosedNamedSessions();
-
-            sendResponse({
-              type: "GET_CLOSED_NAMED_SESSIONS_RESULT",
-              payload: {
-                closedSessions,
-              },
-            });
-          } catch (error) {
-            console.error("Error getting closed named sessions:", error);
-            sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
-            });
-          }
+          sendResponse({
+            type: "GET_CLOSED_NAMED_SESSIONS_RESULT",
+            payload: {
+              closedSessions: await SessionManagement.getClosedNamedSessions(),
+            },
+          });
           break;
         case RESTORE_CLOSED_SESSION:
-          try {
-            const { sessionId } = payload;
-            if (!sessionId) {
-              throw new Error("Session ID is required");
-            }
+          const { sessionId } = payload;
+          if (!sessionId) {
+            throw new Error("Session ID is required");
+          }
 
-            // Restore the closed session
-            const restoredSession =
-              await SessionManagement.restoreClosedSession(sessionId);
+          // Restore the closed session
+          const restoredSession =
+            await SessionManagement.restoreClosedSession(sessionId);
 
-            if (restoredSession) {
-              sendResponse({
-                type: "RESTORE_CLOSED_SESSION_RESULT",
-                payload: {
-                  success: true,
-                  session: restoredSession,
-                },
-              });
-            } else {
-              sendResponse({
-                type: "RESTORE_CLOSED_SESSION_RESULT",
-                payload: {
-                  success: false,
-                  error: "Failed to restore session",
-                },
-              });
-            }
-          } catch (error) {
-            console.error("Error restoring closed session:", error);
+          if (restoredSession) {
             sendResponse({
-              type: "ERROR",
-              payload: error instanceof Error ? error.message : String(error),
+              type: "RESTORE_CLOSED_SESSION_RESULT",
+              payload: {
+                success: true,
+                session: restoredSession,
+              },
+            });
+          } else {
+            sendResponse({
+              type: "RESTORE_CLOSED_SESSION_RESULT",
+              payload: {
+                success: false,
+                error: "Failed to restore session",
+              },
             });
           }
           break;
         default:
-          console.warn("Unknown LLM task type:", type);
+          console.warn("Unknown Message type:", type);
           if (message.action === "callFunction") {
             // This is for editor.html, which has own handling logic.
             // TODO: implement proper targetting logic.
           } else {
-            sendResponse({ type: "ERROR", payload: "Unknown LLM task type" });
+            throw new Error(`Unknown Message type: ${type}`);
           }
       }
     } catch (error) {

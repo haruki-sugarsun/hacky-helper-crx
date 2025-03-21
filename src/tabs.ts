@@ -1076,6 +1076,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
   );
 
   // Get synced bookmarks for the current session if it exists
+  // TODO: Rename the vatiable to syncedOpenTabs.
   let syncedBookmarks: SavedBookmark[] = [];
   if (currentSession) {
     try {
