@@ -35,7 +35,7 @@ const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
 // Page State
 var windowIds: (number | undefined)[] = []; // IDs of all windows
 var state_windows: chrome.windows.Window[]; // All windows
-var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window
+var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window. This is mostly redundant now that we have tabs in state_windows. TODO: Remove it.
 var state_sessions: NamedSession[] = []; // Named Sessions from the service worker
 var currentTabId: number | undefined; // ID of the current tab
 
@@ -179,16 +179,18 @@ async function init() {
   // Check for session parameters in URL and restore session-window association if needed
   await restoreSessionWindowAssociation();
 
-  const windowsGetAll = chrome.windows.getAll().then((results) => {
-    state_windows = results;
-    windowIds = [];
-    results.forEach((window) => {
-      windowIds.push(window.id);
-      console.log(`ID: ${window.id}, Tabs: ${window.tabs}`);
+  const windowsGetAll = chrome.windows
+    .getAll({ populate: true })
+    .then((results) => {
+      state_windows = results;
+      windowIds = [];
+      results.forEach((window) => {
+        windowIds.push(window.id);
+        console.log(`ID: ${window.id}, Tabs: ${window.tabs}`);
+      });
+      console.log(`${windowIds}`);
+      return results;
     });
-    console.log(`${windowIds}`);
-    return results;
-  });
   const tabsQuery = chrome.tabs.query({ currentWindow: true }).then((tabs) => {
     state_tabs = tabs;
     console.log("Tabs in current window:");
@@ -207,7 +209,7 @@ async function init() {
 
       console.log(resTabsQuery);
 
-      updateUI(state_windows, state_tabs);
+      updateUI(state_windows);
     })
     .catch((err) => {
       console.error(err);
@@ -246,10 +248,10 @@ const requestTabSummariesButton = document.querySelector<HTMLButtonElement>(
 requestTabSummariesButton.addEventListener("click", async () => {
   console.log("Tab summaries requested");
 
-  // Refresh the windows list
-  chrome.windows.getAll().then((windows) => {
+  // Refresh the windows list with tab information
+  chrome.windows.getAll({ populate: true }).then((windows) => {
     state_windows = windows;
-    updateUI(state_windows, state_tabs);
+    updateUI(state_windows);
   });
 
   // Get all tabs in the current window
@@ -518,12 +520,12 @@ async function updateSessionTabs(sessionId: string) {
       console.log(`Session ${sessionId} tabs updated successfully`);
       alert("Session tabs updated successfully");
 
-      // Refresh the UI
-      chrome.windows.getAll().then((windows) => {
+      // Refresh the UI with tab information
+      chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
           state_tabs = tabs;
-          updateUI(state_windows, state_tabs);
+          updateUI(state_windows);
         });
       });
     } else {
@@ -568,12 +570,12 @@ async function deleteSession(sessionId: string) {
     ) {
       console.log(`Session ${sessionId} deleted successfully`);
 
-      // Refresh the UI
-      chrome.windows.getAll().then((windows) => {
+      // Refresh the UI with tab information
+      chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
           state_tabs = tabs;
-          updateUI(state_windows, state_tabs);
+          updateUI(state_windows);
         });
       });
     } else {
@@ -609,12 +611,12 @@ function promptCreateNamedSession() {
       if (response && response.type === "CREATE_NAMED_SESSION_RESULT") {
         console.log("Named Session created:", response.payload);
 
-        // Refresh the UI
-        chrome.windows.getAll().then((windows) => {
+        // Refresh the UI with tab information
+        chrome.windows.getAll({ populate: true }).then((windows) => {
           state_windows = windows;
           chrome.tabs.query({ currentWindow: true }).then((tabs) => {
             state_tabs = tabs;
-            updateUI(state_windows, state_tabs);
+            updateUI(state_windows);
           });
         });
       } else {
@@ -735,12 +737,13 @@ async function restoreClosedSession(sessionId: string) {
       console.log(`Session ${sessionId} restored successfully`);
       alert("Session restored successfully");
 
-      // Refresh the UI
-      chrome.windows.getAll().then((windows) => {
+      // Refresh the UI with tab information
+      // TODO: Factor out the common getAll()->updateUI() combinations.
+      chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
           state_tabs = tabs;
-          updateUI(state_windows, state_tabs);
+          updateUI(state_windows);
         });
       });
     } else {
@@ -821,16 +824,13 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
 
 async function updateUI(
   windows: chrome.windows.Window[],
-  tabs: chrome.tabs.Tab[],
   selectedSessionByWindowId?: number /* Optionally specify the session to be opened after the UI refresh by windowId. Select the current if undefined. */,
 ) {
   // Log window and tab information for debugging
   windows.forEach((w) => {
     console.log(`ID: ${w.id}, Tabs: ${w.tabs?.length || 0}`);
   });
-  tabs.forEach((t) => {
-    console.log(`Title: ${t.title}, URL: ${t.url}`);
-  });
+  // We don't need to log tabs separately as they're now included in windows
 
   // ---- Fetch and update Named Sessions ----
   await chrome.runtime
@@ -884,10 +884,10 @@ async function updateUI(
   for (let i = 0; i < windows.length; i++) {
     const win = windows[i];
     // Count non-pinned tabs for this window
-    // TODO: This tab count is not working. FIXIT!
-    const tabCount = state_tabs.filter(
-      (tab) => tab.windowId === win.id && !tab.pinned,
-    ).length;
+    let tabCount = 0;
+    if (win.tabs) {
+      tabCount = win.tabs.filter((tab) => !tab.pinned).length;
+    }
 
     // Determine if a named session exists for this window
     const associatedSession = state_sessions.find(
@@ -1238,7 +1238,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
           await chrome.tabs.remove(tabId);
           state_tabs = state_tabs.filter((t) => t.id !== tabId);
           // TODO: This updateUI should show the UI for the currently selected window panel.
-          updateUI(state_windows, state_tabs, windowId);
+          updateUI(state_windows, windowId);
         } catch (error) {
           console.error(
             `Error closing tab: ${error instanceof Error ? error.message : error}`,
@@ -1391,12 +1391,12 @@ async function migrateTab(tabId: number, windowId: number) {
     if (response && response.type === "MIGRATE_TAB_RESULT") {
       console.log("Tab migrated successfully:", response.payload);
 
-      // Refresh the UI
-      chrome.windows.getAll().then((windows) => {
+      // Refresh the UI with tab information
+      chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
           state_tabs = tabs;
-          updateUI(state_windows, state_tabs);
+          updateUI(state_windows);
         });
       });
     } else {
@@ -1640,11 +1640,11 @@ if (createNamedSessionButton && namedSessionInput) {
       if (response && response.type === "CREATE_NAMED_SESSION_RESULT") {
         console.log("Named Session created:", response.payload);
         // Refresh the sessions list by fetching the latest windows and tabs, then update the UI.
-        chrome.windows.getAll().then((windows) => {
+        chrome.windows.getAll({ populate: true }).then((windows) => {
           state_windows = windows;
           chrome.tabs.query({ currentWindow: true }).then((tabs) => {
             state_tabs = tabs;
-            updateUI(state_windows, state_tabs);
+            updateUI(state_windows);
           });
         });
       } else {
