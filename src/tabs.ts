@@ -705,6 +705,13 @@ function createClosedSessionListItem(
     displayClosedSessionTabs(closedSession);
   });
 
+  // Add double-click handler to restore the session
+  li.addEventListener("dblclick", () => {
+    console.log(
+      `Double-clicked closed session: ${closedSession.id}. Restoring this session.`,
+    );
+    restoreClosedSession(closedSession.id);
+  });
   return li;
 }
 
@@ -839,16 +846,16 @@ async function updateUI(
 
   // ---- Fetch and update Closed Named Sessions ----
   let closedSessions: ClosedNamedSession[] = [];
-  await chrome.runtime
-    .sendMessage({ type: GET_CLOSED_NAMED_SESSIONS })
-    .then((response) => {
-      if (response && response.type === "GET_CLOSED_NAMED_SESSIONS_RESULT") {
-        closedSessions = response.payload.closedSessions || [];
-      }
-    })
-    .catch((err) => {
-      console.error("Error fetching closed named sessions:", err);
+  try {
+    let response = await chrome.runtime.sendMessage({
+      type: GET_CLOSED_NAMED_SESSIONS,
     });
+    if (response && response.type === "GET_CLOSED_NAMED_SESSIONS_RESULT") {
+      closedSessions = response.payload.closedSessions || [];
+    }
+  } catch (err) {
+    console.error("Error fetching closed named sessions:", err);
+  }
 
   // ---- Update the UI for Named, Unnamed, and Closed Sessions ----
   // Get all containers:
@@ -961,7 +968,6 @@ async function updateUI(
         }
       });
     }
-    // TODO: For Closed Named Sessions, add dbclick handler to restore the session.
 
     if (isCurrent) {
       currentWindowItem = listItem;
@@ -991,7 +997,7 @@ async function updateUI(
     });
   }
 
-  // OVerride the selected window with the current window is not yet specified.
+  // Override the selected window with the current window is not yet specified.
   if (!selectedWindowItem) {
     selectedWindowId = windows.find((w) => w.focused)?.id;
     selectedWindowItem = currentWindowItem;
