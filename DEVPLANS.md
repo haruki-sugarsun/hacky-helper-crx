@@ -29,6 +29,17 @@
   - An existing browser window can be registered as a Named Session.
   - When a Named Session is deleted, the corresponding bookmark folder is also removed.
 
+- **Opened Tabs sharing among devices by a Session**
+
+  - Open tabs stored in the backend can be restored by the user operation.
+  - "Open Tabs in other devices" section in the tabs UI shows the opened tabs found in the backend but not opened in the current window.
+
+- **Saved Bookmarks in a Session**
+
+  - The user can save a tab as a "saved bookmark" of the named session.
+  - Whether the tab is saved or not is provided as a status indicator.
+  - We provide "open all" button in the saved bookmark UI.
+
 - **Bookmark Storage Structure**
 
   - A `Named Sessions` bookmark folder is created to store session data.
@@ -48,7 +59,7 @@
   - When the user restores a session, the saved tabs are reopened.
 
 - **Tab Synchronization**
-  - The bookmark folder is updated by a timer of manual trigger.
+  - The backend bookmark folder is updated by a timer of manual trigger.
 
 ## Bookmark as URL Store
 
@@ -93,6 +104,17 @@
 
 - src/lib contains common implementations designed to be shared among the ts files.
 - src/features contains modules designed to encapsulate functionalities per feature. Typically files in features may include each other.
+
+## Tabs UI
+
+### Behavior opening multiple tabs.html for a session.
+
+- Check and define the bahavior. -> Maybe OK.
+- SessionId and windowId mapping is managed by session_management, and
+
+### UI Components
+
+- Context Menu for the (Open-Named, Unnamed, Closed-Named)Sessions.
 
 # Fullfilled Dev Plans
 

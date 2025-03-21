@@ -877,6 +877,7 @@ async function updateUI(
   for (let i = 0; i < windows.length; i++) {
     const win = windows[i];
     // Count non-pinned tabs for this window
+    // TODO: This tab count is not working. FIXIT!
     const tabCount = state_tabs.filter(
       (tab) => tab.windowId === win.id && !tab.pinned,
     ).length;

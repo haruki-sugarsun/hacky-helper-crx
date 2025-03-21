@@ -15,3 +15,10 @@ $ find *.html src/ | entr -r sh -c 'clear; npx prettier . --write; npx tsc --noE
   - granite3.1-moe:3b
   - granite3.1-dense:8b
 - bge-m3
+
+# Just Idea Parking Lot
+
+We have unstructured, just-idea notes here:
+
+- Use some webfont for emojis?
+- Make sure to generate keywords only for the generateKeywords function maybe by specifiying JSON output? -　Show the current LLMTasks status in the popup? e.g. number of the pending tasks, currently-running task etc.
