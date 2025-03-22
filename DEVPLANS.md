@@ -22,6 +22,7 @@
   - If a `tabs.html` exists for the same session/window, it is selected instead of opening a new one.
   - We also provide access to the known named sessions stored in the BookmarkStorage, and we can open the named session.
   - `tabs.ts` handles the Tabs UI and interacts with the service-worker via messages.
+  - Provide a UI to rename a Named Session.
 
 - **Session Creation & Management**
 

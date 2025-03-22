@@ -9,6 +9,7 @@ import {
   SYNC_SESSION_TO_BOOKMARKS,
   UPDATE_NAMED_SESSION_TABS,
   DELETE_NAMED_SESSION,
+  RENAME_NAMED_SESSION,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   GET_SAVED_BOOKMARKS,
@@ -393,6 +394,7 @@ function createSessionListItem(
   dropdownMenu.className = "session-dropdown-menu";
 
   // Add menu items based on whether this is a named session or not
+  // TODO: Support right click to open the menu as well.
   if (sessionId) {
     // Actions for named sessions
     const syncAction = document.createElement("div");
@@ -412,6 +414,15 @@ function createSessionListItem(
       updateSessionTabs(sessionId);
     });
     dropdownMenu.appendChild(updateAction);
+
+    const renameAction = document.createElement("div");
+    renameAction.className = "session-menu-item";
+    renameAction.textContent = "Rename Session";
+    renameAction.addEventListener("click", (e) => {
+      e.stopPropagation();
+      renameSession(sessionId);
+    });
+    dropdownMenu.appendChild(renameAction);
 
     const deleteAction = document.createElement("div");
     deleteAction.className = "session-menu-item";
@@ -536,6 +547,62 @@ async function updateSessionTabs(sessionId: string) {
     console.error("Error updating session tabs:", error);
     alert(
       "Error updating session tabs: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Renames a session
+ */
+async function renameSession(sessionId: string) {
+  // Get the current session name to use as default in the prompt
+  const session = state_sessions.find((s) => s.id === sessionId);
+  if (!session) {
+    console.error(`Session with ID ${sessionId} not found`);
+    return;
+  }
+
+  // Prompt the user for a new name, with the current name as the default
+  const newName = prompt("Enter a new name for this session:", session.name);
+  if (newName === null) return; // User cancelled
+  if (newName.trim() === "") {
+    alert("Session name cannot be empty");
+    return;
+  }
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: RENAME_NAMED_SESSION,
+      payload: {
+        sessionId,
+        newName,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "RENAME_NAMED_SESSION_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Session ${sessionId} renamed to "${newName}" successfully`);
+
+      // Refresh the UI with tab information
+      chrome.windows.getAll({ populate: true }).then((windows) => {
+        state_windows = windows;
+        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+          state_tabs = tabs;
+          updateUI(state_windows);
+        });
+      });
+    } else {
+      console.error("Error renaming session:", response);
+      alert("Error renaming session");
+    }
+  } catch (error) {
+    console.error("Error renaming session:", error);
+    alert(
+      "Error renaming session: " +
         (error instanceof Error ? error.message : String(error)),
     );
   }

@@ -32,6 +32,7 @@ import {
   CREATE_NAMED_SESSION,
   UPDATE_NAMED_SESSION_TABS,
   DELETE_NAMED_SESSION,
+  RENAME_NAMED_SESSION,
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,
   OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
@@ -468,6 +469,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             sendResponse({
               type: "DELETE_NAMED_SESSION_RESULT",
               payload: "success",
+            });
+          }
+          break;
+        case RENAME_NAMED_SESSION:
+          {
+            const { sessionId, newName } = payload;
+            if (!sessionId || !newName) {
+              throw new Error("Session ID and new name are required");
+            }
+
+            const success = await SessionManagement.renameNamedSession(
+              sessionId,
+              newName,
+            );
+
+            sendResponse({
+              type: "RENAME_NAMED_SESSION_RESULT",
+              payload: {
+                success,
+              },
             });
           }
           break;

@@ -223,6 +223,46 @@ export async function updateNamedSessionTabs(
 }
 
 /**
+ * Renames a Named Session by its sessionId.
+ * @param sessionId - The ID of the session to rename
+ * @param newName - The new name for the session
+ * @returns Promise<boolean> - True if the session was successfully renamed, false otherwise
+ */
+export async function renameNamedSession(
+  sessionId: string,
+  newName: string,
+): Promise<boolean> {
+  // Check if sessionName is not provided or empty
+  // TODO: Factor out the name validation.
+  if (!newName || newName.trim() === "") {
+    console.error(`Cannot rename session ${sessionId} to an empty name`);
+    return false;
+  }
+
+  // Get the session from storage
+  const session = await getNamedSessionFromStorage(sessionId);
+  if (!session) {
+    console.warn(
+      `Cannot rename session: Session not found for ID ${sessionId}`,
+    );
+    return false;
+  }
+
+  // Update the session name and updatedAt timestamp
+  session.name = newName;
+  session.updatedAt = Date.now();
+
+  // Save to persistent storage
+  await saveNamedSessionToStorage(session);
+
+  // Update the session in bookmark storage
+  await syncSessionToBookmarks(session);
+
+  console.log(`Renamed session ${sessionId} to "${newName}"`);
+  return true;
+}
+
+/**
  * Deletes a Named Session by its sessionId.
  * Checks both storage and bookmark storage for closed sessions.
  */
