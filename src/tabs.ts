@@ -242,6 +242,8 @@ if (toggleBookmarksButton) {
   });
 }
 
+// Synced tabs are now always visible, no toggle button needed
+
 // Add event listener for the "Open All Bookmarks" button
 const openAllBookmarksButton = document.querySelector<HTMLButtonElement>(
   "#openAllBookmarksButton",
@@ -250,6 +252,17 @@ if (openAllBookmarksButton) {
   openAllBookmarksButton.addEventListener("click", async () => {
     console.log("Opening all bookmarks that aren't already open");
     await openAllBookmarks();
+  });
+}
+
+// Add event listener for the "Open All Synced Tabs" button
+const openAllSyncedTabsButton = document.querySelector<HTMLButtonElement>(
+  "#openAllSyncedTabsButton",
+);
+if (openAllSyncedTabsButton) {
+  openAllSyncedTabsButton.addEventListener("click", async () => {
+    console.log("Opening all synced tabs that aren't already open");
+    await openAllSyncedTabs();
   });
 }
 
@@ -1008,14 +1021,16 @@ async function updateUI(
           updateTabsTable(winId, windowTabs);
         });
 
-        // If this is a named session, fetch and display saved bookmarks
+        // If this is a named session, fetch and display saved bookmarks and synced tabs
         if (associatedSession) {
           fetchAndDisplaySavedBookmarks(associatedSession.id);
+          fetchAndDisplaySyncedTabs(associatedSession.id);
           // Update session metadata
           updateSessionMetadata(associatedSession);
         } else {
-          // Clear saved bookmarks if this is not a named session
+          // Clear saved bookmarks and synced tabs if this is not a named session
           clearSavedBookmarks();
+          clearSyncedTabs();
           // Update session metadata for unnamed window
           updateSessionMetadata(null, win.id);
         }
@@ -1093,18 +1108,20 @@ async function updateUI(
         updateTabsTable(selectedWindowId, windowTabs);
       });
 
-      // If this is a named session, fetch and display saved bookmarks
+      // If this is a named session, fetch and display saved bookmarks and synced tabs
       const associatedSession = state_sessions.find(
         (session) => session.windowId === selectedWindowId && session.name,
       );
       // TODO: We have similar code snippet in this method. Consider refactoring them into renderSessionTabsPane() or something.
       if (associatedSession) {
         fetchAndDisplaySavedBookmarks(associatedSession.id);
+        fetchAndDisplaySyncedTabs(associatedSession.id);
         // Update session metadata
         updateSessionMetadata(associatedSession);
       } else {
-        // Clear saved bookmarks if this is not a named session
+        // Clear saved bookmarks and synced tabs if this is not a named session
         clearSavedBookmarks();
+        clearSyncedTabs();
         // Update session metadata for unnamed window
         updateSessionMetadata(null, selectedWindowId);
       }
@@ -1735,6 +1752,126 @@ if (createNamedSessionButton && namedSessionInput) {
 }
 
 /**
+ * Fetches and displays synced tabs for a session
+ * Shows only tabs that are in the backend but not currently open in the window
+ */
+async function fetchAndDisplaySyncedTabs(sessionId: string) {
+  try {
+    // Get synced tabs for the session
+    // TODO: We have duplicated calls for GET_SYNCED_OPENTABS here and in updateTabsTable. Consider refactoring.
+    const response = await chrome.runtime.sendMessage({
+      type: GET_SYNCED_OPENTABS,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      !response ||
+      response.type !== "GET_SYNCED_OPENTABS_RESULT" ||
+      !response.payload.bookmarks
+    ) {
+      console.error("Error fetching synced tabs:", response);
+      clearSyncedTabs();
+      return;
+    }
+
+    const syncedTabs: SavedBookmark[] = response.payload.bookmarks;
+
+    // Get all currently open tabs in the current window
+    const currentWindow = await chrome.windows.getCurrent();
+    const openTabs = await chrome.tabs.query({ windowId: currentWindow.id });
+
+    // Create a set of open tab URLs for quick lookup
+    const openTabUrls = new Set(openTabs.map((tab) => tab.url));
+
+    // Filter synced tabs to only those that aren't already open
+    const tabsNotOpen = syncedTabs.filter((tab) => !openTabUrls.has(tab.url));
+
+    // Display the tabs that aren't open
+    displaySyncedTabs(tabsNotOpen);
+  } catch (error) {
+    console.error("Error fetching synced tabs:", error);
+    clearSyncedTabs();
+  }
+}
+
+/**
+ * Displays synced tabs in the synced tabs section
+ */
+function displaySyncedTabs(tabs: SavedBookmark[]) {
+  const syncedTabsContainer =
+    document.querySelector<HTMLDivElement>("#synced_tabs")!;
+  const tabsList = syncedTabsContainer.querySelector("ul")!;
+
+  // Clear existing tabs
+  tabsList.innerHTML = "";
+
+  if (tabs.length === 0) {
+    // No tabs available - add a message
+    const noTabsItem = document.createElement("li");
+    noTabsItem.textContent = "No synced tabs from other devices found";
+    tabsList.appendChild(noTabsItem);
+    return;
+  }
+
+  // Add each tab to the list
+  tabs.forEach((tab) => {
+    const listItem = document.createElement("li");
+
+    // Create tab title container
+    const titleContainer = document.createElement("div");
+    titleContainer.className = "synced-tab-title";
+    titleContainer.textContent = tab.title || tab.url;
+    titleContainer.title = tab.url;
+    listItem.appendChild(titleContainer);
+
+    // Create tab actions container
+    const actionsContainer = document.createElement("div");
+    actionsContainer.className = "synced-tab-actions";
+
+    // Add open button
+    const openButton = document.createElement("button");
+    openButton.className = "synced-tab-action-button";
+    openButton.textContent = "Open";
+    openButton.addEventListener("click", async () => {
+      try {
+        await chrome.tabs.create({ url: tab.url });
+      } catch (error) {
+        console.error("Error opening tab:", error);
+        alert(
+          "Error opening tab: " +
+            (error instanceof Error ? error.message : String(error)),
+        );
+      }
+    });
+    actionsContainer.appendChild(openButton);
+
+    listItem.appendChild(actionsContainer);
+
+    tabsList.appendChild(listItem);
+  });
+}
+
+/**
+ * Clears the synced tabs section
+ */
+function clearSyncedTabs() {
+  const syncedTabsContainer =
+    document.querySelector<HTMLDivElement>("#synced_tabs")!;
+  const tabsList = syncedTabsContainer.querySelector("ul")!;
+
+  // Clear existing tabs
+  tabsList.innerHTML = "";
+
+  // Add a message
+  const noTabsItem = document.createElement("li");
+  noTabsItem.textContent =
+    "Select a named session to view tabs from other devices";
+  tabsList.appendChild(noTabsItem);
+}
+
+/**
  * Fetches and displays saved bookmarks for a session
  */
 async function fetchAndDisplaySavedBookmarks(sessionId: string) {
@@ -1956,6 +2093,88 @@ async function openAllBookmarks() {
     console.error("Error opening all bookmarks:", error);
     alert(
       "Error opening all bookmarks: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Opens all synced tabs that aren't already open in the current window
+ */
+async function openAllSyncedTabs() {
+  try {
+    // Get the currently selected session
+    const selectedSessionItem = document.querySelector(
+      "#named_sessions li.selected",
+    );
+    if (!selectedSessionItem) {
+      alert("Please select a named session first");
+      return;
+    }
+
+    // Extract session ID from the selected item
+    const sessionId = selectedSessionItem.getAttribute("data-session-id");
+    if (!sessionId) {
+      alert("No session ID found for the selected session");
+      return;
+    }
+
+    // Get all synced tabs for this session
+    const syncedTabsResponse = await chrome.runtime.sendMessage({
+      type: GET_SYNCED_OPENTABS,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      !syncedTabsResponse ||
+      syncedTabsResponse.type !== "GET_SYNCED_OPENTABS_RESULT" ||
+      !syncedTabsResponse.payload.bookmarks
+    ) {
+      alert("Error fetching synced tabs");
+      return;
+    }
+
+    const syncedTabs: SavedBookmark[] = syncedTabsResponse.payload.bookmarks;
+    if (syncedTabs.length === 0) {
+      alert("No synced tabs found for this session");
+      return;
+    }
+
+    // Get all currently open tabs
+    const currentWindow = await chrome.windows.getCurrent();
+    const openTabs = await chrome.tabs.query({ windowId: currentWindow.id });
+
+    // Create a set of open tab URLs for quick lookup
+    const openTabUrls = new Set(openTabs.map((tab) => tab.url));
+
+    // Filter synced tabs to only those that aren't already open
+    const tabsToOpen = syncedTabs.filter((tab) => !openTabUrls.has(tab.url));
+
+    if (tabsToOpen.length === 0) {
+      alert("All synced tabs are already open in this window");
+      return;
+    }
+
+    // Open each synced tab that isn't already open
+    let openCount = 0;
+    for (const tab of tabsToOpen) {
+      try {
+        await chrome.tabs.create({ url: tab.url });
+        openCount++;
+      } catch (error) {
+        console.error(
+          `Error opening synced tab: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    alert(`Successfully opened ${openCount} synced tabs`);
+  } catch (error) {
+    console.error("Error opening all synced tabs:", error);
+    alert(
+      "Error opening all synced tabs: " +
         (error instanceof Error ? error.message : String(error)),
     );
   }
