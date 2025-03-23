@@ -1,5 +1,6 @@
-> // TODO: Add a function to rename an existing Named Session.
-> in `tabs.ts`.
+>     // TODO: Open a window with a blank page, and update with the corresponding tabs.html URL after restoring other tabs. We need to avoid multiple processing of the tabs UI triggered in parallel.
+>
+> in `session_management.ts`.
 
 ---
 

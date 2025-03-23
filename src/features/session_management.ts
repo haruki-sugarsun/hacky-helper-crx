@@ -174,10 +174,14 @@ export async function createNamedSession(
 /**
  * Updates the Named Session's tab list with the current tabs from the window.
  * If windowId is provided, it will also update the session's windowId.
+ * @param sessionId - The ID of the session to update
+ * @param windowId - Optional window ID to update the session with
+ * @param isRestoringFromBookmarks - Whether this update is part of a session restoration. Default is false.
  */
 export async function updateNamedSessionTabs(
   sessionId: string,
   windowId?: number,
+  isRestoringFromBookmarks: boolean = false,
 ) {
   const session = await getNamedSessionFromStorage(sessionId);
   if (!session) {
@@ -208,10 +212,14 @@ export async function updateNamedSessionTabs(
     // Save updated session to storage
     await saveNamedSessionToStorage(session);
 
-    // Update Bookmark API to reflect new tabs if the session has a name
-    // TODO: We don't need to sync back if restoring the session.
-    if (session.name) {
+    // Update Bookmark API to reflect new tabs if the session has a name and we're not restoring from bookmarks
+    // TODO: if-structure can be simplified?
+    if (session.name && !isRestoringFromBookmarks) {
       await syncSessionToBookmarks(session);
+    } else if (isRestoringFromBookmarks) {
+      console.log(
+        `Skipping sync to bookmarks for session ${sessionId} as it's being restored from bookmarks`,
+      );
     }
 
     console.log(`Updated Named Session ${sessionId} ${session.name}.`);
@@ -545,11 +553,9 @@ export async function restoreClosedSession(
       return null;
     }
 
-    // Create a new window with tabs.html first
+    // Create a new window with a blank page first to avoid multiple processing of the tabs UI triggered in parallel
     const newWindow = await chrome.windows.create({
-      // TODO: Consider adding sessionId and sessionName encoded in URL as we do in tabs_helper.ts.
-      //       We might want to have a common helper function tabs_helper.ts.
-      url: chrome.runtime.getURL("tabs.html"),
+      url: "about:blank",
       focused: true,
     });
 
@@ -577,8 +583,33 @@ export async function restoreClosedSession(
       }
     }
 
-    // Update the session tabs
-    await updateNamedSessionTabs(newSession.id);
+    // Update the session tabs, indicating this is part of a session restoration
+    // TODO: We might be able to reconsider the create&update NamedSession. It now looks a bit complicated.
+    await updateNamedSessionTabs(newSession.id, undefined, true);
+
+    // Find the blank page tab and update it with tabs.html URL
+    const tabs = await chrome.tabs.query({ windowId: newWindow.id });
+    const blankPageTab = tabs.find((tab) => tab.url === "about:blank");
+
+    if (blankPageTab && blankPageTab.id) {
+      // Build the URL with session parameters
+      const queryParams = new URLSearchParams();
+      queryParams.set("sessionId", sessionId);
+      queryParams.set("sessionName", closedSession.name);
+      const tabsUrl = `${chrome.runtime.getURL("tabs.html")}?${queryParams.toString()}`;
+
+      // Update the blank page tab with the tabs.html URL
+      await chrome.tabs.update(blankPageTab.id, {
+        url: tabsUrl,
+        pinned: true, // Pin the tabs.html tab
+      });
+
+      console.log(
+        `Updated blank page tab to tabs.html with session parameters`,
+      );
+    } else {
+      console.warn("Could not find blank page tab to update to tabs.html");
+    }
 
     return newSession;
   } catch (error) {
