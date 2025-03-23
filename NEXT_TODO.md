@@ -1,6 +1,8 @@
->     // TODO: Open a window with a blank page, and update with the corresponding tabs.html URL after restoring other tabs. We need to avoid multiple processing of the tabs UI triggered in parallel.
+Let's work on
+
+>           <!-- TODO: We want a button to open all (if non-exsisting yet)-->
 >
-> in `session_management.ts`.
+> in `tabs.html`.
 
 ---
 

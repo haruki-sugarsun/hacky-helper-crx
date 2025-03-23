@@ -242,6 +242,17 @@ if (toggleBookmarksButton) {
   });
 }
 
+// Add event listener for the "Open All Bookmarks" button
+const openAllBookmarksButton = document.querySelector<HTMLButtonElement>(
+  "#openAllBookmarksButton",
+);
+if (openAllBookmarksButton) {
+  openAllBookmarksButton.addEventListener("click", async () => {
+    console.log("Opening all bookmarks that aren't already open");
+    await openAllBookmarks();
+  });
+}
+
 // Add event listener for the "button to request the tab summaries."
 const requestTabSummariesButton = document.querySelector<HTMLButtonElement>(
   "#requestTabSummariesButton",
@@ -1861,6 +1872,90 @@ async function openSavedBookmark(bookmarkId: string) {
     console.error("Error opening bookmark:", error);
     alert(
       "Error opening bookmark: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Opens all bookmarks that aren't already open in the current window
+ */
+async function openAllBookmarks() {
+  try {
+    // TODO: Consider deciding these common logi about the UI state.
+    // Get the currently selected session
+    const selectedSessionItem = document.querySelector(
+      "#named_sessions li.selected",
+    );
+    if (!selectedSessionItem) {
+      alert("Please select a named session first");
+      return;
+    }
+
+    // Extract session ID from the selected item
+    const sessionId = selectedSessionItem.getAttribute("data-session-id");
+    if (!sessionId) {
+      alert("No session ID found for the selected session");
+      return;
+    }
+
+    // TODO: Consider if we can/should use the already filled HTML elements to know the URLs to open.
+    // Get all saved bookmarks for this session
+    const bookmarksResponse = await chrome.runtime.sendMessage({
+      type: GET_SAVED_BOOKMARKS,
+      payload: {
+        sessionId,
+      },
+    });
+
+    if (
+      !bookmarksResponse ||
+      bookmarksResponse.type !== "GET_SAVED_BOOKMARKS_RESULT" ||
+      !bookmarksResponse.payload.bookmarks
+    ) {
+      alert("Error fetching bookmarks");
+      return;
+    }
+
+    const bookmarks: SavedBookmark[] = bookmarksResponse.payload.bookmarks;
+    if (bookmarks.length === 0) {
+      alert("No bookmarks found for this session");
+      return;
+    }
+
+    // Get all currently open tabs
+    const currentWindow = await chrome.windows.getCurrent();
+    const openTabs = await chrome.tabs.query({ windowId: currentWindow.id });
+
+    // Create a set of open tab URLs for quick lookup
+    const openTabUrls = new Set(openTabs.map((tab) => tab.url));
+
+    // Filter bookmarks to only those that aren't already open
+    const bookmarksToOpen = bookmarks.filter(
+      (bookmark) => !openTabUrls.has(bookmark.url),
+    );
+
+    if (bookmarksToOpen.length === 0) {
+      alert("All bookmarks are already open in this window");
+      return;
+    }
+
+    // Open each bookmark that isn't already open
+    let openCount = 0;
+    for (const bookmark of bookmarksToOpen) {
+      try {
+        await chrome.tabs.create({ url: bookmark.url });
+        openCount++;
+      } catch (error) {
+        console.error(`Error opening bookmark ${bookmark.id}:`, error);
+      }
+    }
+
+    alert(`Successfully opened ${openCount} bookmarks`);
+  } catch (error) {
+    console.error("Error opening all bookmarks:", error);
+    alert(
+      "Error opening all bookmarks: " +
         (error instanceof Error ? error.message : String(error)),
     );
   }
