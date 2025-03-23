@@ -111,6 +111,7 @@ async function restoreSessionWindowAssociation() {
       const sessions = response.payload;
 
       // Check if this session exists but has a null windowId (lost association)
+      // TODO: We also need to check if the window exists or not, and override if not exiting.
       const session = sessions.find((s: NamedSession) => s.id === sessionId);
 
       if (session) {
@@ -1169,13 +1170,15 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
     (session) => session.windowId === currentWindow && session.name,
   );
 
-  // Get synced bookmarks for the current session if it exists
-  // TODO: Rename the vatiable to syncedOpenTabs.
+  // Get synced bookmarks and saved bookmarks for the current session if it exists
+  // TODO: Rename the variable to syncedOpenTabs.
   let syncedBookmarks: SavedBookmark[] = [];
+  let savedBookmarks: SavedBookmark[] = [];
+
   if (currentSession) {
     try {
       // Get synced bookmarks via session_management abstraction
-      const response = await chrome.runtime.sendMessage({
+      const syncedResponse = await chrome.runtime.sendMessage({
         type: GET_SYNCED_OPENTABS,
         payload: {
           sessionId: currentSession.id,
@@ -1183,19 +1186,36 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       });
 
       if (
-        response &&
-        response.type === "GET_SYNCED_OPENTABS_RESULT" &&
-        response.payload.bookmarks
+        syncedResponse &&
+        syncedResponse.type === "GET_SYNCED_OPENTABS_RESULT" &&
+        syncedResponse.payload.bookmarks
       ) {
-        syncedBookmarks = response.payload.bookmarks;
+        syncedBookmarks = syncedResponse.payload.bookmarks;
+      }
+
+      // Get saved bookmarks
+      const savedResponse = await chrome.runtime.sendMessage({
+        type: GET_SAVED_BOOKMARKS,
+        payload: {
+          sessionId: currentSession.id,
+        },
+      });
+
+      if (
+        savedResponse &&
+        savedResponse.type === "GET_SAVED_BOOKMARKS_RESULT" &&
+        savedResponse.payload.bookmarks
+      ) {
+        savedBookmarks = savedResponse.payload.bookmarks;
       }
     } catch (error) {
-      console.error("Error fetching synced bookmarks:", error);
+      console.error("Error fetching bookmarks:", error);
     }
   }
 
-  // Create a set of synced URLs for quick lookup
+  // Create sets of URLs for quick lookup
   const syncedUrls = new Set(syncedBookmarks.map((bookmark) => bookmark.url));
+  const savedUrls = new Set(savedBookmarks.map((bookmark) => bookmark.url));
 
   // Collect all tab URLs to request summaries (only from non-pinned tabs)
   const tabUrls: string[] = filteredTabs
@@ -1242,13 +1262,17 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       }
     }
 
-    // Determine sync status for inclusion in the title cell
-    let syncStatus = "";
+    // Determine sync status and bookmark status for inclusion in the title cell
+    let statusIndicators = "";
     if (currentSession && tab.url) {
-      if (syncedUrls.has(tab.url)) {
-        syncStatus = `<span class="sync-status synced" title="Tab is synced to bookmarks">✓</span>`;
+      // Saved bookmark indicator has the higher preference.
+      if (savedUrls.has(tab.url)) {
+        statusIndicators += `<span class="sync-status synced" title="Tab is saved in bookmarks">⭐</span>`;
+      } else if (syncedUrls.has(tab.url)) {
+        // Sync status indicator
+        statusIndicators += `<span class="sync-status synced" title="Tab is synced to bookmarks">✓</span>`;
       } else {
-        syncStatus = `<span class="sync-status not-synced" title="Tab exists in window but is not synced to bookmarks">⚠️</span>`;
+        statusIndicators += `<span class="sync-status not-synced" title="Tab exists in window but is not synced to bookmarks">⚠️</span>`;
       }
     }
 
@@ -1257,7 +1281,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
             <td class="title-cell" title="${tab.title}">
               <div class="title-container">
                 <span class="title-text">${tab.title || "Untitled"}</span>
-                ${syncStatus}
+                ${statusIndicators}
               </div>
             </td>
             <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>

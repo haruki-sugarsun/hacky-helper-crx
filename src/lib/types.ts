@@ -85,6 +85,7 @@ export interface BookmarkSessionFolder {
 
 /**
  * Represents a saved bookmark
+ * TODO: Rename it to represent a tab in mind, rather than the backend bookmark.
  */
 export interface SavedBookmark {
   /** The bookmark ID */

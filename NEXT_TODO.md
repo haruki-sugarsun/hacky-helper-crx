@@ -1,6 +1,6 @@
 Let's work on
 
-> // TODO: We should add these indicator in the title cell instead of building a dedicated column.
+> // TODO: Have an indicator if the URL is in "saved bookmark" or not.
 > in `tabs.ts`.
 
 ---
