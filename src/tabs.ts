@@ -1141,7 +1141,6 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
             <th>Tab ID</th>
             <th>Title</th>
             <th>URL</th>
-            <th>Status</th>
             <th>Summary</th>
             <th>Actions</th>
         </tr>
@@ -1243,8 +1242,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       }
     }
 
-    // Determine sync status
-    // TODO: We may add these indicator in the title cell instead of building a dedicated column.
+    // Determine sync status for inclusion in the title cell
     let syncStatus = "";
     if (currentSession && tab.url) {
       if (syncedUrls.has(tab.url)) {
@@ -1252,15 +1250,17 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       } else {
         syncStatus = `<span class="sync-status not-synced" title="Tab exists in window but is not synced to bookmarks">⚠️</span>`;
       }
-    } else if (!currentSession) {
-      syncStatus = `<span class="sync-status no-session" title="No named session for this window">-</span>`;
     }
 
     row.innerHTML = `
             <td class="tab-id-cell">${tab.id || "N/A"}</td>
-            <td class="title-cell" title="${tab.title}">${tab.title || "Untitled"}</td>
+            <td class="title-cell" title="${tab.title}">
+              <div class="title-container">
+                <span class="title-text">${tab.title || "Untitled"}</span>
+                ${syncStatus}
+              </div>
+            </td>
             <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>
-            <td class="sync-status-cell">${syncStatus}</td>
             <td class="summary-cell">${summarySnippet}</td>
             <td class="actions-cell">
                 <div class="tab-actions">

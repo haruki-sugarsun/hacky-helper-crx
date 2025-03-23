@@ -1,8 +1,7 @@
 Let's work on
 
->           <!-- TODO: We want a button to open all (if non-exsisting yet)-->
->
-> in `tabs.html`.
+> // TODO: We should add these indicator in the title cell instead of building a dedicated column.
+> in `tabs.ts`.
 
 ---
 

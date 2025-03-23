@@ -353,16 +353,25 @@
 }
 
 /* URL and title cell styles - truncate long text */
-.url-cell,
-.title-cell {
+.url-cell {
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.title-cell {
+.title-container {
   font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Title text container to handle overflow properly */
+.title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Sync status cell styles */
