@@ -1,6 +1,8 @@
 import "./style.css";
 import "./popup.css";
 import { CONFIG_STORE } from "./features/config_store";
+import { MIGRATE_TAB, GET_NAMED_SESSIONS } from "./lib/constants";
+import { NamedSession } from "./lib/types";
 
 // Function to initialize the toggle states from configuration
 async function initializeToggles() {
@@ -119,7 +121,137 @@ async function updateBatteryStatus(
   }
 }
 
+// Function to show the migration dialog
+async function showMigrationDialog() {
+  const dialog = document.getElementById("migrationDialog") as HTMLDivElement;
+  const tabInfoDiv = document.getElementById(
+    "migrationTabInfo",
+  ) as HTMLDivElement;
+  const availableDestinationsDiv = document.getElementById(
+    "availableDestinations",
+  ) as HTMLDivElement;
+
+  // Get the current tab
+  const [currentTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+
+  // TODO: We should not migrade the tabs UI or other extension URL.
+  if (!currentTab || !currentTab.id) {
+    alert("Could not determine the current tab.");
+    return;
+  }
+
+  // Display tab info
+  tabInfoDiv.innerHTML = `
+    <p><strong>Tab:</strong> ${currentTab.title || "Untitled"}</p>
+    <p><strong>URL:</strong> ${currentTab.url || "No URL"}</p>
+  `;
+
+  // Get all windows
+  const windows = await chrome.windows.getAll();
+
+  // Get all named sessions
+  const response = await chrome.runtime.sendMessage({
+    type: GET_NAMED_SESSIONS,
+  });
+
+  let sessions: NamedSession[] = [];
+  if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
+    sessions = response.payload;
+  }
+
+  // Show the dialog
+  dialog.style.display = "flex";
+  availableDestinationsDiv.innerHTML = "<p>Loading destinations...</p>";
+
+  // Filter out the current window
+  const otherWindows = windows.filter(
+    (window) => window.id !== currentTab.windowId,
+  );
+
+  if (otherWindows.length === 0) {
+    availableDestinationsDiv.innerHTML =
+      "<p>No other windows available to migrate to.</p>";
+    return;
+  }
+
+  // Display all windows as potential destinations
+  availableDestinationsDiv.innerHTML = "";
+
+  // Create a destination option for each window (except the current one)
+  otherWindows.forEach((window) => {
+    const destinationOption = document.createElement("div");
+    destinationOption.className = "destination-option";
+
+    // Find if this window has a named session
+    const session = sessions.find((s) => s.windowId === window.id);
+
+    destinationOption.innerHTML = `
+      <div class="destination-name">${session?.name ? `${session.name} (Window ${window.id})` : `Window ${window.id}`}</div>
+    `;
+
+    // Add click event to migrate the tab
+    destinationOption.addEventListener("click", async () => {
+      if (window.id && currentTab.id) {
+        await migrateTab(currentTab.id, window.id);
+        dialog.style.display = "none";
+        // Close the popup after migration
+        // Use setTimeout to allow the migration to complete before closing
+        setTimeout(() => {
+          // Cast to any to bypass TypeScript error
+          self.close();
+        }, 300);
+      }
+    });
+
+    availableDestinationsDiv.appendChild(destinationOption);
+  });
+}
+
+// Function to migrate a tab to another window
+async function migrateTab(tabId: number, windowId: number) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: MIGRATE_TAB,
+      payload: {
+        tabId,
+        windowId,
+      },
+    });
+
+    if (response && response.type === "MIGRATE_TAB_RESULT") {
+      console.log("Tab migrated successfully:", response.payload);
+      return true;
+    } else {
+      console.error("Error migrating tab:", response);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error sending migrate tab message:", error);
+    return false;
+  }
+}
+
 // Initialize the UI when the document is loaded
 document.addEventListener("DOMContentLoaded", async () => {
   await initializeToggles();
+
+  // Add event listener for the migrate button
+  const migrateButton = document.getElementById("migrateTabButton");
+  if (migrateButton) {
+    migrateButton.addEventListener("click", showMigrationDialog);
+  }
+
+  // Add event listener for the cancel button in the migration dialog
+  const cancelButton = document.getElementById("cancelMigrationButton");
+  if (cancelButton) {
+    cancelButton.addEventListener("click", () => {
+      const dialog = document.getElementById(
+        "migrationDialog",
+      ) as HTMLDivElement;
+      dialog.style.display = "none";
+    });
+  }
 });
