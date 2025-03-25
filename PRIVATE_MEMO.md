@@ -4,7 +4,7 @@
 
 ```
 $ npm run dev
-$ find *.html src/ | entr -r sh -c 'clear; npx prettier . --write; npx tsc --noEmit; echo ===DONE==='
+$ find *.html src/ *.md designdocs/ | entr sh -c 'clear; npx prettier . --write; npx tsc --noEmit; echo ===DONE==='
 ```
 
 ## Config
@@ -28,3 +28,6 @@ We have unstructured, just-idea notes here:
 
 - Use some webfont for emojis?
 - Make sure to generate keywords only for the generateKeywords function maybe by specifiying JSON output? -　Show the current LLMTasks status in the popup? e.g. number of the pending tasks, currently-running task etc.
+- Open the sidepanel from popup.
+- Hot key to trigger the sidepanel feature?
+- Keeping pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.

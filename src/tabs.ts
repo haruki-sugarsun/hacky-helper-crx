@@ -402,6 +402,7 @@ function createSessionListItem(
   sessionId?: string,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  // TODO: Call SessionLabel constroctor, so that we can be more TYPED!
   const sessionLabel = document.createElement("session-label") as any;
 
   // Set the label text
@@ -1872,7 +1873,6 @@ async function showCategoriesDialog() {
 async function saveTabToBookmarks(tabId: number) {
   try {
     // Get the currently selected session
-    // TODO: Fix this, as Web Component refactoring broke this.
     const selectedSessionItem = document.querySelector(
       "#named_sessions li.selected",
     );
@@ -1881,9 +1881,14 @@ async function saveTabToBookmarks(tabId: number) {
       return;
     }
 
-    // Extract session ID from the selected item
-    // This assumes the session ID is stored in a data attribute
-    const sessionId = selectedSessionItem.getAttribute("data-session-id");
+    // Extract session ID from the session-label web component inside the selected item
+    const sessionLabel = selectedSessionItem.querySelector("session-label");
+    if (!sessionLabel) {
+      alert("No session label found for the selected session");
+      return;
+    }
+
+    const sessionId = sessionLabel.getAttribute("data-session-id");
     if (!sessionId) {
       alert("No session ID found for the selected session");
       return;
@@ -2131,6 +2136,7 @@ function displaySavedBookmarks(bookmarks: SavedBookmark[]) {
   }
 
   // Add each bookmark to the list
+  // Add dbclick to open the bookmark.
   bookmarks.forEach((bookmark) => {
     const listItem = document.createElement("li");
 
@@ -2304,8 +2310,14 @@ async function openAllBookmarks() {
       return;
     }
 
-    // Extract session ID from the selected item
-    const sessionId = selectedSessionItem.getAttribute("data-session-id");
+    // Extract session ID from the session-label web component inside the selected item
+    const sessionLabel = selectedSessionItem.querySelector("session-label");
+    if (!sessionLabel) {
+      alert("No session label found for the selected session");
+      return;
+    }
+
+    const sessionId = sessionLabel.getAttribute("data-session-id");
     if (!sessionId) {
       alert("No session ID found for the selected session");
       return;
@@ -2387,8 +2399,15 @@ async function openAllSyncedTabs() {
       return;
     }
 
-    // Extract session ID from the selected item
-    const sessionId = selectedSessionItem.getAttribute("data-session-id");
+    // Extract session ID from the session-label web component inside the selected item
+    // TODO: Factor out these repeating logic.
+    const sessionLabel = selectedSessionItem.querySelector("session-label");
+    if (!sessionLabel) {
+      alert("No session label found for the selected session");
+      return;
+    }
+
+    const sessionId = sessionLabel.getAttribute("data-session-id");
     if (!sessionId) {
       alert("No session ID found for the selected session");
       return;
