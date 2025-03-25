@@ -43,7 +43,10 @@ async function initializeForm() {
   );
 
   // Fill the form:
-  await appendFormFrom(settingsTabOrderingUl, ConfigStore.SORT_ON_TAB_SWITCH);
+  await appendBoolFormFrom(
+    settingsTabOrderingUl,
+    ConfigStore.SORT_ON_TAB_SWITCH,
+  );
 
   // Add LLM settings
   await appendFormFrom(settingsLlmUl, ConfigStore.OPENAI_API_KEY);
