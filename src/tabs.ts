@@ -1029,6 +1029,12 @@ async function updateUI(
 
         // If this is a named session, fetch and display saved bookmarks and synced tabs
         if (associatedSession) {
+          // For named session, make sure the "Saved Bookmarks" UI is visible
+          const savedBookmarksContainer =
+            document.querySelector<HTMLDivElement>("#saved_bookmarks");
+          if (savedBookmarksContainer) {
+            savedBookmarksContainer.style.display = "block";
+          }
           fetchAndDisplaySavedBookmarks(associatedSession.id);
           fetchAndDisplaySyncedTabs(associatedSession.id);
           // Update session metadata
@@ -1037,8 +1043,15 @@ async function updateUI(
           // Clear saved bookmarks and synced tabs if this is not a named session
           clearSavedBookmarks();
           clearSyncedTabs();
+          // For unnamed session, completely hide the "Saved Bookmarks" UI
+          // TODO: This logic actually can and should be merged into a common logic.
+          const savedBookmarksContainer =
+            document.querySelector<HTMLDivElement>("#saved_bookmarks");
+          if (savedBookmarksContainer) {
+            savedBookmarksContainer.style.display = "none";
+          }
           // Update session metadata for unnamed window
-          updateSessionMetadata(null, win.id);
+          updateSessionMetadata(null, selectedWindowId);
         }
       }
     });
@@ -1155,8 +1168,16 @@ async function updateUI(
         updateSessionMetadata(associatedSession);
       } else {
         // Clear saved bookmarks and synced tabs if this is not a named session
+        // TODO: For unamed session, which definitely has no bookmark, we can completely hide the "Saved Bookmarks" UI.
         clearSavedBookmarks();
         clearSyncedTabs();
+
+        const savedBookmarksContainer =
+          document.querySelector<HTMLDivElement>("#saved_bookmarks");
+        if (savedBookmarksContainer) {
+          savedBookmarksContainer.style.display = "none";
+        }
+
         // Update session metadata for unnamed window
         updateSessionMetadata(null, selectedWindowId);
       }
