@@ -19,7 +19,6 @@
 #named_sessions li,
 #tabs_sessions li,
 #closed_sessions li {
-  padding: 8px 10px;
   margin-bottom: 5px;
   border-radius: 4px;
   cursor: pointer;
@@ -88,12 +87,14 @@
 }
 
 #named_sessions li:hover,
-#tabs_sessions li:hover {
+#tabs_sessions li:hover,
+#closed_sessions li:hover {
   background-color: #333355;
 }
 
 #named_sessions li.selected,
-#tabs_sessions li.selected {
+#tabs_sessions li.selected,
+#closed_sessions li.selected {
   background-color: #2a2a4a;
   border-left: 3px solid #6666cc;
 }

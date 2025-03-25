@@ -446,13 +446,6 @@ function createSessionListItem(
 
   li.appendChild(sessionLabel);
 
-  if (isCurrent) {
-    li.classList.add("current-window");
-  }
-  if (sessionId) {
-    li.setAttribute("data-session-id", sessionId);
-  }
-
   return li;
 }
 

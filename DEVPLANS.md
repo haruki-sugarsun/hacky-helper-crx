@@ -117,7 +117,7 @@
 
 ### UI Components
 
-- Context Menu for the (Open-Named, Unnamed, Closed-Named)Sessions.
+- Right-click to show a Context Menu for the (Open-Named, Unnamed, Closed-Named)Sessions.
 
 ## Implementation Design
 

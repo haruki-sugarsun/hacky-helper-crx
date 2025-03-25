@@ -43,17 +43,25 @@ class SessionLabel extends HTMLElement {
     this.shadowRoot?.appendChild(container);
 
     // Add event listeners
-    this.menuButton.addEventListener("click", (e) => {
+    const showMenu = (e: Event) => {
       e.stopPropagation();
+      e.preventDefault();
       this.dropdownMenu.classList.toggle("show");
 
       // Close other open menus
+      // TODO: Check if this actually works or not.
       document.querySelectorAll("session-label").forEach((label) => {
         if (label !== this) {
           (label as SessionLabel).closeMenu();
         }
       });
-    });
+    };
+
+    // Show menu on button click
+    this.menuButton.addEventListener("click", showMenu);
+
+    // Show menu on right click of any part of the component
+    this.addEventListener("contextmenu", showMenu);
 
     // Close dropdown when clicking outside
     document.addEventListener("click", () => {
