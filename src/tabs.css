@@ -306,6 +306,23 @@
 
 .bookmark-title {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(80%, 30em);
+  gap: 4px;
+}
+
+.bookmark-title-text {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark-url-text {
+  font-size: 0.85em;
+  width: auto;
+  color: #aaa;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

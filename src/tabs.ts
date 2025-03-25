@@ -2202,8 +2202,18 @@ function displaySavedBookmarks(bookmarks: SavedBookmark[]) {
     // Create bookmark title container
     const titleContainer = document.createElement("div");
     titleContainer.className = "bookmark-title";
-    titleContainer.textContent = bookmark.title || bookmark.url;
-    titleContainer.title = bookmark.url;
+    // Create title and URL elements
+    const titleText = document.createElement("div");
+    titleText.className = "bookmark-title-text";
+    titleText.textContent = bookmark.title || "Untitled";
+
+    const urlText = document.createElement("div");
+    urlText.className = "bookmark-url-text";
+    urlText.textContent = bookmark.url;
+
+    titleContainer.appendChild(titleText);
+    titleContainer.appendChild(urlText);
+    titleContainer.title = `${bookmark.title || "Untitled"}\n${bookmark.url}`;
     listItem.appendChild(titleContainer);
 
     // Create bookmark actions container
@@ -2218,6 +2228,17 @@ function displaySavedBookmarks(bookmarks: SavedBookmark[]) {
       openSavedBookmark(bookmark.id);
     });
     actionsContainer.appendChild(openButton);
+
+    // Add remove button
+    const removeButton = document.createElement("button");
+    removeButton.className = "bookmark-action-button";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => {
+      if (confirm("Are you sure you want to remove this bookmark?")) {
+        removeBookmark(bookmark.id);
+      }
+    });
+    actionsContainer.appendChild(removeButton);
 
     listItem.appendChild(actionsContainer);
 
@@ -2257,6 +2278,49 @@ function clearSavedBookmarks() {
   noBookmarksItem.textContent =
     "Select a named session to view saved bookmarks";
   bookmarksList.appendChild(noBookmarksItem);
+}
+
+/**
+ * Removes a saved bookmark
+ */
+async function removeBookmark(bookmarkId: string) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "REMOVE_SAVED_BOOKMARK", // TODO: Make a constant.
+      payload: {
+        bookmarkId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "REMOVE_SAVED_BOOKMARK_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Bookmark ${bookmarkId} removed successfully`);
+
+      // Get the currently selected session
+      const selectedSessionItem = document.querySelector(
+        "#named_sessions li.selected",
+      );
+      if (selectedSessionItem) {
+        const sessionId = selectedSessionItem.getAttribute("data-session-id");
+        if (sessionId) {
+          // Refresh the bookmarks display
+          await fetchAndDisplaySavedBookmarks(sessionId);
+        }
+      }
+    } else {
+      console.error("Error removing bookmark:", response);
+      alert("Error removing bookmark");
+    }
+  } catch (error) {
+    console.error("Error removing bookmark:", error);
+    alert(
+      "Error removing bookmark: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
 }
 
 /**

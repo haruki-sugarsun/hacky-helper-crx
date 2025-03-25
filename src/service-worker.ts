@@ -48,6 +48,7 @@ import {
   GET_SYNCED_OPENTABS,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
+  REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
 import { CONFIG_STORE, getConfig } from "./features/config_store.ts";
@@ -713,6 +714,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               payload: {
                 success: true,
                 tab,
+              },
+            });
+          }
+          break;
+        case REMOVE_SAVED_BOOKMARK:
+          {
+            const { bookmarkId } = payload;
+            if (!bookmarkId) {
+              throw new Error("Bookmark ID is required");
+            }
+            await chrome.bookmarks.remove(bookmarkId);
+            sendResponse({
+              type: "REMOVE_SAVED_BOOKMARK_RESULT",
+              payload: {
+                success: true,
+                bookmarkId,
               },
             });
           }
