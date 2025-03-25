@@ -114,6 +114,7 @@
 /* Container for tabs table and saved bookmarks */
 #tabs_container {
   display: flex;
+  flex-direction: column;
   position: relative;
   margin-top: 20px;
 }
@@ -418,6 +419,36 @@
   word-wrap: break-word;
   max-height: 150px;
   overflow-y: auto;
+}
+
+/* Tab ID container with checkbox */
+.tab-id-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-select-checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+/* Migrate Selected button */
+#migrateSelectedButton {
+  margin-bottom: 10px;
+  padding: 8px 16px;
+  background-color: #444466;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: bold;
+}
+
+#migrateSelectedButton:hover {
+  background-color: #5555aa;
 }
 
 /* Clickable tab ID styles */

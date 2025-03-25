@@ -269,6 +269,7 @@ export function categorizeTabsBySimilarity(
 
 /**
  * Migrates a tab to a different window/session
+ * TODO: Merge this feature to session_management.ts.
  * @param tabId ID of the tab to migrate
  * @param windowId ID of the destination window
  * @returns Promise that resolves when the tab has been migrated

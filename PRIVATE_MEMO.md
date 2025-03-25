@@ -16,6 +16,12 @@ $ find *.html src/ | entr -r sh -c 'clear; npx prettier . --write; npx tsc --noE
   - granite3.1-dense:8b
 - bge-m3
 
+## Prompt Notes
+
+```
+Read the file .clinerules to follow the rules first.
+```
+
 # Just Idea Parking Lot
 
 We have unstructured, just-idea notes here:

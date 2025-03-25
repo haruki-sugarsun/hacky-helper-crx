@@ -23,6 +23,7 @@
   - We also provide access to the known named sessions stored in the BookmarkStorage, and we can open the named session.
   - `tabs.ts` handles the Tabs UI and interacts with the service-worker via messages.
   - Provide a UI to rename a Named Session.
+  - Multiple Tabs in a session can be selected and migrated to another session in bulk.
 
 - **Session Creation & Management**
 

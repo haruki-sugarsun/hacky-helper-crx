@@ -533,6 +533,24 @@ export async function getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
 }
 
 /**
+ * Migrates multiple tabs to a different window/session
+ * @param tabIds Array of IDs of the tabs to migrate
+ * @param windowId ID of the destination window
+ * @returns Promise that resolves when the tabs have been migrated
+ */
+export async function migrateTabsToWindow(
+  tabIds: number[],
+  windowId: number,
+): Promise<chrome.tabs.Tab[]> {
+  const results: chrome.tabs.Tab[] = [];
+  for (const tabId of tabIds) {
+    const tab = await chrome.tabs.move(tabId, { windowId, index: -1 });
+    results.push(tab);
+  }
+  return results;
+}
+
+/**
  * Restores a closed named session by creating a new window with the saved tabs
  */
 export async function restoreClosedSession(

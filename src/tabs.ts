@@ -1147,6 +1147,29 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
         </tr>
     `;
 
+  // Add event listener to the "Migrate Selected" button
+  const migrateSelectedButton = document.querySelector<HTMLButtonElement>(
+    "#migrateSelectedButton",
+  );
+  if (migrateSelectedButton) {
+    // Remove any existing event listeners
+    migrateSelectedButton.replaceWith(migrateSelectedButton.cloneNode(true));
+
+    // Get the fresh reference after replacing
+    const freshMigrateSelectedButton =
+      document.querySelector<HTMLButtonElement>("#migrateSelectedButton");
+    if (freshMigrateSelectedButton) {
+      freshMigrateSelectedButton.addEventListener("click", () => {
+        const selectedTabIds = getSelectedTabIds();
+        if (selectedTabIds.length > 0) {
+          showMigrationDialogForMultipleTabs(selectedTabIds);
+        } else {
+          alert("Please select at least one tab to migrate");
+        }
+      });
+    }
+  }
+
   // Clear existing table rows
   const tableBody = tabsTable.querySelector("tbody")!;
   tableBody.innerHTML = "";
@@ -1276,8 +1299,19 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       }
     }
 
+    // Add checkbox for multiple tab selection
+    // TODO: Clicking checkbox also triggers the tab activation via the handler for tab-id-cell
+    // TODO: We might rather think of changing the behaviors e.g.
+    //       - ID and checkbox only change the selected states.
+    //       - Merge Title and URL columns, with some style tweaks.
+    //       - Trigger Tab activation via click in Title column.
     row.innerHTML = `
-            <td class="tab-id-cell">${tab.id || "N/A"}</td>
+            <td class="tab-id-cell">
+              <div class="tab-id-container">
+                <input type="checkbox" class="tab-select-checkbox" data-tab-id="${tab.id}" data-tab-url="${tab.url}">
+                <span>${tab.id || "N/A"}</span>
+              </div>
+            </td>
             <td class="title-cell" title="${tab.title}">
               <div class="title-container">
                 <span class="title-text">${tab.title || "Untitled"}</span>
@@ -1303,6 +1337,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
         console.log(`Activating tab with ID: ${tab.id}`);
         try {
           // Activate the window first
+          // TODO: Consider if we can chain these API call.
           if (tab.windowId) {
             await chrome.windows.update(tab.windowId, { focused: true });
           }
@@ -1494,6 +1529,130 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
   cancelButton.addEventListener("click", () => {
     dialog.style.display = "none";
   });
+}
+
+/**
+ * Gets the IDs of all selected tabs
+ * @returns Array of selected tab IDs
+ */
+function getSelectedTabIds(): number[] {
+  const selectedTabIds: number[] = [];
+  const checkboxes = document.querySelectorAll<HTMLInputElement>(
+    ".tab-select-checkbox:checked",
+  );
+
+  checkboxes.forEach((checkbox) => {
+    const tabId = parseInt(checkbox.getAttribute("data-tab-id") || "0");
+    if (tabId) {
+      selectedTabIds.push(tabId);
+    }
+  });
+
+  return selectedTabIds;
+}
+
+/**
+ * Shows the migration dialog for multiple tabs
+ * @param tabIds Array of tab IDs to migrate
+ */
+async function showMigrationDialogForMultipleTabs(tabIds: number[]) {
+  const dialog = document.querySelector<HTMLDivElement>("#migrationDialog")!;
+  const tabInfoDiv =
+    document.querySelector<HTMLDivElement>("#migrationTabInfo")!;
+  const suggestedDestinationsDiv = document.querySelector<HTMLDivElement>(
+    "#suggestedDestinations",
+  )!;
+  const allDestinationsDiv =
+    document.querySelector<HTMLDivElement>("#allDestinations")!;
+
+  // Display tab info
+  tabInfoDiv.innerHTML = `
+    <p><strong>Selected Tabs:</strong> ${tabIds.length} tabs selected</p>
+  `;
+
+  // Show the dialog
+  dialog.style.display = "flex";
+
+  // Hide suggestions section for multiple tabs
+  suggestedDestinationsDiv.innerHTML =
+    "<p>Suggestions not available when migrating multiple tabs.</p>";
+
+  // Display all windows as potential destinations
+  allDestinationsDiv.innerHTML = "";
+
+  // Get all windows
+  const windows = await chrome.windows.getAll();
+
+  // Get the current window ID (assuming all selected tabs are from the same window)
+  const currentTab = await chrome.tabs.get(tabIds[0]);
+  const currentWindowId = currentTab.windowId;
+
+  // Create a destination option for each window (except the current one)
+  windows.forEach((window) => {
+    if (window.id !== currentWindowId) {
+      const destinationOption = document.createElement("div");
+      destinationOption.className = "destination-option";
+
+      // Find if this window has a named session
+      const session = state_sessions.find((s) => s.windowId === window.id);
+
+      destinationOption.innerHTML = `
+        <div class="destination-name">${session?.name ? `${session.name} (Window ${window.id})` : `Window ${window.id}`}</div>
+      `;
+
+      // Add click event to migrate the tabs
+      destinationOption.addEventListener("click", async () => {
+        if (window.id) {
+          await migrateMultipleTabs(tabIds, window.id);
+          dialog.style.display = "none";
+        }
+      });
+
+      allDestinationsDiv.appendChild(destinationOption);
+    }
+  });
+
+  // Add event listener for the cancel button
+  const cancelButton = document.querySelector<HTMLButtonElement>(
+    "#cancelMigrationButton",
+  )!;
+  cancelButton.addEventListener("click", () => {
+    dialog.style.display = "none";
+  });
+}
+
+/**
+ * Migrates multiple tabs to another window
+ * @param tabIds Array of tab IDs to migrate
+ * @param windowId Destination window ID
+ */
+async function migrateMultipleTabs(tabIds: number[], windowId: number) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: MIGRATE_TAB,
+      payload: {
+        tabIds,
+        windowId,
+      },
+    });
+
+    if (response && response.type === "MIGRATE_TAB_RESULT") {
+      console.log("Tabs migrated successfully:", response.payload);
+
+      // Refresh the UI with tab information
+      chrome.windows.getAll({ populate: true }).then((windows) => {
+        state_windows = windows;
+        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+          state_tabs = tabs;
+          updateUI(state_windows);
+        });
+      });
+    } else {
+      console.error("Error migrating tabs:", response);
+    }
+  } catch (error) {
+    console.error("Error sending migrate tabs message:", error);
+  }
 }
 
 // Function to migrate a tab to another window

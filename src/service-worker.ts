@@ -593,25 +593,49 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           }
           break;
         case MIGRATE_TAB:
+          // TODO: We can rename the message type to MIGRATE_TABS, and let the caller only use `tabIds`.
           {
-            const { tabId, windowId } = payload;
-            if (!tabId || !windowId) {
-              throw new Error("Tab ID and window ID are required");
+            const { tabId, tabIds, windowId } = payload;
+            if (!windowId) {
+              throw new Error("Window ID is required");
             }
 
-            // Migrate the tab to the destination window
-            const migratedTab = await TabCategorization.migrateTabToWindow(
-              tabId,
-              windowId,
-            );
+            if (tabIds && Array.isArray(tabIds)) {
+              // Handle multiple tabs
+              if (tabIds.length === 0) {
+                throw new Error("No tab IDs provided");
+              }
 
-            sendResponse({
-              type: "MIGRATE_TAB_RESULT",
-              payload: {
-                success: true,
-                tab: migratedTab,
-              },
-            });
+              // Migrate the tabs to the destination window
+              const migratedTabs = await SessionManagement.migrateTabsToWindow(
+                tabIds,
+                windowId,
+              );
+
+              sendResponse({
+                type: "MIGRATE_TAB_RESULT",
+                payload: {
+                  success: true,
+                  tabs: migratedTabs,
+                },
+              });
+            } else if (tabId) {
+              // Handle single tab (backward compatibility)
+              const migratedTabs = await SessionManagement.migrateTabsToWindow(
+                [tabId],
+                windowId,
+              );
+
+              sendResponse({
+                type: "MIGRATE_TAB_RESULT",
+                payload: {
+                  success: true,
+                  tab: migratedTabs[0],
+                },
+              });
+            } else {
+              throw new Error("Either tabId or tabIds must be provided");
+            }
           }
           break;
         case SAVE_TAB_TO_BOOKMARKS:
