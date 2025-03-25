@@ -41,6 +41,7 @@
   - The user can save a tab as a "saved bookmark" of the named session.
   - Whether the tab is saved or not is provided as a status indicator.
   - We provide "open all" button in the saved bookmark UI.
+  - If the named session has no tabs open, we may offer to open the saved bookmarks.
 
 - **Bookmark Storage Structure**
 
