@@ -361,12 +361,48 @@
   white-space: nowrap;
 }
 
+/* Merged Title & URL cell styles */
+.title-url-cell {
+  max-width: min(40vw, 30em);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.title-url-cell:hover {
+  background-color: #3a3a5a;
+}
+
+.title-url-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .title-container {
   max-width: min(40vw, 30em);
   font-weight: 500;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.title-container.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.title-container.clickable:hover {
+  background-color: #3a3a5a;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.url-text {
+  font-size: 0.85em;
+  color: #aaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Title text container to handle overflow properly */

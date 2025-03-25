@@ -861,8 +861,7 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
   const tableHead = tabsTable.querySelector("thead")!;
   tableHead.innerHTML = `
     <tr>
-      <th>Title</th>
-      <th>URL</th>
+      <th>Title & URL</th>
       <th>Actions</th>
     </tr>
   `;
@@ -875,7 +874,7 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
     // No tabs available - add a message row
     const noTabsRow = document.createElement("tr");
     noTabsRow.innerHTML = `
-      <td colspan="3">No tabs available in this closed session.</td>
+      <td colspan="2">No tabs available in this closed session.</td>
     `;
     tableBody.appendChild(noTabsRow);
     return;
@@ -886,8 +885,14 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
     const row = document.createElement("tr");
 
     row.innerHTML = `
-      <td class="title-cell" title="${tab.title}">${tab.title || "Untitled"}</td>
-      <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>
+      <td class="title-url-cell" title="${tab.title} - ${tab.url}">
+        <div class="title-url-container">
+          <div class="title-container">
+            <span class="title-text">${tab.title || "Untitled"}</span>
+          </div>
+          <div class="url-text">${tab.url || "N/A"}</div>
+        </div>
+      </td>
       <td class="actions-cell">
         <div class="tab-actions">
           <button class="tab-action-button open-button" data-url="${tab.url}">Open</button>
@@ -1140,8 +1145,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
   tableHead.innerHTML = `
         <tr>
             <th>Tab ID</th>
-            <th>Title</th>
-            <th>URL</th>
+            <th>Title & URL</th>
             <th>Summary</th>
             <th>Actions</th>
         </tr>
@@ -1299,12 +1303,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       }
     }
 
-    // Add checkbox for multiple tab selection
-    // TODO: Clicking checkbox also triggers the tab activation via the handler for tab-id-cell
-    // TODO: We might rather think of changing the behaviors e.g.
-    //       - ID and checkbox only change the selected states.
-    //       - Merge Title and URL columns, with some style tweaks.
-    //       - Trigger Tab activation via click in Title column.
+    // Add checkbox for multiple tab selection and merged Title/URL column
     row.innerHTML = `
             <td class="tab-id-cell">
               <div class="tab-id-container">
@@ -1312,13 +1311,15 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
                 <span>${tab.id || "N/A"}</span>
               </div>
             </td>
-            <td class="title-cell" title="${tab.title}">
-              <div class="title-container">
-                <span class="title-text">${tab.title || "Untitled"}</span>
-                ${statusIndicators}
+            <td class="title-url-cell" title="${tab.title} - ${tab.url}">
+              <div class="title-url-container">
+                <div class="title-container clickable">
+                  <span class="title-text">${tab.title || "Untitled"}</span>
+                  ${statusIndicators}
+                </div>
+                <div class="url-text">${tab.url || "N/A"}</div>
               </div>
             </td>
-            <td class="url-cell" title="${tab.url}">${tab.url || "N/A"}</td>
             <td class="summary-cell">${summarySnippet}</td>
             <td class="actions-cell">
                 <div class="tab-actions">
@@ -1329,15 +1330,13 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
             </td>`;
     tableBody.appendChild(row);
 
-    // Add click event listener to the tab ID cell
-    const tabIdCell = row.querySelector(".tab-id-cell");
-    if (tabIdCell && tab.id) {
-      tabIdCell.classList.add("clickable");
-      tabIdCell.addEventListener("click", async () => {
+    // Add click event listener to the title-url-cell for tab activation
+    const titleUrlCell = row.querySelector(".title-url-cell");
+    if (titleUrlCell && tab.id) {
+      titleUrlCell.addEventListener("click", async () => {
         console.log(`Activating tab with ID: ${tab.id}`);
         try {
           // Activate the window first
-          // TODO: Consider if we can chain these API call.
           if (tab.windowId) {
             await chrome.windows.update(tab.windowId, { focused: true });
           }
@@ -1351,6 +1350,14 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
             `Error activating tab: ${error instanceof Error ? error.message : error}`,
           );
         }
+      });
+    }
+
+    // Prevent checkbox from triggering tab activation
+    const checkbox = row.querySelector(".tab-select-checkbox");
+    if (checkbox) {
+      checkbox.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent event from bubbling up to parent elements
       });
     }
   });
