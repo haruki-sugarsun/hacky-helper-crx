@@ -1122,6 +1122,35 @@ async function updateUI(
       if (associatedSession) {
         fetchAndDisplaySavedBookmarks(associatedSession.id);
         fetchAndDisplaySyncedTabs(associatedSession.id);
+
+        // Check if this window has any non-pinned tabs
+        chrome.tabs
+          .query({ windowId: selectedWindowId, pinned: false })
+          .then((tabs) => {
+            if (tabs.length === 0) {
+              // If there are no non-pinned tabs, automatically show the saved bookmarks panel
+              const savedBookmarksContainer =
+                document.querySelector<HTMLDivElement>("#saved_bookmarks");
+              if (
+                savedBookmarksContainer &&
+                savedBookmarksContainer.classList.contains("collapsed")
+              ) {
+                savedBookmarksContainer.classList.remove("collapsed");
+
+                // Update the toggle button text
+                // TODO: Factor out the repeating code.
+                const toggleBookmarksButton =
+                  document.querySelector<HTMLButtonElement>(
+                    "#toggleBookmarksButton",
+                  );
+                if (toggleBookmarksButton) {
+                  toggleBookmarksButton.textContent = "❌";
+                  toggleBookmarksButton.title = "Collapse bookmarks panel";
+                }
+              }
+            }
+          });
+
         // Update session metadata
         updateSessionMetadata(associatedSession);
       } else {
@@ -1184,10 +1213,46 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
   if (filteredTabs.length === 0) {
     // No tabs available - add a message row
     const noTabsRow = document.createElement("tr");
-    noTabsRow.innerHTML = `
+
+    // Check if this is a named session
+    const currentWindow = tabs[0]?.windowId;
+    const currentSession = state_sessions.find(
+      (session) => session.windowId === currentWindow && session.name,
+    );
+
+    if (currentSession) {
+      // This is a named session with no tabs - offer to open saved bookmarks
+      noTabsRow.innerHTML = `
+            <td colspan="6">
+              <div class="no-tabs-message">
+                <p>No tabs available in this window (excluding pinned tabs).</p>
+                <p>Would you like to open the saved bookmarks for this session?</p>
+                <button id="openSavedBookmarksButton" class="action-button">Open Saved Bookmarks</button>
+              </div>
+            </td>
+        `;
+      tableBody.appendChild(noTabsRow);
+
+      // Add event listener for the "Open Saved Bookmarks" button
+      setTimeout(() => {
+        const openSavedBookmarksButton =
+          document.querySelector<HTMLButtonElement>(
+            "#openSavedBookmarksButton",
+          );
+        if (openSavedBookmarksButton) {
+          openSavedBookmarksButton.addEventListener("click", async () => {
+            console.log("Opening saved bookmarks for empty session");
+            await openAllBookmarks();
+          });
+        }
+      }, 0);
+    } else {
+      // Regular window with no tabs
+      noTabsRow.innerHTML = `
             <td colspan="6">No tabs available in this window (excluding pinned tabs).</td>
         `;
-    tableBody.appendChild(noTabsRow);
+      tableBody.appendChild(noTabsRow);
+    }
     return;
   }
 

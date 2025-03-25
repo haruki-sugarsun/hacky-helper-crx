@@ -526,6 +526,35 @@ content {
   font-style: italic;
 }
 
+/* No tabs message with offer to open bookmarks */
+.no-tabs-message {
+  text-align: center;
+  padding: 20px;
+  background-color: #333344;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.no-tabs-message p {
+  margin: 10px 0;
+}
+
+.no-tabs-message button {
+  margin-top: 15px;
+  padding: 8px 16px;
+  background-color: #444466;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: bold;
+}
+
+.no-tabs-message button:hover {
+  background-color: #5555aa;
+}
+
 /* Instructions text */
 .instructions {
   margin: 10px 0;
