@@ -3,7 +3,7 @@
 /* Left Pane: Sessions list */
 #sessions {
   margin: 0 10px;
-  width: max(15%, 30em);
+  width: min(20vw, 30em);
   border-right: 1px solid #444;
   padding-right: 15px;
 }
@@ -361,6 +361,7 @@
 }
 
 .title-container {
+  max-width: min(40vw, 30em);
   font-weight: 500;
   display: flex;
   justify-content: space-between;
