@@ -30,6 +30,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        popup: "popup.html",
         editor: "editor.html",
         voice_log: "voice_log.html",
         tabs: "tabs.html",
