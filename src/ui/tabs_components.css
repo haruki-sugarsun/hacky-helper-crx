@@ -27,6 +27,11 @@
   user-select: none;
 }
 
+.current-window {
+  font-weight: bold;
+  color: #aaddff;
+}
+
 .session-menu-button {
   background: none;
   border: none;
@@ -46,17 +51,6 @@
   background-color: #444466;
   color: white;
 }
-
-/* .session-dropdown-menu {
-  display: none;
-  position: absolute;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-} */
 
 /* Dropdown menu styles */
 .session-dropdown-menu {

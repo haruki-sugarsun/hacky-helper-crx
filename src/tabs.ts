@@ -1101,7 +1101,12 @@ async function updateUI(
 }
 
 // Helper function to update the tabs table with tabs from a specific window
-async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
+async function updateTabsTable(
+  selectedWindowId: number, // windowId for the session shown in the UI.
+  tabs: chrome.tabs.Tab[],
+) {
+  // Get the current window where tabs.html is running
+  const currentWindow = await chrome.windows.getCurrent();
   const tabsTable = tabs_tablist.querySelector("table")!;
 
   // Update table headers - now including the summary column and actions
@@ -1193,9 +1198,8 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
   }
 
   // Get the current session if it's a named session
-  const currentWindow = tabs[0]?.windowId;
   const currentSession = state_sessions.find(
-    (session) => session.windowId === currentWindow && session.name,
+    (session) => session.windowId === selectedWindowId && session.name,
   );
 
   // Get synced bookmarks and saved bookmarks for the current session if it exists
@@ -1305,6 +1309,8 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
     }
 
     // Add checkbox for multiple tab selection and merged Title/URL column
+    // TODO: When showing another session/window, replace the migrate button with a button to bring the session to the current session.
+    // TODO: `selectedWindowId !== tab.windowId` this condition is wrong, we need to know if the current window is the same as the tabs' window or not.
     row.innerHTML = `
             <td class="tab-id-cell">
               <div class="tab-id-container">
@@ -1324,7 +1330,11 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
             <td class="summary-cell">${summarySnippet}</td>
             <td class="actions-cell">
                 <div class="tab-actions">
-                    <button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Migrate</button>
+                    ${
+                      currentWindow.id && currentWindow.id !== tab.windowId
+                        ? `<button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Bring Here</button>`
+                        : `<button class="tab-action-button migrate-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Migrate</button>`
+                    }
                     <button class="tab-action-button save-button" data-tab-id="${tab.id}" data-tab-url="${tab.url}">Save</button>
                     <button class="tab-action-button close-button" data-tab-id="${tab.id}">Close</button>
                 </div>
@@ -1371,7 +1381,15 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
       const tabUrl = target.getAttribute("data-tab-url") || "";
 
       if (tabId && tabUrl) {
-        showMigrationDialog(tabId, tabUrl);
+        const tab = await chrome.tabs.get(tabId);
+
+        if (currentWindow.id && currentWindow.id !== tab.windowId) {
+          // If viewing another window's tabs, move directly to current window
+          await migrateTab(tabId, currentWindow.id);
+        } else {
+          // If in current window, show migration dialog
+          showMigrationDialog(tabId, tabUrl);
+        }
       }
     });
   });
@@ -1400,7 +1418,7 @@ async function updateTabsTable(windowId: number, tabs: chrome.tabs.Tab[]) {
           await chrome.tabs.remove(tabId);
           state_tabs = state_tabs.filter((t) => t.id !== tabId);
           // TODO: This updateUI should show the UI for the currently selected window panel.
-          updateUI(state_windows, windowId);
+          updateUI(state_windows, selectedWindowId);
         } catch (error) {
           console.error(
             `Error closing tab: ${error instanceof Error ? error.message : error}`,
@@ -1678,6 +1696,7 @@ async function migrateTab(tabId: number, windowId: number) {
       console.log("Tab migrated successfully:", response.payload);
 
       // Refresh the UI with tab information
+      // TODO: After the migration, we want to keep the session view, and just reload the tabs area.
       chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
@@ -1853,6 +1872,7 @@ async function showCategoriesDialog() {
 async function saveTabToBookmarks(tabId: number) {
   try {
     // Get the currently selected session
+    // TODO: Fix this, as Web Component refactoring broke this.
     const selectedSessionItem = document.querySelector(
       "#named_sessions li.selected",
     );
