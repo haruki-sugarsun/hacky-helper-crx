@@ -25,6 +25,8 @@ import {
 } from "./lib/types";
 import "./style.css";
 import "./tabs.css";
+import "./ui/tabs_components";
+import "./ui/tabs_components.css"; // TODO: Check if we need this?
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -400,94 +402,49 @@ function createSessionListItem(
   sessionId?: string,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  const sessionLabel = document.createElement("session-label") as any;
 
-  // Create a container for the label to allow for flex layout
-  const labelContainer = document.createElement("div");
-  labelContainer.className = "session-label";
-  labelContainer.textContent = label;
-  li.appendChild(labelContainer);
+  // Set the label text
+  sessionLabel.label = label;
 
-  // Add action menu button for sessions
-  const menuButton = document.createElement("button");
-  menuButton.className = "session-menu-button";
-  menuButton.innerHTML = "⋮"; // Vertical ellipsis
-  menuButton.title = "Session actions";
-  li.appendChild(menuButton);
+  // Set whether this is the current window
+  sessionLabel.isCurrent = isCurrent;
 
-  // Create dropdown menu (hidden by default)
-  const dropdownMenu = document.createElement("div");
-  dropdownMenu.className = "session-dropdown-menu";
+  // Set the session ID if provided
+  sessionLabel.sessionId = sessionId;
 
-  // Add menu items based on whether this is a named session or not
-  // TODO: Support right click to open the menu as well.
+  // Set menu items based on whether this is a named session or not
   if (sessionId) {
     // Actions for named sessions
-    const syncAction = document.createElement("div");
-    syncAction.className = "session-menu-item";
-    syncAction.textContent = "Force Sync to Bookmarks";
-    syncAction.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent triggering the li click event
-      forceSyncSession(sessionId);
-    });
-    dropdownMenu.appendChild(syncAction);
-
-    const updateAction = document.createElement("div");
-    updateAction.className = "session-menu-item";
-    updateAction.textContent = "Update Tabs";
-    updateAction.addEventListener("click", (e) => {
-      e.stopPropagation();
-      updateSessionTabs(sessionId);
-    });
-    dropdownMenu.appendChild(updateAction);
-
-    const renameAction = document.createElement("div");
-    renameAction.className = "session-menu-item";
-    renameAction.textContent = "Rename Session";
-    renameAction.addEventListener("click", (e) => {
-      e.stopPropagation();
-      renameSession(sessionId);
-    });
-    dropdownMenu.appendChild(renameAction);
-
-    const deleteAction = document.createElement("div");
-    deleteAction.className = "session-menu-item";
-    deleteAction.textContent = "Delete Session";
-    deleteAction.addEventListener("click", (e) => {
-      e.stopPropagation();
-      deleteSession(sessionId);
-    });
-    dropdownMenu.appendChild(deleteAction);
+    sessionLabel.menuItems = [
+      {
+        text: "Force Sync to Bookmarks",
+        onClick: () => forceSyncSession(sessionId),
+      },
+      {
+        text: "Update Tabs",
+        onClick: () => updateSessionTabs(sessionId),
+      },
+      {
+        text: "Rename Session",
+        onClick: () => renameSession(sessionId),
+      },
+      {
+        text: "Delete Session",
+        onClick: () => deleteSession(sessionId),
+      },
+    ];
   } else {
     // Actions for unnamed sessions (windows)
-    const createNamedAction = document.createElement("div");
-    createNamedAction.className = "session-menu-item";
-    createNamedAction.textContent = "Create Named Session";
-    createNamedAction.addEventListener("click", (e) => {
-      e.stopPropagation();
-      promptCreateNamedSession();
-    });
-    dropdownMenu.appendChild(createNamedAction);
+    sessionLabel.menuItems = [
+      {
+        text: "Create Named Session",
+        onClick: () => promptCreateNamedSession(),
+      },
+    ];
   }
 
-  li.appendChild(dropdownMenu);
-
-  // Toggle dropdown menu when clicking the menu button
-  menuButton.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent triggering the li click event
-    dropdownMenu.classList.toggle("show");
-
-    // Close other open menus
-    document.querySelectorAll(".session-dropdown-menu.show").forEach((menu) => {
-      if (menu !== dropdownMenu) {
-        menu.classList.remove("show");
-      }
-    });
-  });
-
-  // Close dropdown when clicking outside
-  document.addEventListener("click", () => {
-    dropdownMenu.classList.remove("show");
-  });
+  li.appendChild(sessionLabel);
 
   if (isCurrent) {
     li.classList.add("current-window");
@@ -725,69 +682,32 @@ function createClosedSessionListItem(
   closedSession: ClosedNamedSession,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  const sessionLabel = document.createElement("session-label") as any;
 
-  // Create a container for the label to allow for flex layout
-  const labelContainer = document.createElement("div");
-  labelContainer.className = "session-label";
+  // Set the label text
   const tabCount = closedSession.tabs.length;
-  labelContainer.textContent = `${closedSession.name} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
-  li.appendChild(labelContainer);
+  sessionLabel.label = `${closedSession.name} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
 
-  // Add action menu button for sessions
-  const menuButton = document.createElement("button");
-  menuButton.className = "session-menu-button";
-  menuButton.innerHTML = "⋮"; // Vertical ellipsis
-  menuButton.title = "Session actions";
-  li.appendChild(menuButton);
+  // Set the session ID
+  sessionLabel.sessionId = closedSession.id;
 
-  // Create dropdown menu (hidden by default)
-  const dropdownMenu = document.createElement("div");
-  dropdownMenu.className = "session-dropdown-menu";
+  // Set menu items for closed sessions
+  sessionLabel.menuItems = [
+    {
+      text: "Restore Session",
+      onClick: () => restoreClosedSession(closedSession.id),
+    },
+    {
+      text: "Delete Session",
+      onClick: () => deleteSession(closedSession.id),
+    },
+  ];
 
-  // Add restore action
-  const restoreAction = document.createElement("div");
-  restoreAction.className = "session-menu-item";
-  restoreAction.textContent = "Restore Session";
-  restoreAction.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent triggering the li click event
-    restoreClosedSession(closedSession.id);
-  });
-  dropdownMenu.appendChild(restoreAction);
-
-  // Add delete action
-  const deleteAction = document.createElement("div");
-  deleteAction.className = "session-menu-item";
-  deleteAction.textContent = "Delete Session";
-  deleteAction.addEventListener("click", (e) => {
-    e.stopPropagation();
-    deleteSession(closedSession.id);
-  });
-  dropdownMenu.appendChild(deleteAction);
-
-  li.appendChild(dropdownMenu);
-
-  // Toggle dropdown menu when clicking the menu button
-  menuButton.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent triggering the li click event
-    dropdownMenu.classList.toggle("show");
-
-    // Close other open menus
-    document.querySelectorAll(".session-dropdown-menu.show").forEach((menu) => {
-      if (menu !== dropdownMenu) {
-        menu.classList.remove("show");
-      }
-    });
-  });
-
-  // Close dropdown when clicking outside
-  document.addEventListener("click", () => {
-    dropdownMenu.classList.remove("show");
-  });
-
+  li.appendChild(sessionLabel);
   li.setAttribute("data-session-id", closedSession.id);
 
   // Make the label clickable to view the session's tabs
-  labelContainer.addEventListener("click", () => {
+  sessionLabel.addEventListener("click", () => {
     // Clear selection on all items
     document
       .querySelectorAll("#sessions li")
@@ -806,6 +726,7 @@ function createClosedSessionListItem(
     );
     restoreClosedSession(closedSession.id);
   });
+
   return li;
 }
 
@@ -992,9 +913,10 @@ async function updateUI(
     );
 
     // Build the label based on whether a Named Session exists
+    // TODO: Create a web component for this label, and place the related code in src/ui/tabs_components.ts
     let label = "";
     if (associatedSession) {
-      label = `Named Session: ${associatedSession.name} (Window: ${win.id}, ${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
+      label = `${associatedSession.name} (Window: ${win.id}, ${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
     } else {
       label = `Window ${win.id} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
     }

@@ -119,6 +119,14 @@
 
 - Context Menu for the (Open-Named, Unnamed, Closed-Named)Sessions.
 
+## Implementation Design
+
+- src/features/ contains business logic purely handling the interaction with the browser and UI/user.
+- src/ui/ directory contains the HTML components packed as Web Componnent.
+- src/lib/ contains the shared implementations which can be refered from other any TS files.
+- TS files directly in src/ are the main entrypoints for each UI/page, so they are considered as an application context.
+- HTML files directly in src/ are the UI definitions, and provides the basic strucutre of the UI. src/ui/ files are basically for replacing a part of the structure.
+
 # Fullfilled Dev Plans
 
 ## Disable heavy processing based on battery mode
