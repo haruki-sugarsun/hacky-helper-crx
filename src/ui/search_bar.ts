@@ -2,7 +2,7 @@
  * Search bar component for the tabs UI
  */
 
-import "./search_component.css";
+import styles from "./search_component.css?inline";
 
 class SearchBar extends HTMLElement {
   private searchInput: HTMLInputElement;
@@ -17,6 +17,9 @@ class SearchBar extends HTMLElement {
 
     // Create shadow DOM
     const shadow = this.attachShadow({ mode: "open" });
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(styles);
+    shadow.adoptedStyleSheets = [sheet];
 
     // Create container
     const container = document.createElement("div");
@@ -29,9 +32,10 @@ class SearchBar extends HTMLElement {
     this.searchInput.placeholder = "Search sessions... (/ or Alt+S)";
 
     // Create clear button
+    // TODO: Consider replace the button label with an image.
     this.clearButton = document.createElement("button");
     this.clearButton.className = "clear-button";
-    this.clearButton.textContent = "✕";
+    this.clearButton.textContent = "X";
     this.clearButton.style.display = "none";
 
     // Add event listeners
