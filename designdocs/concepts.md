@@ -4,7 +4,7 @@
 
 - A manageable unit
 - A session can be either "named" or "unnamed".
--
+- A session can have some metadata, e.g. ordering.
 
 ### Named Sessions
 

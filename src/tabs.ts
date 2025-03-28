@@ -886,43 +886,26 @@ async function updateUI(
   unnamedList.innerHTML = "";
   closedList.innerHTML = "";
 
+  // Sort named sessions alphabetically by name
+  const sortedNamedSessions = [...state_sessions].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  // Sort windows by ID for unnamed sessions
+  const sortedWindows = [...windows].sort((a, b) => (a.id || 0) - (b.id || 0));
+
   // Track the current window to auto-select it
   let currentWindowItem: HTMLLIElement | undefined = undefined;
   // Auto-select the specified window and load its tabs
   let selectedWindowId: number | undefined;
   let selectedWindowItem: HTMLLIElement | undefined = undefined;
 
-  // Add a list item for each window
-  for (let i = 0; i < windows.length; i++) {
-    const win = windows[i];
-    // Count non-pinned tabs for this window
-    let tabCount = 0;
-    if (win.tabs) {
-      tabCount = win.tabs.filter((tab) => !tab.pinned).length;
-    }
-
-    // Determine if a named session exists for this window
-    const associatedSession = state_sessions.find(
-      (session) => session.windowId === win.id && session.name,
-    );
-
-    // Build the label based on whether a Named Session exists
-    // TODO: Create a web component for this label, and place the related code in src/ui/tabs_components.ts
-    let label = "";
-    if (associatedSession) {
-      label = `${associatedSession.name} (Window: ${win.id}, ${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
-    } else {
-      label = `Window ${win.id} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
-    }
-
-    const isCurrent = win.focused;
-    // Create the list item with single-click handler to select the window
-    const listItem = createSessionListItem(
-      label,
-      isCurrent,
-      associatedSession?.id,
-    );
-
+  // Helper function to add click and double-click event listeners to a session list item
+  const addSessionEventListeners = (
+    listItem: HTMLLIElement,
+    win: chrome.windows.Window,
+    associatedSession: NamedSession | undefined,
+  ) => {
     // Make the label clickable to select the session
     listItem.addEventListener("click", () => {
       // Clear selection on all items and mark this one as selected
@@ -930,6 +913,9 @@ async function updateUI(
         .querySelectorAll("li")
         .forEach((item) => item.classList.remove("selected"));
       unnamedList
+        .querySelectorAll("li")
+        .forEach((item) => item.classList.remove("selected"));
+      closedList
         .querySelectorAll("li")
         .forEach((item) => item.classList.remove("selected"));
 
@@ -996,30 +982,90 @@ async function updateUI(
         }
       });
     }
+  };
+
+  // 1. Add named sessions to the UI
+  for (const session of sortedNamedSessions) {
+    // Find the window associated with this session
+    const win = sortedWindows.find((w) => w.id === session.windowId);
+    if (!win) continue; // Skip if window not found
+
+    // Count non-pinned tabs for this window
+    let tabCount = 0;
+    if (win.tabs) {
+      tabCount = win.tabs.filter((tab) => !tab.pinned).length;
+    }
+
+    // Build the label
+    const label = `${session.name} (Window: ${win.id}, ${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
+
+    const isCurrent = win.focused;
+    // Create the list item
+    const listItem = createSessionListItem(label, isCurrent, session.id);
+
+    // Add event listeners
+    addSessionEventListeners(listItem, win, session);
 
     if (isCurrent) {
       currentWindowItem = listItem;
     }
-    if (selectedSessionByWindowId && selectedSessionByWindowId == win.id) {
+    if (selectedSessionByWindowId && selectedSessionByWindowId === win.id) {
       selectedWindowId = selectedSessionByWindowId;
       selectedWindowItem = listItem;
     }
-    if (associatedSession) {
-      namedList.appendChild(listItem);
-    } else {
-      unnamedList.appendChild(listItem);
-    }
+
+    namedList.appendChild(listItem);
   }
 
-  // Add closed sessions to the UI
+  // 2. Add unnamed sessions (windows without associated named sessions) to the UI
+  for (const win of sortedWindows) {
+    // Skip windows that have an associated named session
+    const hasNamedSession = sortedNamedSessions.some(
+      (session) => session.windowId === win.id && session.name,
+    );
+    if (hasNamedSession) continue;
+
+    // Count non-pinned tabs for this window
+    let tabCount = 0;
+    if (win.tabs) {
+      tabCount = win.tabs.filter((tab) => !tab.pinned).length;
+    }
+
+    // Build the label
+    const label = `Window ${win.id} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
+
+    const isCurrent = win.focused;
+    // Create the list item
+    const listItem = createSessionListItem(label, isCurrent);
+
+    // Add event listeners
+    addSessionEventListeners(listItem, win, undefined);
+
+    if (isCurrent) {
+      currentWindowItem = listItem;
+    }
+    if (selectedSessionByWindowId && selectedSessionByWindowId === win.id) {
+      selectedWindowId = selectedSessionByWindowId;
+      selectedWindowItem = listItem;
+    }
+
+    unnamedList.appendChild(listItem);
+  }
+
+  // 3. Add closed sessions to the UI
   if (closedSessions.length === 0) {
     // No closed sessions available - add a message
     const noSessionsItem = document.createElement("li");
     noSessionsItem.textContent = "No closed sessions available";
     closedList.appendChild(noSessionsItem);
   } else {
+    // Sort closed sessions alphabetically by name
+    const sortedClosedSessions = [...closedSessions].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
     // Add each closed session
-    closedSessions.forEach((session) => {
+    sortedClosedSessions.forEach((session) => {
       const listItem = createClosedSessionListItem(session);
       closedList.appendChild(listItem);
     });
@@ -1044,7 +1090,7 @@ async function updateUI(
       });
 
       // If this is a named session, fetch and display saved bookmarks and synced tabs
-      const associatedSession = state_sessions.find(
+      const associatedSession = sortedNamedSessions.find(
         (session) => session.windowId === selectedWindowId && session.name,
       );
       // TODO: We have similar code snippet in this method. Consider refactoring them into renderSessionTabsPane() or something.

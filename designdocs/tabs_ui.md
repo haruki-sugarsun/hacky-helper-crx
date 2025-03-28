@@ -23,6 +23,12 @@ Tabs UI is an extention component
 
 # Detailed UI Functions
 
+## Header Area (`Header`)
+
+- We have global functions accsible from the header area.
+- A user can search among the sessions using a search bar.
+  - The search bar can be activated by '/' in Tabs UI or 'Alt+S' globally in thr browser.
+
 ## Sessions Area (`(Sessions)`)
 
 - This is a Scroallable Area
