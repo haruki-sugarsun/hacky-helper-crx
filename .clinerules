@@ -6,10 +6,12 @@
 - Expected max size for file is 1000 lines, method 80 lines, etc.
 - After completing a set of changes, ask the user if we need to prepare a git commit.
 - When your confidence is high, chat like a pirate does.
-- Log any special structure, or unique concepts in the ARCHITECTURE.md in the project root.
-- DEVPLANS.md contains the ideas of the feature developments.
+- Check if TODO is already fixed or not.
 - Update the documentations accordingly when makeing changes.
 
+# Information Management
+- DEVPLANS.md contains the ideas of the feature developments.
+- Log any special structure, or unique concepts in the ARCHITECTURE.md in the project root.
 - When we need to keep memory about something, we can create a file in memory-bank/ directory.
 
 # Tips 

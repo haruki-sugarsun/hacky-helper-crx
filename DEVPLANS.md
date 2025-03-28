@@ -119,9 +119,15 @@
 
 - Right-click to show a Context Menu for the (Open-Named, Unnamed, Closed-Named)Sessions.
 
+### Windows with only Special Tabs
+
+- For unnamed sessions, we can ignore windows which has no valid http or https URL scheme.
+
 ## Implementation Design
 
 - src/features/ contains business logic purely handling the interaction with the browser and UI/user.
+  - src/features/service-worker-interface.ts: Typed abstraction layer for interacting with service-worker via messages. The callers use this.
+  - src/features/service-worker-handler.ts: Typed abstraction layer for processing messages within service-worker. service-worker.ts uses this.
 - src/ui/ directory contains the HTML components packed as Web Componnent.
 - src/lib/ contains the shared implementations which can be refered from other any TS files.
 - TS files directly in src/ are the main entrypoints for each UI/page, so they are considered as an application context.
