@@ -29,6 +29,23 @@ export function initSearchFunctionality() {
   searchBar.onClear = () => {
     hideSearchResults();
   };
+  // Hide search results when focus moves outside of search section.
+  // Note: The "focusin" event is triggered only when a focusable element (e.g., input, button, or an element with a tabindex) receives focus.
+  // Ordinary elements like <span> are not focusable by default and will not fire "focusin" when clicked.
+  // To handle such cases, we also listen for "click" events which are fired on all elements.
+  document.addEventListener("focusin", (event) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest(".search-section")) {
+      hideSearchResults();
+    }
+  });
+  // Also hide search results on click outside search section
+  document.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest(".search-section")) {
+      hideSearchResults();
+    }
+  });
 
   // Add keyboard shortcut for search ('/' key)
   document.addEventListener("keydown", (event) => {
