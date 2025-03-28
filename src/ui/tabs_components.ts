@@ -15,6 +15,7 @@ class SessionLabel extends HTMLElement {
 
     // Add styles to shadow DOM
     const styleElement = document.createElement("style");
+    // TODO: Extract this as a static shared instance and use adoptedStyleSheets.
     styleElement.textContent = styles;
     this.shadowRoot?.appendChild(styleElement);
 

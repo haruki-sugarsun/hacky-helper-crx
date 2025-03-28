@@ -1031,6 +1031,18 @@ async function updateUI(
     );
     if (hasNamedSession) continue;
 
+    // For unnamed sessions, we can ignore windows which has no valid http, https, or extension URL scheme.
+    if (win.tabs) {
+      const meaningfulTabs = win.tabs.filter(
+        (tab) => tab.url && /^https?:|^chrome-extension:/.test(tab.url),
+      );
+      if (meaningfulTabs.length === 0) {
+        continue;
+      }
+    } else {
+      continue;
+    }
+
     // Count non-pinned tabs for this window
     let tabCount = 0;
     if (win.tabs) {

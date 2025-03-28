@@ -121,7 +121,7 @@
 
 ### Windows with only Special Tabs
 
-- For unnamed sessions, we can ignore windows which has no valid http or https URL scheme.
+- For unnamed sessions, we can ignore windows which has no valid http, https, or extension URL scheme.
 
 ## Implementation Design
 

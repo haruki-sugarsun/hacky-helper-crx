@@ -368,8 +368,15 @@ export async function syncSessionToBookmarks(
       pinned: false,
     });
 
+    // Filter tabs with valid URL scheme: http, https, or chrome-extension:
+    // TODO: Factor out such common logic into a util file in lib directory.
+    const validTabs = tabs.filter((tab) => {
+      if (!tab.url) return false;
+      return /^https?:|^chrome-extension:/.test(tab.url);
+    });
+
     // Convert tabs to NamedSessionTab format
-    const sessionTabs: NamedSessionTab[] = tabs.map((tab) => ({
+    const sessionTabs: NamedSessionTab[] = validTabs.map((tab) => ({
       tabId: tab.id || null,
       title: tab.title || "Untitled",
       url: tab.url || "",

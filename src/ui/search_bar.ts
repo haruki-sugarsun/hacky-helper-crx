@@ -17,7 +17,7 @@ class SearchBar extends HTMLElement {
 
     // Create shadow DOM
     const shadow = this.attachShadow({ mode: "open" });
-    const sheet = new CSSStyleSheet();
+    const sheet = new CSSStyleSheet(); // TODO: Extract this as a static shared instance.
     sheet.replaceSync(styles);
     shadow.adoptedStyleSheets = [sheet];
 

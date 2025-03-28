@@ -31,3 +31,5 @@ We have unstructured, just-idea notes here:
 - Open the sidepanel from popup.
 - Hot key to trigger the sidepanel feature?
 - Keeping pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.
+- Try using `@import "abc.css";` with adoptedStyleSheets.
+  - ref: https://chatgpt.com/c/67e6d8cc-6a98-8007-a9a8-bf6896f0820a
