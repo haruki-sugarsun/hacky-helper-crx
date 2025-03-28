@@ -29,6 +29,14 @@ Tabs UI is an extention component
 - A user can search among the sessions using a search bar.
   - The search bar can be activated by '/' in Tabs UI or 'Alt+S' globally in thr browser.
 
+### Universal Search for Sessions and Tabs
+
+- Incremental search on user typing.
+- Search results shows results for categorized into these:
+  - Open Named Sessions
+  - Closed Named Sessions
+  - Open Tabs in any of the windows
+
 ## Sessions Area (`(Sessions)`)
 
 - This is a Scroallable Area

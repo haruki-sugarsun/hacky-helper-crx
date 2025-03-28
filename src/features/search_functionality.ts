@@ -106,9 +106,14 @@ async function showSearchResults(query: string) {
     // Get sessions from service worker
     const namedSessions = await getNamedSessionsFromServiceWorker();
     const closedSessions = await getClosedNamedSessionsFromServiceWorker();
+    // Calculate openNamedSessions by excluding closed sessions from named sessions
+    const openNamedSessions = namedSessions.filter(
+      session => !closedSessions.find(closed => closed.id === session.id)
+    );
 
     // Filter sessions based on query
-    const matchingNamedSessions = namedSessions
+    // TODO: Use openNamedSessions here and show results 
+    const matchingNamedSessions = openNamedSessions
       .filter((session) => session.name.toLowerCase().includes(normalizedQuery))
       .map((session) => {
         // Find the corresponding DOM element
