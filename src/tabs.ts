@@ -29,7 +29,11 @@ import "./ui/tabs_components";
 import "./ui/tabs_components.css"; // TODO: Check if we need this?
 import "./ui/search_bar";
 import "./ui/search_results.css";
+import { SessionMetadataComponent } from "./ui/session_metadata";
 import { initSearchFunctionality } from "./features/search_functionality";
+
+// Custom Elements inits.
+SessionMetadataComponent.init();
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -37,6 +41,10 @@ console.log("tabs.ts", new Date());
 // References to the fixed elements and handler setup:
 // TODO: Gather all the references by ID in the top-level, so that we can know the necessary HTML elements to be modified.
 const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
+
+// Tabs Area
+const sessionMetadataElement =
+  document.querySelector<SessionMetadataComponent>("#session_metadata")!;
 
 // Page State
 var windowIds: (number | undefined)[] = []; // IDs of all windows
@@ -946,7 +954,7 @@ async function updateUI(
           fetchAndDisplaySavedBookmarks(associatedSession.id);
           fetchAndDisplaySyncedTabs(associatedSession.id);
           // Update session metadata
-          updateSessionMetadata(associatedSession);
+          renderSessionsMetadata(associatedSession);
         } else {
           // Clear saved bookmarks and synced tabs if this is not a named session
           clearSavedBookmarks();
@@ -959,7 +967,7 @@ async function updateUI(
             savedBookmarksContainer.style.display = "none";
           }
           // Update session metadata for unnamed window
-          updateSessionMetadata(null, selectedWindowId);
+          renderSessionsMetadata(null, winId);
         }
       }
     });
@@ -1145,7 +1153,7 @@ async function updateUI(
           });
 
         // Update session metadata
-        updateSessionMetadata(associatedSession);
+        renderSessionsMetadata(associatedSession);
       } else {
         // Clear saved bookmarks and synced tabs if this is not a named session
         // TODO: For unamed session, which definitely has no bookmark, we can completely hide the "Saved Bookmarks" UI.
@@ -1159,7 +1167,7 @@ async function updateUI(
         }
 
         // Update session metadata for unnamed window
-        updateSessionMetadata(null, selectedWindowId);
+        renderSessionsMetadata(null, selectedWindowId);
       }
     }
   }
@@ -2539,34 +2547,27 @@ async function openAllSyncedTabs() {
 }
 
 // Renderer for Session Metadata:
-const sessionMetadataElement =
-  document.querySelector<HTMLDivElement>("#session_metadata")!;
 /**
- * Updates the session metadata display
- * @param session The named session, or null if this is an unnamed window
- * @param windowId The window ID (only used if session is null)
+ * Renders the session metadata display using a web component.
+ * @param session The named session, or null if this is an unnamed window.
+ * @param windowId The window ID (only used if session is null).
  */
-function updateSessionMetadata(
+function renderSessionsMetadata(
   session: NamedSession | null,
   windowId?: number,
 ) {
   if (session) {
-    // Format the creation and update dates
     const createdDate = new Date(session.createdAt).toLocaleString();
     const updatedDate = new Date(session.updatedAt).toLocaleString();
-
-    // Display session metadata
-    sessionMetadataElement.innerHTML = `
-      Session ID: ${session.id} | 
-      Window ID: ${session.windowId} | 
-      Created: ${createdDate} | 
-      Updated: ${updatedDate}
-    `;
+    // TODO: Merge these setAttribute  calls into one method call.
+    sessionMetadataElement.setAttribute("session-id", session.id);
+    sessionMetadataElement.setAttribute("window-id", String(session.windowId));
+    sessionMetadataElement.setAttribute("created", createdDate);
+    sessionMetadataElement.setAttribute("updated", updatedDate);
+    sessionMetadataElement.setAttribute("unnamed", "false");
   } else if (windowId) {
-    // Display window metadata for unnamed windows
-    sessionMetadataElement.innerHTML = `Window ID: ${windowId} (Unnamed session)`;
-  } else {
-    // Clear metadata if no session or window is selected
-    sessionMetadataElement.innerHTML = "";
+    sessionMetadataElement.setAttribute("window-id", String(windowId));
+    sessionMetadataElement.setAttribute("unnamed", "true");
   }
+  // sessionMetadataElement.appendChild(metadataComponent);
 }

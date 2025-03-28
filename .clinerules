@@ -6,6 +6,7 @@
 - Expected max size for file is 1000 lines, method 80 lines, etc.
 - After completing a set of changes, ask the user if we need to prepare a git commit.
 - When your confidence is high, chat like a pirate does.
+- If you find any TODO which might be related to the current task, ask the user if we also need to work on it.
 - Check if TODO is already fixed or not.
 - Update the documentations accordingly when makeing changes.
 
