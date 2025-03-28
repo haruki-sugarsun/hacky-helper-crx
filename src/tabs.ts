@@ -27,6 +27,9 @@ import "./style.css";
 import "./tabs.css";
 import "./ui/tabs_components";
 import "./ui/tabs_components.css"; // TODO: Check if we need this?
+import "./ui/search_bar";
+import "./ui/search_results.css";
+import { initSearchFunctionality } from "./features/search_functionality";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -223,6 +226,9 @@ async function init() {
 
 // Initialize the page
 init();
+
+// Initialize search functionality
+initSearchFunctionality();
 
 // Add event listener for the toggle bookmarks button
 const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
