@@ -7,7 +7,12 @@ Tabs UI is an extention component
 - tabs.html
 - src/tabs.ts
 - src/tabs.css
-- src/ui/tabs_components.ts
+- src/features/search_functionality.ts
+- src/features/session_management.ts
+- src/features/tab_categorization.ts
+- src/features/service-worker-interface.ts
+- src/ui/search_bar.ts
+- src/ui/search_results.css
 
 # UI Layout
 
@@ -28,6 +33,7 @@ Tabs UI is an extention component
 - We have global functions accsible from the header area.
 - A user can search among the sessions using a search bar.
   - The search bar can be activated by '/' in Tabs UI or 'Alt+S' globally in thr browser.
+- When showing the results, the user can select the results by cursor up/down.
 
 ### Universal Search for Sessions and Tabs
 
@@ -65,3 +71,11 @@ Tabs UI is an extention component
 ### Saved Bookmarkd (`[]`)
 
 ### Synced Tabs (`[Synced Tabs]`)
+
+# Interaction with Other Components
+
+- Message-based interactions with the Service-Worker.
+  - Necessary processing for Session Management is mostly delegated to the Service-Worker via messages.
+  - Tabs UI also receives some events via messages and modify the UI.
+    - Reloading the UI on Hotkey.
+    - Focus the Search Bar on Hotkey.
