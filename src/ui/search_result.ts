@@ -8,6 +8,7 @@ import styles from "./search_result.css?inline";
 export class SearchResultComponent extends BaseComponent {
   constructor({
     resultLabel = "No Label",
+    resultSubLabel = undefined as string | undefined,
     sessionId = undefined as string | undefined,
     isCurrent = false,
     onClick = undefined as (() => void) | undefined,
@@ -29,7 +30,14 @@ export class SearchResultComponent extends BaseComponent {
     labelElement.className = "search-result-label";
     labelElement.textContent = this.getAttribute("label") || "No Label";
 
-    // Append elements
+    // Create sub-label
+    if (resultSubLabel) {
+      const subLabelElement = document.createElement("div");
+      subLabelElement.className = "search-result-sub-label";
+      subLabelElement.textContent = resultSubLabel;
+      container.appendChild(subLabelElement);
+    }
+
     container.appendChild(labelElement);
     this.shadow.appendChild(container);
   }

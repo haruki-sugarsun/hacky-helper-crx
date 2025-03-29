@@ -187,7 +187,7 @@ export async function updateNamedSessionTabs(
   windowId?: number,
   isRestoringFromBookmarks: boolean = false,
 ) {
-  const session = await getNamedSessionFromStorage(sessionId);
+  let session = await getNamedSessionFromStorage(sessionId);
   if (!session) {
     console.warn(
       `Cannot update Named Session tabs: Session not found for session ${sessionId}`,
