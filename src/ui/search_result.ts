@@ -21,25 +21,13 @@ export class SearchResultComponent extends BaseComponent {
     if (isCurrent) this.classList.add("current");
     if (onClick) this.addEventListener("click", onClick);
     // TODO: Build the structure using using innerHTML.
-    // Create container
-    const container = document.createElement("div");
-    container.className = "search-result-item";
-
-    // Create label
-    const labelElement = document.createElement("div");
-    labelElement.className = "search-result-label";
-    labelElement.textContent = this.getAttribute("label") || "No Label";
-
-    // Create sub-label
-    if (resultSubLabel) {
-      const subLabelElement = document.createElement("div");
-      subLabelElement.className = "search-result-sub-label";
-      subLabelElement.textContent = resultSubLabel;
-      container.appendChild(subLabelElement);
-    }
-
-    container.appendChild(labelElement);
-    this.shadow.appendChild(container);
+    // Build structure using innerHTML for a cleaner markup and improved order.
+    this.shadow.innerHTML = `
+      <div class="search-result-item">
+        <div class="search-result-label">${this.getAttribute("label") || "No Label"}</div>
+        ${resultSubLabel ? `<div class="search-result-sub-label">${resultSubLabel}</div>` : ""}
+      </div>
+    `;
   }
 
   connectedCallback() {
