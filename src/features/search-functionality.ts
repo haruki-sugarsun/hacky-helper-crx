@@ -85,6 +85,7 @@ export function initSearchFunctionality(): void {
       }
 
       // Highlight new result
+      // TODO: This is not working with our current Component refactoring.
       results[currentIndex].classList.add("highlighted");
       results[currentIndex].scrollIntoView({ block: "nearest" });
     }
