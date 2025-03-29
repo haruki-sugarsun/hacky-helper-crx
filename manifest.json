@@ -33,6 +33,12 @@
         "default": "Alt+X"
       },
       "description": "Open the tabs management page"
+    },
+    "focus-search-bar": {
+      "suggested_key": {
+        "default": "Alt+S"
+      },
+      "description": "Focus the search bar in Tabs UI of the current window."
     }
   }
 }

@@ -55,6 +55,7 @@ export function initSearchFunctionality(): void {
       return;
     }
 
+    // TODO: we can allow input to the search bar if already focused.
     if (
       event.key === "/" &&
       !event.ctrlKey &&
@@ -66,10 +67,10 @@ export function initSearchFunctionality(): void {
     }
   });
 
-  // Add global keyboard shortcut (Alt+S)
-  document.addEventListener("keydown", (event: KeyboardEvent): void => {
-    if (event.key === "s" && event.altKey && !event.ctrlKey && !event.metaKey) {
-      event.preventDefault();
+  // TODO: Check if this works as expected. It might have some timing issue, and implmenet a btter solution if needed.
+  // Listen for hotkey messages from the service worker.
+  chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    if (message.type === "hotkey" && message.command === "focus-search-bar") {
       searchBar.focus();
     }
   });

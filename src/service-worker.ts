@@ -67,9 +67,53 @@ console.log("service-worker.ts", new Date());
 
 // Listen for keyboard commands
 chrome.commands.onCommand.addListener((command) => {
-  if (command === "open-tabs-page") {
-    console.log("Command received: open-tabs-page");
-    openTabsPage();
+  console.log(`Command received: ${command}`);
+
+  switch (command) {
+    case "open-tabs-page":
+      console.log("Opening tabs page");
+      openTabsPage();
+      break;
+
+    case "focus-search-bar":
+      // TODO: Have a common implementation to find the Tabs UI for the active window.
+      chrome.tabs.query(
+        { currentWindow: true, url: chrome.runtime.getURL("tabs.html*") },
+        (tabs) => {
+          if (tabs.length > 0) {
+            // Send message to the first tab only
+            if (tabs[0] && tabs[0].id) {
+              // First activate the tab
+              chrome.tabs.update(tabs[0].id, { active: true });
+              // Then send the message
+              chrome.tabs.sendMessage(tabs[0].id, {
+                type: "hotkey",
+                command: "focus-search-bar",
+              });
+            }
+          } else {
+            // No Tabs UI page found; open one and send a message.
+            // TODO: Use await for more readability.
+            // TODO: Or use another approach passing event via URL fragment?
+            // TODO: Have a common implementation to open the Tabs UI page.
+            chrome.tabs.create(
+              { url: chrome.runtime.getURL("tabs.html"), active: true },
+              (tab) => {
+                setTimeout(() => {
+                  chrome.tabs.sendMessage(tab.id!, {
+                    type: "hotkey",
+                    command: "focus-search-bar",
+                  });
+                }, 1000);
+              },
+            );
+          }
+        },
+      );
+      break;
+
+    default:
+      console.log(`Unhandled command: ${command}`);
   }
 });
 
