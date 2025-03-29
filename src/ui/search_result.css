@@ -16,3 +16,9 @@
 .search-result-label {
   font-size: 14px;
 }
+
+.search-result-sub-label {
+  font-size: 0.7em;
+  text-wrap-mode: nowrap;
+  overflow: hidden;
+}
