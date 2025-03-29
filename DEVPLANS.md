@@ -35,6 +35,12 @@
 
   - Open tabs stored in the backend can be restored by the user operation.
   - "Open Tabs in other devices" section in the tabs UI shows the opened tabs found in the backend but not opened in the current window.
+  - Tab sync is triggered periodically,
+    - `service-worker.ts` registers and call a corresponding function in `session_management.ts`.
+    -
+    - So each Synced Tab in the Backend Storage has
+      - timestamp when it was synced to the backend.
+      -
 
 - **Saved Bookmarks in a Session**
 
@@ -42,6 +48,7 @@
   - Whether the tab is saved or not is provided as a status indicator.
   - We provide "open all" button in the saved bookmark UI.
   - If the named session has no tabs open, we may offer to open the saved bookmarks.
+  - A "keep-open" flag can be set to a saved bookmark, and session management tries to keep it open everytime the session got focus.
 
 - **Bookmark Storage Structure**
 

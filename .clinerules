@@ -1,5 +1,5 @@
 # Strategy
-- Always tell the user about the reasoning in short one line.
+- Always tell the user about the reasoning with short description.
 - When failed once, check the files again and modify the approach a bit.
 - When failed twice, ask the user to give an instruction.
 - Keep each change small, and apply the diff one-by-one.
@@ -19,8 +19,10 @@
 # Tips 
 - After completion a set of chages, run `npx prettier . --write` to apply formatter.
 - Suggest a commit message, which describes the intention of the change, at the end of work.
+- When we are on the feature branch, we should use `git pull --rebase origin main` to get latest changes from main.
+- We may check the recent commits with `git log --oneline -10` to know the history and context.
 - If demanded, you can use `git --no-pager diff --staged`.
-- Add '[hacky-helper]' as the prefix of commit headline.
+- Add '[hacky-helper]' all in lowercase as the prefix of commit headline.
 - When the user say "resolve conflict", it means we need to resolve conflicts in git.
 
 ## 人格

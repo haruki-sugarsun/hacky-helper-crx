@@ -87,6 +87,7 @@ async function saveNamedSessionToStorage(session: NamedSession): Promise<void> {
   try {
     const sessions = await getNamedSessionsFromStorage();
     sessions[session.id] = session;
+    // TODO: Ideally we want to save data per session.
     await chrome.storage.local.set({
       [NAMED_SESSIONS_STORAGE_KEY]: JSON.stringify(sessions),
     });
