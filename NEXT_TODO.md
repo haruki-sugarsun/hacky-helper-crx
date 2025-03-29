@@ -1,8 +1,4 @@
-Let's work on
-
-> <!-- TODO: Add a button to migrate the current tab to other session. -->
->
-> in `index.html` popup.
+Find a TODO from codebase and let's work on it.
 
 ---
 

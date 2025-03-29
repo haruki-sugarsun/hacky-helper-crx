@@ -4,6 +4,9 @@
 
 import styles from "./search_component.css?inline";
 
+const sharedSheet = new CSSStyleSheet();
+sharedSheet.replaceSync(styles);
+
 class SearchBar extends HTMLElement {
   private searchInput: HTMLInputElement;
   private clearButton: HTMLButtonElement;
@@ -17,9 +20,7 @@ class SearchBar extends HTMLElement {
 
     // Create shadow DOM
     const shadow = this.attachShadow({ mode: "open" });
-    const sheet = new CSSStyleSheet(); // TODO: Extract this as a static shared instance.
-    sheet.replaceSync(styles);
-    shadow.adoptedStyleSheets = [sheet];
+    shadow.adoptedStyleSheets = [sharedSheet];
 
     // Create container
     const container = document.createElement("div");

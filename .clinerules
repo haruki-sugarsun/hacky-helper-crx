@@ -1,4 +1,5 @@
 # Strategy
+- Always tell the user about the reasoning in short one line.
 - When failed once, check the files again and modify the approach a bit.
 - When failed twice, ask the user to give an instruction.
 - Keep each change small, and apply the diff one-by-one.
@@ -18,6 +19,7 @@
 # Tips 
 - After completion a set of chages, run `npx prettier . --write` to apply formatter.
 - Suggest a commit message, which describes the intention of the change, at the end of work.
+- If demanded, you can use `git diff --no-pager`.
 - Add '[hacky-helper]' as the prefix of commit headline.
 - When the user say "resolve conflict", it means we need to resolve conflicts in git.
 

@@ -10,10 +10,11 @@
  */
 import styles from "./session_metadata.css?inline";
 
+const sharedSheet = new CSSStyleSheet();
+sharedSheet.replaceSync(styles);
+
 export class SessionMetadataComponent extends HTMLElement {
-  static sheet: CSSStyleSheet = new CSSStyleSheet();
   static init() {
-    this.sheet.replaceSync(styles);
     // Define the custom element so it can be used as <session-metadata>
     customElements.define("session-metadata", SessionMetadataComponent);
   }
@@ -25,8 +26,8 @@ export class SessionMetadataComponent extends HTMLElement {
   constructor() {
     super();
     // Attach a shadow DOM so styles and markup are encapsulated.
-    this.attachShadow({ mode: "open" });
-    this.shadowRoot!.adoptedStyleSheets = [SessionMetadataComponent.sheet];
+    const shadow = this.attachShadow({ mode: "open" });
+    shadow.adoptedStyleSheets = [sharedSheet];
     this.render();
   }
 
