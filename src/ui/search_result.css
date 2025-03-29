@@ -1,0 +1,18 @@
+/* Styles for the SearchResult Web Component */
+
+.search-result-item {
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Change the style of .search-result-item when the host has the highlighted class.
+   Also handled in hover. */
+:host(.highlighted) .search-result-item {
+  background-color: #808080;
+  font-weight: bold;
+}
+
+.search-result-label {
+  font-size: 14px;
+}
