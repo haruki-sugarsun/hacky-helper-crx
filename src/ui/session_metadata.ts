@@ -16,11 +16,34 @@ export class SessionMetadataComponent extends BaseComponent {
     return ["session-id", "window-id", "created", "updated", "unnamed"];
   }
 
+  private sessionIdSpan: HTMLElement;
+  private windowIdSpan: HTMLElement;
+  private createdSpan: HTMLElement;
+  private updatedSpan: HTMLElement;
+  private unnamedSpan: HTMLElement;
+
   constructor() {
     super();
     this.initialize(styles);
-    // TODO: Construct DOM here using shadow.
-    this.render();
+
+    // Initialize the HTML structure using innerHTML with separators.
+    this.shadow.innerHTML = `
+      <span class="session-id"></span>
+      <span class="separator"> | </span>
+      <span class="window-id"></span>
+      <span class="separator"> | </span>
+      <span class="created"></span>
+      <span class="separator"> | </span>
+      <span class="updated"></span>
+      <span class="unnamed"></span>
+    `;
+
+    // Assign span elements to instance members.
+    this.sessionIdSpan = this.shadow.querySelector(".session-id")!;
+    this.windowIdSpan = this.shadow.querySelector(".window-id")!;
+    this.createdSpan = this.shadow.querySelector(".created")!;
+    this.updatedSpan = this.shadow.querySelector(".updated")!;
+    this.unnamedSpan = this.shadow.querySelector(".unnamed")!;
   }
 
   attributeChangedCallback(
@@ -33,24 +56,27 @@ export class SessionMetadataComponent extends BaseComponent {
   }
 
   render() {
-    let content = "";
-    // If the 'unnamed' attribute is present and equals "true"
-    if (this.getAttribute("unnamed") === "true") {
-      const windowId = this.getAttribute("window-id") || "N/A";
-      content = `<div>Window ID: ${windowId} (Unnamed session)</div>`;
-    } else {
-      const sessionId = this.getAttribute("session-id") || "N/A";
-      const windowId = this.getAttribute("window-id") || "N/A";
-      const created = this.getAttribute("created") || "N/A";
-      const updated = this.getAttribute("updated") || "N/A";
-      content = `<div>
-        Session ID: ${sessionId} | 
-        Window ID: ${windowId} | 
-        Created: ${created} | 
-        Updated: ${updated}
-      </div>`;
+    const isUnnamed = this.getAttribute("unnamed") === "true";
+    const isNamed = !isUnnamed && this.getAttribute("session-id");
+    const isClosed = !isUnnamed && !this.getAttribute("session-id");
+
+    // Update shadow root class based on state.
+    const shadowHost = this.shadow.host as HTMLElement;
+    shadowHost.classList.remove("named", "unnamed", "closed");
+    if (isUnnamed) {
+      shadowHost.classList.add("unnamed");
+    } else if (isNamed) {
+      shadowHost.classList.add("named");
+    } else if (isClosed) {
+      shadowHost.classList.add("closed");
     }
-    this.shadow.innerHTML = `${content}`;
+
+    // Update span contents.
+    this.sessionIdSpan.textContent = `Session ID: ${this.getAttribute("session-id") || "N/A"}`;
+    this.windowIdSpan.textContent = `Window ID: ${this.getAttribute("window-id") || "N/A"}`;
+    this.createdSpan.textContent = `Created: ${this.getAttribute("created") || "N/A"}`;
+    this.updatedSpan.textContent = `Updated: ${this.getAttribute("updated") || "N/A"}`;
+    this.unnamedSpan.textContent = isUnnamed ? "(Unnamed session)" : "";
   }
 }
 

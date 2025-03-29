@@ -2567,5 +2567,5 @@ function renderSessionsMetadata(
     sessionMetadataElement.setAttribute("window-id", String(windowId));
     sessionMetadataElement.setAttribute("unnamed", "true");
   }
-  // sessionMetadataElement.appendChild(metadataComponent);
+  // TODO: We need to support Closed Named Session as well.
 }
