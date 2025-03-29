@@ -25,15 +25,13 @@ import {
 } from "./lib/types";
 import "./style.css";
 import "./tabs.css";
-import "./ui/tabs_components";
-import "./ui/tabs_components.css"; // TODO: Check if we need this?
+// We import files and *Component names separately to ensure the top-level side effects.
+import "./ui/session_label";
 import "./ui/search_bar";
 import "./ui/search_results.css";
+import "./ui/session_metadata";
 import { SessionMetadataComponent } from "./ui/session_metadata";
 import { initSearchFunctionality } from "./features/search_functionality";
-
-// Custom Elements inits.
-SessionMetadataComponent.init();
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());

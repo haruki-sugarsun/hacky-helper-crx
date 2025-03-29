@@ -1,23 +1,18 @@
-import styles from "./tabs_components.css?inline";
+import { BaseComponent } from "./base_component";
+import styles from "./session_label.css?inline";
 
 /**
  * SessionLabel component displays a session's label with a menu button
  * and dropdown menu for various actions.
  */
-class SessionLabel extends HTMLElement {
+class SessionLabelComponent extends BaseComponent {
   private labelContainer: HTMLDivElement;
   private menuButton: HTMLButtonElement;
   private dropdownMenu: HTMLDivElement;
 
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
-
-    // Add styles to shadow DOM
-    const styleElement = document.createElement("style");
-    // TODO: Extract this as a static shared instance and use adoptedStyleSheets.
-    styleElement.textContent = styles;
-    this.shadowRoot?.appendChild(styleElement);
+    const shadow = this.initialize(styles);
 
     // Create the component's elements
     this.labelContainer = document.createElement("div");
@@ -41,7 +36,7 @@ class SessionLabel extends HTMLElement {
     container.appendChild(this.dropdownMenu);
 
     // Append container to shadow DOM
-    this.shadowRoot?.appendChild(container);
+    shadow.appendChild(container);
 
     // Add event listeners
     const showMenu = (e: Event) => {
@@ -53,7 +48,7 @@ class SessionLabel extends HTMLElement {
       // TODO: Check if this actually works or not.
       document.querySelectorAll("session-label").forEach((label) => {
         if (label !== this) {
-          (label as SessionLabel).closeMenu();
+          (label as SessionLabelComponent).closeMenu();
         }
       });
     };
@@ -126,4 +121,4 @@ class SessionLabel extends HTMLElement {
 }
 
 // Register the web components
-customElements.define("session-label", SessionLabel);
+customElements.define("session-label", SessionLabelComponent);

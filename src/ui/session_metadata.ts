@@ -8,26 +8,18 @@
  *  - updated: The last updated date/time.
  *  - unnamed: If set to "true", displays a message for unnamed sessions.
  */
+import { BaseComponent } from "./base_component";
 import styles from "./session_metadata.css?inline";
 
-const sharedSheet = new CSSStyleSheet();
-sharedSheet.replaceSync(styles);
-
-export class SessionMetadataComponent extends HTMLElement {
-  static init() {
-    // Define the custom element so it can be used as <session-metadata>
-    customElements.define("session-metadata", SessionMetadataComponent);
-  }
-
+export class SessionMetadataComponent extends BaseComponent {
   static get observedAttributes() {
     return ["session-id", "window-id", "created", "updated", "unnamed"];
   }
 
   constructor() {
     super();
-    // Attach a shadow DOM so styles and markup are encapsulated.
-    const shadow = this.attachShadow({ mode: "open" });
-    shadow.adoptedStyleSheets = [sharedSheet];
+    this.initialize(styles);
+    // TODO: Construct DOM here using shadow.
     this.render();
   }
 
@@ -58,6 +50,8 @@ export class SessionMetadataComponent extends HTMLElement {
         Updated: ${updated}
       </div>`;
     }
-    this.shadowRoot!.innerHTML = `${content}`;
+    this.shadow.innerHTML = `${content}`;
   }
 }
+
+customElements.define("session-metadata", SessionMetadataComponent);

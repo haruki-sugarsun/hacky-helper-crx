@@ -2,12 +2,10 @@
  * Search bar component for the tabs UI
  */
 
-import styles from "./search_component.css?inline";
+import { BaseComponent } from "./base_component";
+import styles from "./search_bar.css?inline";
 
-const sharedSheet = new CSSStyleSheet();
-sharedSheet.replaceSync(styles);
-
-class SearchBar extends HTMLElement {
+class SearchBarComponent extends BaseComponent {
   private searchInput: HTMLInputElement;
   private clearButton: HTMLButtonElement;
 
@@ -17,10 +15,7 @@ class SearchBar extends HTMLElement {
 
   constructor() {
     super();
-
-    // Create shadow DOM
-    const shadow = this.attachShadow({ mode: "open" });
-    shadow.adoptedStyleSheets = [sharedSheet];
+    const shadow = this.initialize(styles);
 
     // Create container
     const container = document.createElement("div");
@@ -116,4 +111,4 @@ class SearchBar extends HTMLElement {
 }
 
 // Define the custom element
-customElements.define("search-bar", SearchBar);
+customElements.define("search-bar", SearchBarComponent);
