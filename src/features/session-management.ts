@@ -330,11 +330,6 @@ export async function createNamedSession(
   console.log(
     `Created Named Session: ${finalSessionId} for window ${windowId}`,
   );
-
-  // Start auto-save timer if not already running
-  // TODO: Consider a better place to have the timer/scheduled alarm.
-  startAutoSaveTimer();
-
   return session;
 }
 
@@ -770,44 +765,6 @@ export async function activateSessionById(sessionId: string): Promise<void> {
    Auto-save Management
 ============================ */
 
-// Auto-save timer. TODO: Implement a proper timer.
-let autoSaveTimer: number | null = null;
-
-/**
- * Starts the auto-save timer for syncing sessions to bookmarks
- * TODO: We also would like to reset the timer on some activity in the session.
- * TODO: setTimer might not work as expected in service-worker. replace it with proper alarm triggers.
- *       We see `Error starting auto-save timer: ReferenceError: window is not defined`.
- */
-export async function startAutoSaveTimer() {
-  // If timer is already running, don't start another one
-  if (autoSaveTimer !== null) return;
-
-  try {
-    // Get auto-save idle time from config
-    const config = await getConfig();
-    const idleTimeMinutes = parseInt(
-      config.bookmarkAutoSaveIdleTime || "5",
-      10,
-    );
-
-    // Convert to milliseconds
-    const idleTimeMs = idleTimeMinutes * 60 * 1000;
-
-    // Start timer
-    autoSaveTimer = window.setTimeout(async () => {
-      await autoSaveAllSessions();
-      autoSaveTimer = null;
-    }, idleTimeMs);
-
-    console.log(
-      `Auto-save timer started with ${idleTimeMinutes} minutes idle time`,
-    );
-  } catch (error) {
-    console.error("Error starting auto-save timer:", error);
-  }
-}
-
 /**
  * Auto-saves all named sessions to bookmarks
  */
@@ -832,4 +789,9 @@ async function autoSaveAllSessions() {
   } catch (error) {
     console.error("Error auto-saving sessions:", error);
   }
+}
+
+// TODO: Doc.
+export async function triggerAutoSessionSync(): Promise<void> {
+  console.log("autoSessionSync called - skeleton implementation");
 }
