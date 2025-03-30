@@ -20,6 +20,8 @@ import {
 import "./style.css";
 import "./tabs.css";
 import serviceWorkerInterface from "./features/service-worker-interface";
+import { CONFIG_STORE } from "./features/config-store";
+
 // We import files and *Component names separately to ensure the top-level side effects.
 import "./ui/session-label";
 import "./ui/search-bar";
