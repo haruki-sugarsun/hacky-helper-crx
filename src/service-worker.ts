@@ -50,7 +50,7 @@ import {
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
-import { CONFIG_STORE, getConfig } from "./features/config-store.ts";
+import { CONFIG_STORE } from "./features/config-store.ts";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 
@@ -962,45 +962,9 @@ async function updateCache(url: string, digestEntry: DigestEntry) {
 // in-Memory Model and the background store.
 // Sessions (groups of tabs/URLs)
 
-// Bookmark folder as a Storage
-// Initialize bookmark parent folder
-async function initializeBookmarkParentFolder() {
-  try {
-    // Check if we already have a parent folder ID in config
-    const config = await getConfig();
-    if (config.bookmarkParentId) {
-      // Verify the folder still exists
-      try {
-        await chrome.bookmarks.get(config.bookmarkParentId);
-        console.log(
-          "Bookmark parent folder already exists:",
-          config.bookmarkParentId,
-        );
-        return;
-      } catch (error) {
-        console.warn(
-          "Configured bookmark parent folder no longer exists, will create a new one",
-        );
-      }
-    }
-
-    // Create a parent folder for our bookmarks
-    const parentFolder = await chrome.bookmarks.create({
-      title: "Hacky Helper Sessions",
-    });
-
-    // Save the folder ID to config
-    CONFIG_STORE.set("bookmarkParentId", parentFolder.id);
-    console.log("Created bookmark parent folder:", parentFolder.id);
-  } catch (error) {
-    console.error("Error initializing bookmark parent folder:", error);
-  }
-}
-
-// Call the initialization function when the service worker starts
-// TODO: Ask before creating a folder, or let the user choose the bookmark folder to use.
-// TODO: And better to kick initialization via SessionManager instead of direcly calling bookmarkStorage here.
-initializeBookmarkParentFolder().then(async () => {
+// TODO: Have src/service-worker/bookmark-storage-support.ts to have implementations.
+// TODO: Fix error `Top-level await is not available in the configured target environment ("chrome87", "edge88", "es2020", "firefox78", "safari14" + 2 overrides)`
+(async () => {
   try {
     // Initialize the bookmark storage system after the parent folder is set up
     const initialized = await BookmarkStorage.getInstance().initialize();
@@ -1012,4 +976,4 @@ initializeBookmarkParentFolder().then(async () => {
   } catch (error) {
     console.error("Error initializing bookmark storage:", error);
   }
-});
+})();
