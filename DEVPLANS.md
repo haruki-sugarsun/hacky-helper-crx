@@ -59,7 +59,7 @@
     - So the responsibilities of the components can be described as follows:
       - Tabs UI (`tabs.ts`) offers the UI and interacts with other components via messages to the service-worker.
       - `sessions_management.ts` managed the associations of `sessionId` and `windowId`.
-      - `bookmark_storage.ts` managed the Open/Saved tabs of named sessions using bookmark API.
+      - `bookmark_storage.ts` managed the Open/Saved tabs of named sessions using bookmark API.tace with 
       - The primary data for Open tabs is the browser window, and the Saved tabs is the bookmark.
 
 - **Session Restoration**
@@ -70,6 +70,12 @@
 
 - **Tab Synchronization**
   - The backend bookmark folder is updated by a timer of manual trigger.
+  - Duration between the triggers can be configured in S
+ettings UI
+  - When the trigger runs on the Extension with clientId "C", for the Open Named Sessions,
+    - If the last syncedAt metadata is 
+    - If the set of the current Open Tabs differs from the  Open Tabs synced in the backend with the same ownerId "C", save back to the backend, creating, updating, and deleting  them. This automatic sync only processes the owned (by "C").
+  - The user can let the extension "take over" the synced Open Tabs using the UI in Tabs UI.
 
 ## Bookmark as URL Store
 
