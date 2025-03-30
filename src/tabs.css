@@ -110,12 +110,6 @@
   border-left: 3px solid #6666cc;
 }
 
-#named_sessions li.current-window,
-#tabs_sessions li.current-window {
-  font-weight: bold;
-  color: #aaddff;
-}
-
 /**/
 #tabs_tablist {
   position: relative;

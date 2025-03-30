@@ -9,6 +9,11 @@
   box-sizing: border-box;
 }
 
+:host(.current-window) {
+  font-weight: bold;
+  color: #aaddff;
+}
+
 .container {
   position: relative;
   width: 100%;
