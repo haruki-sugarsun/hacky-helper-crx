@@ -61,6 +61,7 @@ import * as TabCategorization from "./features/tab_categorization";
 import * as DigestManagement from "./features/digest_management";
 import { bookmarkStorage } from "./features/bookmark_storage";
 import { openTabsPage } from "./features/tabs_helpers";
+import { handleServiceWorkerMessage } from "./features/service-worker-handler";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -864,12 +865,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           }
           break;
         default:
-          console.warn("Unknown Message type:", type);
-          if (message.action === "callFunction") {
-            // This is for editor.html, which has own handling logic.
-            // TODO: implement proper targetting logic.
-          } else {
-            throw new Error(`Unknown Message type: ${type}`);
+          // TODO: Migrate the handlers to `service-worker-handler.ts`.
+          if (!handleServiceWorkerMessage(message, _sender, sendResponse)) {
+            console.warn("Unknown Message type:", type);
+            if (message.action === "callFunction") {
+              // This is for editor.html, which has own handling logic.
+              // TODO: implement proper targetting logic.
+            } else {
+              throw new Error(`Unknown Message type: ${type}`);
+            }
           }
       }
     } catch (error) {

@@ -72,6 +72,7 @@ async function getNamedSessionsFromStorage(): Promise<
 
 /**
  * Gets a specific named session from storage by ID
+ * TODO: Have a better naming. This only returns open sessions.
  */
 async function getNamedSessionFromStorage(
   sessionId: string,
@@ -642,4 +643,34 @@ export async function restoreClosedSession(
     console.error("Error restoring closed session:", error);
     return null;
   }
+}
+
+/*
+ * Activates a session by ID.
+ * Restores if closed and focuses its window.
+ *
+ * @param sessionId - Session ID.
+ */
+export async function activateSessionById(sessionId: string): Promise<void> {
+  // TODO: Use getNamedSessions() and find by SessionID. (Now checks both open and closed sessions)
+  const sessions = await getNamedSessions();
+  let session = sessions.find((s) => s.id === sessionId);
+  if (!session) {
+    console.error(`Session ${sessionId} not found.`);
+    throw new Error(`Session not found: ${sessionId}`);
+  }
+  // If not open, restore the session and activate.
+  if (!session.windowId) {
+    console.log(`Session ${sessionId} is not open. Attempting to restore.`);
+    const restoredSession = await restoreClosedSession(sessionId);
+    if (!restoredSession || !restoredSession.windowId) {
+      console.error(`Failed to restore session ${sessionId}.`);
+      throw new Error(`Cannot restore session: ${sessionId}`);
+    }
+    session = restoredSession;
+  }
+  await chrome.windows.update(session.windowId!, { focused: true });
+  console.log(
+    `Activated session ${sessionId} by focusing window ${session.windowId}`,
+  );
 }

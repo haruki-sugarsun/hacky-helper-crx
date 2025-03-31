@@ -85,7 +85,6 @@ export function initSearchFunctionality(): void {
       }
 
       // Highlight new result
-      // TODO: This is not working with our current Component refactoring.
       results[currentIndex].classList.add("highlighted");
       results[currentIndex].scrollIntoView({ block: "nearest" });
     }
@@ -174,6 +173,7 @@ async function showSearchResults(query: string): Promise<void> {
         return {
           element: element || document.createElement("li"), // Fallback if element not found
           label: session.name,
+          session: { sessionId: session.id },
           isCurrent: false, // We'll update this later if needed
         };
       });
@@ -192,6 +192,7 @@ async function showSearchResults(query: string): Promise<void> {
         return {
           element: element || document.createElement("li"), // Fallback if element not found
           label: session.name,
+          session: { sessionId: session.id },
           isCurrent: false,
         };
       });
@@ -205,6 +206,7 @@ async function showSearchResults(query: string): Promise<void> {
         element: document.createElement("li"), // Placeholder element
         label: tab.title || "",
         subLabel: tab.url || "",
+        tab: { tabId: tab.id!, windowId: tab.windowId },
         isCurrent: tab.active || false,
       }));
 
@@ -309,6 +311,8 @@ function addResultsCategory(
     element: Element; // TODO: Consider if having an element helps something. Maybe not.
     label: string;
     subLabel?: string;
+    session?: { sessionId?: string }; // `session` exists for sessions. Handler will activate or restore it.
+    tab?: { tabId: number; windowId: number }; // `tab` exists for open tabs. Handler will activate it.
     isCurrent: boolean;
   }>,
 ): SearchResultComponent[] {
@@ -325,7 +329,6 @@ function addResultsCategory(
     const searchResult = new SearchResultComponent({
       resultLabel: result.label,
       resultSubLabel: result.subLabel,
-
       isCurrent: result.isCurrent,
       onClick: () => {
         hideSearchResults();
@@ -333,6 +336,14 @@ function addResultsCategory(
         //       - Activate the session for Open Named Sessions.
         //       - Restore the session for Closed Named Sessions.
         //       - Activate the tab for a open tab in any of the windows.
+        if (result.session) {
+          // Handle sessions
+          serviceWorkerInterface.activateSession(result.session.sessionId!);
+        } else if (result.tab) {
+          // Handle tabs using tabId and activate window
+          chrome.tabs.update(result.tab.tabId, { active: true });
+          chrome.windows.update(result.tab.windowId!, { focused: true });
+        }
       },
     });
     container.appendChild(searchResult);
