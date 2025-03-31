@@ -2,6 +2,7 @@
  * Search functionality for the tabs UI
  */
 
+import { SearchResultComponent } from "../ui/search_result";
 // TODO: Later move these logics to interact with service-worker to tabs.ts. so that features/ files only contains the pure business logic which are easy to test.
 import { NamedSession, ClosedNamedSession } from "../lib/types";
 import serviceWorkerInterface from "./service-worker-interface";
@@ -42,6 +43,51 @@ export function initSearchFunctionality(): void {
     const target = event.target as HTMLElement;
     if (!target.closest(".search-section")) {
       hideSearchResults();
+    }
+  });
+
+  // Add keyboard navigation for search results
+  searchBar.addEventListener("keydown", (event: KeyboardEvent): void => {
+    // TODO: And we also want to have "enter" key to open the result.
+    if (
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown" ||
+      event.key === "Enter"
+    ) {
+      event.preventDefault();
+      const results = searchResults.querySelectorAll("search-result");
+      if (results.length === 0) return;
+
+      let currentIndex = Array.from(results).findIndex((item) =>
+        item.classList.contains("highlighted"),
+      );
+
+      // Remove current highlight
+      if (currentIndex !== -1) {
+        results[currentIndex].classList.remove("highlighted");
+      } else if (event.key === "Enter") {
+        const current = Array.from(results).find((item) =>
+          item.classList.contains("highlighted"),
+        );
+
+        if (current) {
+          console.log(current);
+          // TODO: This is not working as expected now.
+          current.dispatchEvent(new Event("click"));
+        }
+      }
+
+      // Update index based on key
+      if (event.key === "ArrowUp") {
+        currentIndex = (currentIndex - 1 + results.length) % results.length;
+      } else if (event.key === "ArrowDown") {
+        currentIndex = (currentIndex + 1) % results.length;
+      }
+
+      // Highlight new result
+      // TODO: This is not working with our current Component refactoring.
+      results[currentIndex].classList.add("highlighted");
+      results[currentIndex].scrollIntoView({ block: "nearest" });
     }
   });
 
@@ -102,6 +148,7 @@ async function showSearchResults(query: string): Promise<void> {
   searchResults.style.display = "block";
 
   try {
+    // TODO: Cache these sessions and openTabs on the start of search. We can clear if the query is cleared, or searchBar loses focus.
     const namedSessions: NamedSession[] =
       await serviceWorkerInterface.getNamedSessions();
     const closedSessions: ClosedNamedSession[] =
@@ -127,7 +174,6 @@ async function showSearchResults(query: string): Promise<void> {
         return {
           element: element || document.createElement("li"), // Fallback if element not found
           label: session.name,
-          sessionId: session.id,
           isCurrent: false, // We'll update this later if needed
         };
       });
@@ -146,25 +192,30 @@ async function showSearchResults(query: string): Promise<void> {
         return {
           element: element || document.createElement("li"), // Fallback if element not found
           label: session.name,
-          sessionId: session.id,
           isCurrent: false,
         };
       });
 
-    // For unnamed sessions (windows), we still use the DOM approach
-    const unnamedSessions = getMatchingSessions(
-      "#tabs_sessions li",
-      normalizedQuery,
-    );
+    // Fetch open tab titles using Chrome API
+    const openTabs = await chrome.tabs.query({});
+    const matchingTabs = openTabs
+      // TODO: We might want to match with URL too.
+      .filter((tab) => tab.title?.toLowerCase().includes(normalizedQuery))
+      .map((tab) => ({
+        element: document.createElement("li"), // Placeholder element
+        label: tab.title || "",
+        subLabel: tab.url || "",
+        isCurrent: tab.active || false,
+      }));
 
     // Clear previous results
     searchResults.innerHTML = "";
 
-    // Combine all matching sessions
+    // Combine all matching sessions and tabs
     const allMatches = [
       ...matchingNamedSessions,
-      ...unnamedSessions,
       ...matchingClosedSessions,
+      ...matchingTabs,
     ];
 
     if (allMatches.length === 0) {
@@ -176,25 +227,49 @@ async function showSearchResults(query: string): Promise<void> {
       `;
     } else {
       // Add category headers and results
+      let resultComponents: SearchResultComponent[] = [];
       if (matchingNamedSessions.length > 0) {
-        addResultsCategory(
-          searchResults,
-          "Named Sessions",
-          matchingNamedSessions,
+        resultComponents = resultComponents.concat(
+          addResultsCategory(
+            searchResults,
+            "Named Sessions",
+            matchingNamedSessions,
+          ),
         );
-      }
-
-      if (unnamedSessions.length > 0) {
-        addResultsCategory(searchResults, "Windows", unnamedSessions);
       }
 
       if (matchingClosedSessions.length > 0) {
-        addResultsCategory(
-          searchResults,
-          "Closed Sessions",
-          matchingClosedSessions,
+        resultComponents = resultComponents.concat(
+          addResultsCategory(
+            searchResults,
+            "Closed Sessions",
+            matchingClosedSessions,
+          ),
         );
       }
+
+      if (matchingTabs.length > 0) {
+        resultComponents = resultComponents.concat(
+          addResultsCategory(searchResults, "Open Tabs", matchingTabs),
+        );
+      }
+
+      // Register hover handlers for all components
+      resultComponents.forEach((component) => {
+        component.addEventListener("mouseenter", () => {
+          // Clear highlighted class from all other components
+          resultComponents.forEach((otherComponent) => {
+            if (otherComponent === component) {
+              otherComponent.classList.add("highlighted");
+            } else {
+              otherComponent.classList.remove("highlighted");
+            }
+          });
+        });
+        component.addEventListener("mouseleave", () => {
+          component.classList.remove("highlighted");
+        });
+      });
     }
   } catch (error) {
     console.error("Error searching sessions:", error);
@@ -222,48 +297,6 @@ function hideSearchResults(): void {
 }
 
 /**
- * Get matching sessions from the specified container
- * @param selector CSS selector for the container
- * @param query Search query
- * @returns Array of matching session elements
- */
-function getMatchingSessions(
-  selector: string,
-  query: string,
-): Array<{
-  element: Element;
-  label: string;
-  sessionId?: string;
-  isCurrent: boolean;
-}> {
-  const items = document.querySelectorAll(selector);
-  const matches: Array<{
-    element: Element;
-    label: string;
-    sessionId?: string;
-    isCurrent: boolean;
-  }> = [];
-
-  items.forEach((item: Element) => {
-    const sessionLabel = item.querySelector("session-label") as any;
-    if (!sessionLabel) return;
-
-    // TODO: Use proper getter method for labels.
-    const labelText: string = sessionLabel.label?.toLowerCase() || "";
-    if (labelText.includes(query)) {
-      matches.push({
-        element: item,
-        label: sessionLabel.label || "",
-        sessionId: sessionLabel.getAttribute("data-session-id") || undefined,
-        isCurrent: item.classList.contains("current-window"),
-      });
-    }
-  });
-
-  return matches;
-}
-
-/**
  * Add a category of search results to the search results container
  * @param container Search results container
  * @param categoryName Category name
@@ -273,12 +306,12 @@ function addResultsCategory(
   container: HTMLDivElement,
   categoryName: string,
   results: Array<{
-    element: Element;
+    element: Element; // TODO: Consider if having an element helps something. Maybe not.
     label: string;
-    sessionId?: string;
+    subLabel?: string;
     isCurrent: boolean;
   }>,
-): void {
+): SearchResultComponent[] {
   // Create category header
   const categoryHeader = document.createElement("div");
   categoryHeader.className = "search-result-category";
@@ -286,26 +319,24 @@ function addResultsCategory(
   container.appendChild(categoryHeader);
 
   // Add each result
+  const resultComponents: SearchResultComponent[] = [];
   results.forEach((result) => {
-    const resultItem = document.createElement("div");
-    resultItem.className = "search-result-item";
-    if (result.isCurrent) {
-      resultItem.classList.add("current");
-    }
+    // Use SearchResultComponent instead of createElement
+    const searchResult = new SearchResultComponent({
+      resultLabel: result.label,
+      resultSubLabel: result.subLabel,
 
-    const resultLabel = document.createElement("div");
-    resultLabel.className = "search-result-label";
-    resultLabel.textContent = result.label;
-    resultItem.appendChild(resultLabel);
-
-    // Add click handler to select the session
-    resultItem.addEventListener("click", (): void => {
-      // Hide search results
-      hideSearchResults();
-      // Simulate click on the original session item
-      (result.element as HTMLElement).click();
+      isCurrent: result.isCurrent,
+      onClick: () => {
+        hideSearchResults();
+        // TODO: instead of passing a click event, we want to trigger desired actions per results.
+        //       - Activate the session for Open Named Sessions.
+        //       - Restore the session for Closed Named Sessions.
+        //       - Activate the tab for a open tab in any of the windows.
+      },
     });
-
-    container.appendChild(resultItem);
+    container.appendChild(searchResult);
+    resultComponents.push(searchResult);
   });
+  return resultComponents;
 }
