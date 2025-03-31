@@ -1,4 +1,4 @@
-import { getConfig } from "./config_store";
+import { getConfig } from "./config-store";
 import {
   BookmarkSessionFolder,
   ClosedNamedSession,
@@ -449,7 +449,3 @@ export class BookmarkStorage {
     }
   }
 }
-
-// Export a singleton instance
-// TODO: a singleton instance is not an ideal approach. Replace it with proper factory/DI pattern.
-export const bookmarkStorage = BookmarkStorage.getInstance();

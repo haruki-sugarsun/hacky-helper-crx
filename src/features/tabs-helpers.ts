@@ -1,4 +1,4 @@
-import * as SessionManagement from "./session_management";
+import * as SessionManagement from "./session-management";
 
 /**
  * Ensures a tabs.html tab exists in the specified window.

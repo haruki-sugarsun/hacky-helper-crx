@@ -2,8 +2,8 @@
  * Web Component for displaying a search result item.
  */
 
-import { BaseComponent } from "./base_component";
-import styles from "./search_result.css?inline";
+import { BaseComponent } from "./BaseComponent";
+import styles from "./search-result.css?inline";
 
 export class SearchResultComponent extends BaseComponent {
   constructor({

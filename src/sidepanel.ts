@@ -3,8 +3,8 @@ import {
   OpenAILLMService,
   OllamaLLMService,
   LLMService,
-} from "./features/llm_service.ts";
-import { CONFIG_STORE } from "./features/config_store.ts";
+} from "./features/llm-service.ts";
+import { CONFIG_STORE } from "./features/config-store.ts";
 import { OLLAMA_API_URL_DEFAULT } from "./lib/constants.ts";
 import { component_model } from "./components.ts";
 import "./sidepanel.css";

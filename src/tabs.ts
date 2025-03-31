@@ -16,7 +16,7 @@ import {
   OPEN_SAVED_BOOKMARK,
   GET_SYNCED_OPENTABS,
 } from "./lib/constants";
-import { ensureTabsHtmlInWindow } from "./features/tabs_helpers";
+import { ensureTabsHtmlInWindow } from "./features/tabs-helpers";
 import {
   ClosedNamedSession,
   NamedSession,
@@ -26,13 +26,13 @@ import {
 import "./style.css";
 import "./tabs.css";
 // We import files and *Component names separately to ensure the top-level side effects.
-import "./ui/session_label";
-import "./ui/search_bar";
-import "./ui/search_result";
-import "./ui/search_results.css";
-import "./ui/session_metadata";
-import { SessionMetadataComponent } from "./ui/session_metadata";
-import { initSearchFunctionality } from "./features/search_functionality";
+import "./ui/session-label";
+import "./ui/search-bar";
+import "./ui/search-result";
+import "./ui/search-results.css";
+import "./ui/session-metadata";
+import { SessionMetadataComponent } from "./ui/session-metadata";
+import { initSearchFunctionality } from "./features/search-functionality";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());

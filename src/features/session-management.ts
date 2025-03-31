@@ -3,11 +3,13 @@ import {
   NamedSession,
   NamedSessionTab,
 } from "../lib/types";
-import { bookmarkStorage } from "./bookmark_storage";
-import { getConfig } from "./config_store";
+import { BookmarkStorage } from "./BookmarkStorage";
+import { getConfig } from "./config-store";
 
 // Storage key for named sessions
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
+
+// TODO: Encapsulate in a class.
 
 /**
  * Gets all named sessions from storage and verifies window existence
@@ -282,7 +284,7 @@ export async function deleteNamedSession(sessionId: string) {
   if (session) {
     // Remove corresponding Bookmark folder if the session has a name
     if (session.name) {
-      await bookmarkStorage.deleteSessionFolder(sessionId);
+      await BookmarkStorage.getInstance().deleteSessionFolder(sessionId);
     }
 
     // Remove from storage
@@ -295,14 +297,17 @@ export async function deleteNamedSession(sessionId: string) {
     const activeSessions = await getNamedSessionsFromStorage();
     const activeSessionIds = Object.keys(activeSessions);
     const closedSessions =
-      await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+      await BookmarkStorage.getInstance().getClosedNamedSessions(
+        activeSessionIds,
+      );
     const closedSession = closedSessions.find(
       (session) => session.id === sessionId,
     );
 
     if (closedSession) {
       // Delete the closed session from bookmark storage
-      const result = await bookmarkStorage.deleteSessionFolder(sessionId);
+      const result =
+        await BookmarkStorage.getInstance().deleteSessionFolder(sessionId);
       if (result) {
         console.log(
           `Deleted closed Named Session ${sessionId} from bookmark storage`,
@@ -329,7 +334,7 @@ export async function deleteNamedSession(sessionId: string) {
 export async function restoreNamedSessionsFromBookmarks() {
   try {
     // Initialize bookmark storage
-    const initialized = await bookmarkStorage.initialize();
+    const initialized = await BookmarkStorage.getInstance().initialize();
     if (!initialized) {
       console.warn("Failed to initialize bookmark storage for restoration");
       return;
@@ -386,7 +391,7 @@ export async function syncSessionToBookmarks(
       owner: "current", // Default owner, could be configurable in the future
     }));
 
-    const result = await bookmarkStorage.syncSessionToBookmarks(
+    const result = await BookmarkStorage.getInstance().syncSessionToBookmarks(
       session,
       sessionTabs,
     );
@@ -406,7 +411,7 @@ export async function saveTabToBookmarks(
   metadata?: any,
 ): Promise<boolean> {
   try {
-    const result = await bookmarkStorage.saveTabToBookmarks(
+    const result = await BookmarkStorage.getInstance().saveTabToBookmarks(
       sessionId,
       tab,
       metadata,
@@ -422,14 +427,14 @@ export async function saveTabToBookmarks(
  * Gets saved bookmarks for a session
  */
 export async function getSavedBookmarks(sessionId: string) {
-  return await bookmarkStorage.getSavedBookmarks(sessionId);
+  return await BookmarkStorage.getInstance().getSavedBookmarks(sessionId);
 }
 
 /**
  * Gets synced bookmarks for a session
  */
 export async function getSyncedBookmarks(sessionId: string) {
-  return await bookmarkStorage.getSyncedBookmarks(sessionId);
+  return await BookmarkStorage.getInstance().getSyncedBookmarks(sessionId);
 }
 
 /**
@@ -505,7 +510,9 @@ export async function getNamedSessions(): Promise<NamedSession[]> {
   // Get closed sessions from bookmarks
   const activeSessionIds = Object.keys(activeSessions);
   const closedSessions =
-    await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+    await BookmarkStorage.getInstance().getClosedNamedSessions(
+      activeSessionIds,
+    );
 
   // Convert closed sessions to NamedSession format
   const convertedClosedSessions: NamedSession[] = closedSessions.map(
@@ -534,7 +541,9 @@ export async function getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
 
     // Get closed sessions from bookmark storage
     // TODO: We should filter in the session_management since that represents better separation of responsibilities.
-    return await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+    return await BookmarkStorage.getInstance().getClosedNamedSessions(
+      activeSessionIds,
+    );
   } catch (error) {
     console.error("Error getting closed named sessions:", error);
     return [];
@@ -570,7 +579,9 @@ export async function restoreClosedSession(
     const sessions = await getNamedSessionsFromStorage();
     const activeSessionIds = Object.keys(sessions);
     const closedSessions =
-      await bookmarkStorage.getClosedNamedSessions(activeSessionIds);
+      await BookmarkStorage.getInstance().getClosedNamedSessions(
+        activeSessionIds,
+      );
     const closedSession = closedSessions.find(
       (session) => session.id === sessionId,
     );

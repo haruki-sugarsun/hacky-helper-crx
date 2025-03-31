@@ -1,5 +1,5 @@
 import { NamedSession, TabSummary } from "../lib/types";
-import { getNamedSessions } from "./session_management";
+import { getNamedSessions } from "./session-management";
 
 /**
  * Calculates the cosine similarity between two embedding vectors

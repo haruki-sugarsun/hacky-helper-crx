@@ -1,12 +1,12 @@
 import { h, init, propsModule, eventListenersModule } from "snabbdom";
 
-import "./features/config_store";
+import "./features/config-store";
 import {
   ConfigStore,
   Config,
   BoolConfig,
   StringConfig,
-} from "./features/config_store";
+} from "./features/config-store";
 import {
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,

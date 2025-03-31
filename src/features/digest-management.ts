@@ -1,6 +1,8 @@
 import { DigestEntry } from "../lib/types";
 import { PersistentCache } from "../lib/persistent-cache";
 
+// TODO: Encapsulate these in a class.
+
 // Constants for cache configuration
 export const SUMMARY_CACHE_SIZE = 5; // Store the latest 5 summaries per tab+URL
 

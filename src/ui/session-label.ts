@@ -1,5 +1,5 @@
-import { BaseComponent } from "./base_component";
-import styles from "./session_label.css?inline";
+import { BaseComponent } from "./BaseComponent";
+import styles from "./session-label.css?inline";
 
 /**
  * SessionLabel component displays a session's label with a menu button

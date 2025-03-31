@@ -8,7 +8,7 @@ import {
   GET_NAMED_SESSIONS,
   GET_CLOSED_NAMED_SESSIONS,
 } from "../lib/constants";
-import { activateSessionById } from "./session_management";
+import { activateSessionById } from "./session-management";
 
 /**
  * Handles incoming messages to the service worker.
