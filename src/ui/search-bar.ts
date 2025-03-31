@@ -2,8 +2,8 @@
  * Search bar component for the tabs UI
  */
 
-import { BaseComponent } from "./base_component";
-import styles from "./search_bar.css?inline";
+import { BaseComponent } from "./BaseComponent";
+import styles from "./search-bar.css?inline";
 
 class SearchBarComponent extends BaseComponent {
   private searchInput: HTMLInputElement;

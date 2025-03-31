@@ -1,5 +1,7 @@
 const LOCAL_STORAGE_PREFIX = "hacky_helper_";
 
+// TODO: Encapsulte in a class.
+
 // Class representing configurable values.
 export class Config {
   key: string;

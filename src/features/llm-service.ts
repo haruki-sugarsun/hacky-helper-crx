@@ -1,4 +1,4 @@
-import { CONFIG_STORE } from "./config_store";
+import { CONFIG_STORE } from "./config-store";
 import {
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,

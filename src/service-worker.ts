@@ -22,7 +22,7 @@ import {
   LLMService,
   OpenAILLMService,
   OllamaLLMService,
-} from "./features/llm_service.ts";
+} from "./features/llm-service.ts";
 
 import {
   CREATE_SUMMARY,
@@ -51,16 +51,16 @@ import {
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
-import { CONFIG_STORE, getConfig } from "./features/config_store.ts";
+import { CONFIG_STORE, getConfig } from "./features/config-store.ts";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 
-import "./features/tab_organizer.ts";
-import * as SessionManagement from "./features/session_management";
-import * as TabCategorization from "./features/tab_categorization";
-import * as DigestManagement from "./features/digest_management";
-import { bookmarkStorage } from "./features/bookmark_storage";
-import { openTabsPage } from "./features/tabs_helpers";
+import "./features/tab-organizer.ts";
+import * as SessionManagement from "./features/session-management.ts";
+import * as TabCategorization from "./features/tab-categorization.ts";
+import * as DigestManagement from "./features/digest-management";
+import { BookmarkStorage } from "./features/BookmarkStorage.ts";
+import { openTabsPage } from "./features/tabs-helpers.ts";
 import { handleServiceWorkerMessage } from "./features/service-worker-handler";
 
 // Entrypoint logging:
@@ -1013,7 +1013,7 @@ async function initializeBookmarkParentFolder() {
 initializeBookmarkParentFolder().then(async () => {
   try {
     // Initialize the bookmark storage system after the parent folder is set up
-    const initialized = await bookmarkStorage.initialize();
+    const initialized = await BookmarkStorage.getInstance().initialize();
     if (initialized) {
       console.log("Bookmark storage system initialized successfully");
     } else {

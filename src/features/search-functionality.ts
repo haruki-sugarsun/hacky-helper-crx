@@ -2,7 +2,7 @@
  * Search functionality for the tabs UI
  */
 
-import { SearchResultComponent } from "../ui/search_result";
+import { SearchResultComponent } from "../ui/search-result";
 // TODO: Later move these logics to interact with service-worker to tabs.ts. so that features/ files only contains the pure business logic which are easy to test.
 import { NamedSession, ClosedNamedSession } from "../lib/types";
 import serviceWorkerInterface from "./service-worker-interface";

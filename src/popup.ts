@@ -1,6 +1,6 @@
 import "./style.css";
 import "./popup.css";
-import { CONFIG_STORE } from "./features/config_store";
+import { CONFIG_STORE } from "./features/config-store";
 import { MIGRATE_TAB, GET_NAMED_SESSIONS } from "./lib/constants";
 import { NamedSession } from "./lib/types";
 

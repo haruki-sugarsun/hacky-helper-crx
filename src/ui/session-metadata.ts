@@ -8,8 +8,8 @@
  *  - updated: The last updated date/time.
  *  - unnamed: If set to "true", displays a message for unnamed sessions.
  */
-import { BaseComponent } from "./base_component";
-import styles from "./session_metadata.css?inline";
+import { BaseComponent } from "./BaseComponent";
+import styles from "./session-metadata.css?inline";
 
 export class SessionMetadataComponent extends BaseComponent {
   static get observedAttributes() {

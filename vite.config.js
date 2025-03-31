@@ -32,7 +32,7 @@ export default defineConfig({
       input: {
         popup: "popup.html",
         editor: "editor.html",
-        voice_log: "voice_log.html",
+        voice_log: "voice-log.html",
         tabs: "tabs.html",
         settings: "settings.html",
       },
