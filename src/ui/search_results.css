@@ -3,7 +3,7 @@
 .search-results {
   position: absolute;
   left: 0;
-  width: 100%;
+  width: max(100%, 50vw);
   max-height: 300px;
   overflow-y: auto;
   background-color: #2a2a3a;
@@ -13,26 +13,6 @@
   z-index: 100;
 }
 
-.search-result-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border-bottom: 1px solid #444;
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.search-result-item:hover {
-  background-color: #444466;
-}
-
-.search-result-item.current {
-  background-color: #333355;
-  border-left: 3px solid #6666cc;
-}
-
 .search-result-category {
   font-size: 0.8em;
   color: #aaa;
@@ -40,10 +20,6 @@
   padding: 4px 12px;
   background-color: #333344;
   font-weight: bold;
-}
-
-.search-result-label {
-  font-weight: 500;
 }
 
 .search-no-results {
