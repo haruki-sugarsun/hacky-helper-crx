@@ -452,6 +452,16 @@ export async function deleteNamedSession(sessionId: string) {
   }
 }
 
+/**
+ * Duplicates (clones) a Named Session by its original session ID.
+ * Returns the newly created Named Session or null if cloning fails.
+ */
+export async function cloneNamedSession(
+  _originalSessionId: string,
+): Promise<NamedSession | null> {
+  throw new ErrorEvent("Not yet implemented.");
+  return null;
+}
 /* ============================
    Session Retrieval Functions
 ============================ */
