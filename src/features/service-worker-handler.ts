@@ -3,12 +3,9 @@
  * This file contains the logic for handling messages sent to the service worker.
  */
 
-import {
-  ACTIVATE_SESSION,
-  GET_NAMED_SESSIONS,
-  GET_CLOSED_NAMED_SESSIONS,
-} from "../lib/constants";
-import { activateSessionById, cloneNamedSession } from "./session-management";
+import { ACTIVATE_SESSION, GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
+import { GET_NAMED_SESSIONS } from "./service-worker-messages";
+import * as SessionManagement from "./session-management";
 import { SuccessResult, CLONE_NAMED_SESSION } from "./service-worker-messages";
 
 /**
@@ -66,7 +63,7 @@ async function handleActivateSession(
   }
 
   try {
-    await activateSessionById(sessionId);
+    await SessionManagement.activateSessionById(sessionId);
     sendResponse({ success: true });
   } catch (error) {
     console.error("Error activating session:", error);
@@ -78,9 +75,11 @@ async function handleActivateSession(
  * Handles the retrieval of named sessions.
  * @param sendResponse The callback to send a response.
  */
-function handleGetNamedSessions(sendResponse: (response?: any) => void): void {
-  // Placeholder for actual implementation
-  sendResponse({ type: "GET_NAMED_SESSIONS_RESULT", payload: [] });
+async function handleGetNamedSessions(
+  sendResponse: (response?: any) => void,
+): Promise<void> {
+  const sessions = await SessionManagement.getNamedSessions();
+  sendResponse(sessions);
 }
 
 /**
@@ -110,7 +109,7 @@ async function handleCloneNamedSession(
     return;
   }
   try {
-    const clonedSession = await cloneNamedSession(sessionId);
+    const clonedSession = await SessionManagement.cloneNamedSession(sessionId);
     if (!clonedSession) {
       console.error("Failed to clone session:", sessionId);
       sendResponse({ error: "Failed to clone session" });
