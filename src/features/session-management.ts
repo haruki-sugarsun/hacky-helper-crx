@@ -55,7 +55,6 @@ async function getOpenNamedSessionsInLocal(): Promise<
             console.log(
               `Window ${session.windowId} for session ${sessionId} no longer exists, removing session from storage`,
             );
-
             // Delete the session from the sessions object
             delete sessions[sessionId];
             hasUpdates = true;
