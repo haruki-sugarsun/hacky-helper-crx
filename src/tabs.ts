@@ -1,7 +1,6 @@
 import {
   GET_CACHED_SUMMARIES,
   CREATE_NAMED_SESSION,
-  GET_NAMED_SESSIONS,
   CATEGORIZE_TABS,
   SUGGEST_TAB_DESTINATIONS,
   MIGRATE_TAB,
@@ -117,62 +116,56 @@ async function restoreSessionWindowAssociation() {
     const currentWindow = await chrome.windows.getCurrent();
 
     // Get all named sessions
-    const response = await chrome.runtime.sendMessage({
-      type: GET_NAMED_SESSIONS,
-    });
-    if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
-      const sessions = response.payload;
+    const sessions = await serviceWorkerInterface.getNamedSessions();
 
-      // Check if this session exists but has a null windowId (lost association)
-      // TODO: We also need to check if the window exists or not, and override if not exiting.
-      const session = sessions.find((s: NamedSession) => s.id === sessionId);
+    // Check if this session exists but has a null windowId (lost association)
+    // TODO: We also need to check if the window exists or not, and override if not exiting.
+    const session = sessions.find((s: NamedSession) => s.id === sessionId);
 
-      if (session) {
-        if (session.windowId === null) {
-          console.log(
-            `Restoring session-window association for session ${sessionId} with window ${currentWindow.id}`,
-          );
-
-          // Update the session with the current window ID
-          const updateResponse = await chrome.runtime.sendMessage({
-            type: UPDATE_NAMED_SESSION_TABS,
-            payload: {
-              sessionId: sessionId,
-              windowId: currentWindow.id,
-            },
-          });
-
-          if (
-            updateResponse &&
-            updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
-          ) {
-            console.log("Successfully restored session-window association");
-          }
-        } else {
-          console.log(
-            `Session ${sessionId} already associated with window ${session.windowId}`,
-          );
-        }
-      } else if (sessionName) {
-        // If the session doesn't exist but we have a name, create it
+    if (session) {
+      if (session.windowId === null) {
         console.log(
-          `Creating new named session ${sessionName} for window ${currentWindow.id}`,
+          `Restoring session-window association for session ${sessionId} with window ${currentWindow.id}`,
         );
-
-        const createResponse = await chrome.runtime.sendMessage({
-          type: CREATE_NAMED_SESSION,
+        // Update the session with the current window ID
+        const updateResponse = await chrome.runtime.sendMessage({
+          type: UPDATE_NAMED_SESSION_TABS,
           payload: {
+            sessionId: sessionId,
             windowId: currentWindow.id,
-            sessionName: sessionName,
           },
         });
 
         if (
-          createResponse &&
-          createResponse.type === "CREATE_NAMED_SESSION_RESULT"
+          updateResponse &&
+          updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
         ) {
-          console.log("Successfully created named session");
+          console.log("Successfully restored session-window association");
         }
+      } else {
+        console.log(
+          `Session ${sessionId} already associated with window ${session.windowId}`,
+        );
+      }
+    } else if (sessionName) {
+      // If the session doesn't exist but we have a name, create it
+      console.log(
+        `Creating new named session ${sessionName} for window ${currentWindow.id}`,
+      );
+
+      const createResponse = await chrome.runtime.sendMessage({
+        type: CREATE_NAMED_SESSION,
+        payload: {
+          windowId: currentWindow.id,
+          sessionName: sessionName,
+        },
+      });
+
+      if (
+        createResponse &&
+        createResponse.type === "CREATE_NAMED_SESSION_RESULT"
+      ) {
+        console.log("Successfully created named session");
       }
     }
   } catch (error) {
@@ -889,16 +882,8 @@ async function updateUI(
   // We don't need to log tabs separately as they're now included in windows
 
   // ---- Fetch and update Named Sessions ----
-  await chrome.runtime
-    .sendMessage({ type: GET_NAMED_SESSIONS })
-    .then((response) => {
-      if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
-        state_sessions = response.payload;
-      }
-    })
-    .catch((err) => {
-      console.error("Error fetching named sessions:", err);
-    });
+  // TODO: Migrate the call with GET_NAMED_SESSIONS to service-worker-interface/handler/messages.ts.
+  state_sessions = await serviceWorkerInterface.getNamedSessions();
 
   // ---- Fetch and update Closed Named Sessions ----
   let closedSessions: ClosedNamedSession[] = [];

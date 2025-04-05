@@ -36,7 +36,6 @@ import {
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,
   OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
-  GET_NAMED_SESSIONS,
   CATEGORIZE_TABS,
   SUGGEST_TAB_DESTINATIONS,
   MIGRATE_TAB,
@@ -535,15 +534,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               payload: {
                 success,
               },
-            });
-          }
-          break;
-        case GET_NAMED_SESSIONS:
-          {
-            const sessions = await SessionManagement.getNamedSessions();
-            sendResponse({
-              type: "GET_NAMED_SESSIONS_RESULT",
-              payload: sessions,
             });
           }
           break;

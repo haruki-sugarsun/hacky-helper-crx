@@ -1,8 +1,8 @@
 import "./style.css";
 import "./popup.css";
 import { CONFIG_STORE } from "./features/config-store";
-import { MIGRATE_TAB, GET_NAMED_SESSIONS } from "./lib/constants";
-import { NamedSession } from "./lib/types";
+import { MIGRATE_TAB } from "./lib/constants";
+import serviceWorkerInterface from "./features/service-worker-interface";
 
 // Function to initialize the toggle states from configuration
 async function initializeToggles() {
@@ -153,14 +153,7 @@ async function showMigrationDialog() {
   const windows = await chrome.windows.getAll();
 
   // Get all named sessions
-  const response = await chrome.runtime.sendMessage({
-    type: GET_NAMED_SESSIONS,
-  });
-
-  let sessions: NamedSession[] = [];
-  if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
-    sessions = response.payload;
-  }
+  const sessions = await serviceWorkerInterface.getNamedSessions();
 
   // Show the dialog
   dialog.style.display = "flex";

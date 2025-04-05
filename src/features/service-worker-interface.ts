@@ -1,13 +1,13 @@
 /**
  * Typed abstraction layer for interacting with service-worker via messages.
  */
-import {
-  GET_NAMED_SESSIONS,
-  GET_CLOSED_NAMED_SESSIONS,
-  ACTIVATE_SESSION,
-} from "../lib/constants";
+import { GET_CLOSED_NAMED_SESSIONS, ACTIVATE_SESSION } from "../lib/constants";
 import { NamedSession, ClosedNamedSession } from "../lib/types";
-import { SuccessResult, CLONE_NAMED_SESSION } from "./service-worker-messages";
+import {
+  SuccessResult,
+  GET_NAMED_SESSIONS,
+  CLONE_NAMED_SESSION,
+} from "./service-worker-messages";
 
 /**
  * ServiceWorkerInterface provides a typed abstraction layer for interacting with the Chrome Extension's background Service Worker.
@@ -25,16 +25,13 @@ class ServiceWorkerInterface {
    */
   async getNamedSessions(): Promise<NamedSession[]> {
     try {
-      const response = await chrome.runtime.sendMessage({
+      return await chrome.runtime.sendMessage({
         type: GET_NAMED_SESSIONS,
       });
-      if (response && response.type === "GET_NAMED_SESSIONS_RESULT") {
-        return response.payload;
-      }
     } catch (error) {
       console.error("Error in getNamedSessions:", error);
+      return [];
     }
-    return [];
   }
 
   /**
