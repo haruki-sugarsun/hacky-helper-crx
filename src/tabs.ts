@@ -121,7 +121,6 @@ async function restoreSessionWindowAssociation() {
     // Check if this session exists but has a null windowId (lost association)
     // TODO: We also need to check if the window exists or not, and override if not exiting.
     const session = sessions.find((s: NamedSession) => s.id === sessionId);
-
     if (session) {
       // TODO: Define the function in service-worker-interface and service-worker-handler. Missing type complicated the thing.
       if (!session.windowId || session.windowId === null) {
@@ -163,24 +162,25 @@ async function restoreSessionWindowAssociation() {
         );
       }
     } else if (sessionName) {
+      // TODO: This check looks naive. Let's reconsider the condition more.
       // If the session doesn't exist but we have a name, create it
       console.log(
-        `Creating new named session ${sessionName} for window ${currentWindow.id}`,
+        `Restoring session-window association for session ${sessionId} with window ${currentWindow.id}`,
       );
-
-      const createResponse = await chrome.runtime.sendMessage({
-        type: CREATE_NAMED_SESSION,
+      // Update the session with the current window ID
+      const updateResponse = await chrome.runtime.sendMessage({
+        type: UPDATE_NAMED_SESSION_TABS,
         payload: {
+          sessionId: sessionId,
           windowId: currentWindow.id,
-          sessionName: sessionName,
         },
       });
 
       if (
-        createResponse &&
-        createResponse.type === "CREATE_NAMED_SESSION_RESULT"
+        updateResponse &&
+        updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
       ) {
-        console.log("Successfully created named session");
+        console.log("Successfully restored session-window association");
       }
     }
   } catch (error) {
