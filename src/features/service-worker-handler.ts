@@ -8,7 +8,8 @@ import {
   GET_NAMED_SESSIONS,
   GET_CLOSED_NAMED_SESSIONS,
 } from "../lib/constants";
-import { activateSessionById } from "./session-management";
+import { activateSessionById, cloneNamedSession } from "./session-management";
+import { SuccessResult, CLONE_NAMED_SESSION } from "./service-worker-messages";
 
 /**
  * Handles incoming messages to the service worker.
@@ -33,6 +34,10 @@ export function handleServiceWorkerMessage(
 
     case GET_CLOSED_NAMED_SESSIONS:
       handleGetClosedNamedSessions(sendResponse);
+      break;
+
+    case CLONE_NAMED_SESSION:
+      handleCloneNamedSession(message, sendResponse);
       break;
 
     default:
@@ -87,4 +92,36 @@ function handleGetClosedNamedSessions(
 ): void {
   // Placeholder for actual implementation
   sendResponse({ type: "GET_CLOSED_NAMED_SESSIONS_RESULT", payload: [] });
+}
+
+/**
+ * Handles the cloning of a named session.
+ * @param message The message containing the session ID to clone.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleCloneNamedSession(
+  message: { payload: { sessionId: string } },
+  sendResponse: (response?: any) => void,
+): Promise<void> {
+  const { sessionId } = message.payload;
+  if (!sessionId) {
+    console.error("Session ID is missing in CLONE_NAMED_SESSION message.");
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+  try {
+    const clonedSession = await cloneNamedSession(sessionId);
+    if (!clonedSession) {
+      console.error("Failed to clone session:", sessionId);
+      sendResponse({ error: "Failed to clone session" });
+      return;
+    }
+    console.log(`Cloned session ${sessionId} as ${clonedSession.id}`);
+    sendResponse({
+      success: true,
+    } as SuccessResult);
+  } catch (error) {
+    console.error("Error cloning session:", error);
+    sendResponse({ error: "Failed to clone session" });
+  }
 }

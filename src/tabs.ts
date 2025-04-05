@@ -25,6 +25,7 @@ import {
 } from "./lib/types";
 import "./style.css";
 import "./tabs.css";
+import serviceWorkerInterface from "./features/service-worker-interface";
 // We import files and *Component names separately to ensure the top-level side effects.
 import "./ui/session-label";
 import "./ui/search-bar";
@@ -444,6 +445,10 @@ function createSessionListItem(
         onClick: () => renameSession(sessionId),
       },
       {
+        text: "Clone Session",
+        onClick: () => cloneSession(sessionId),
+      },
+      {
         text: "Delete Session",
         onClick: () => deleteSession(sessionId),
       },
@@ -644,6 +649,32 @@ async function deleteSession(sessionId: string) {
       "Error deleting session: " +
         (error instanceof Error ? error.message : String(error)),
     );
+  }
+}
+
+// TODO: Organize the methods related to the actions.
+/**
+ * Clones a session with the given ID using the service worker interface.
+ * After successful cloning, it refreshes the UI with updated windows and tabs state.
+ *
+ * @param sessionId - The ID of the session to clone
+ * @returns A Promise that resolves when the cloning operation and UI update are complete
+ */
+async function cloneSession(sessionId: string) {
+  const result = await serviceWorkerInterface.cloneNamedSession(sessionId);
+  if (result.success) {
+    console.log(`Session ${sessionId} cloned successfully.`);
+    alert("Session cloned successfully.");
+    chrome.windows.getAll({ populate: true }).then((windows) => {
+      state_windows = windows;
+      chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+        state_tabs = tabs;
+        updateUI(state_windows);
+      });
+    });
+  } else {
+    console.error("Error cloning session:", result);
+    alert("Failed to clone session.");
   }
 }
 

@@ -241,6 +241,45 @@ export async function getSyncedOpenTabs(sessionId: string) {
   return await BookmarkStorage.getInstance().getSyncedBookmarks(sessionId);
 }
 
+/**
+ * Creates a closed session in the bookmark backend.
+ * This method is equivalent to creating a corresponding data entry in the backend.
+ * TODO: Reuse this implementation for other similar logic.
+ * @param sessionName The name of the session to create.
+ * @returns The created BookmarkSessionFolder.
+ * @throws Error if the session name is invalid or the creation fails.
+ */
+async function createClosedNamedSessionInBackend(
+  sessionName: string,
+): Promise<NamedSession> {
+  if (!sessionName || sessionName.trim() === "") {
+    console.error("Creating a closed session without a valid name.");
+    throw new Error("Session name is required but not provided or empty.");
+  }
+  const finalSessionId = crypto.randomUUID();
+  const timestamp = Date.now();
+  const closedSession: NamedSession = {
+    id: finalSessionId,
+    name: sessionName,
+    windowId: undefined, // Indicates a closed session
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+
+  // Create the closed session solely in the bookmark backend.
+  const result =
+    await BookmarkStorage.getInstance().createSessionFolder(closedSession);
+  if (!result) {
+    console.error("Failed to create closed session in bookmark storage");
+    throw new Error("Failed to create closed session in bookmark storage");
+  }
+
+  console.log(
+    `Created Closed Named Session in bookmark backend: ${finalSessionId}`,
+  );
+  return closedSession;
+}
+
 /* ============================
    Session C(R)UD Operations
 ============================ */
@@ -450,6 +489,84 @@ export async function deleteNamedSession(sessionId: string) {
       return false;
     }
   }
+}
+
+/**
+ * Duplicates (clones) a Named Session by its original session ID.
+ * Returns the newly created Named Session or null if cloning fails.
+ */
+export async function cloneNamedSession(
+  originalSessionId: string,
+): Promise<NamedSession | null> {
+  // We assume the orignal session is open.
+  const originalSession = await getOpenNamedSessionInLocal(originalSessionId);
+  if (!originalSession || !originalSession.windowId) {
+    console.error(
+      `Cannot clone session: session ${originalSessionId} not found or invalid.`,
+    );
+    return null;
+  }
+  const newName = originalSession.name + " (Copy)";
+  const newSession = await createClosedNamedSessionInBackend(newName);
+  // Clone open tabs from original session
+  try {
+    const originalTabs = await chrome.tabs.query({
+      windowId: originalSession.windowId,
+      pinned: false,
+    });
+    const namedSessionTabs: NamedSessionTab[] = originalTabs.map((tab) => ({
+      tabId: tab.id || null,
+      title: tab.title || "Untitled",
+      url: tab.url || "",
+      updatedAt: Date.now(),
+      owner: "current",
+    }));
+
+    await BookmarkStorage.getInstance().syncOpenedPagesForSession(
+      newSession.id,
+      namedSessionTabs,
+    );
+    console.log(`Copied ${originalTabs.length} open tabs to the new session`);
+  } catch (err) {
+    console.error("Error copying open tabs:", err);
+  }
+  // Clone saved bookmarks from original session
+  try {
+    const savedBookmarks = await getSavedBookmarks(originalSession.id);
+    if (savedBookmarks && savedBookmarks.length) {
+      for (const bookmark of savedBookmarks) {
+        // TODO: saveTabToBookmarks() actually needs just a partial data from tab. Define own tiny version of Tab for it.
+        const fakeTab = {
+          id: -1,
+          index: -1,
+          pinned: false,
+          highlighted: false,
+          windowId: 0,
+          title: bookmark.title,
+          url: bookmark.url,
+          favIconUrl: "",
+          status: "complete",
+          discarded: false,
+          autoDiscardable: true,
+          active: false,
+          incognito: false,
+        } as unknown as chrome.tabs.Tab;
+        await BookmarkStorage.getInstance().saveTabToBookmarks(
+          newSession.id,
+          fakeTab,
+        );
+      }
+      console.log(
+        `Copied ${savedBookmarks.length} saved bookmarks to the new session`,
+      );
+    }
+  } catch (err) {
+    console.error("Error copying saved bookmarks:", err);
+  }
+  console.log(
+    `Cloned session ${originalSessionId} to new session ${newSession.id}`,
+  );
+  return newSession;
 }
 
 /* ============================

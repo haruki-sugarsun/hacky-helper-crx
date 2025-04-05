@@ -7,6 +7,7 @@ import {
   ACTIVATE_SESSION,
 } from "../lib/constants";
 import { NamedSession, ClosedNamedSession } from "../lib/types";
+import { SuccessResult, CLONE_NAMED_SESSION } from "./service-worker-messages";
 
 /**
  * ServiceWorkerInterface provides a typed abstraction layer for interacting with the Chrome Extension's background Service Worker.
@@ -72,6 +73,24 @@ class ServiceWorkerInterface {
     } catch (error) {
       console.error("Error in activateSession:", error);
     }
+  }
+
+  /**
+   * Clones a named session.
+   *
+   * @param sessionId - The identifier of the session to clone.
+   * @returns A promise that resolves to a SuccessResult indicating the outcome.
+   */
+  async cloneNamedSession(sessionId: string): Promise<SuccessResult> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: CLONE_NAMED_SESSION,
+        payload: { sessionId },
+      });
+    } catch (error) {
+      console.error("Error in cloneNamedSession:", error);
+    }
+    return { success: false };
   }
 }
 
