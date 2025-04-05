@@ -121,6 +121,7 @@ async function restoreSessionWindowAssociation() {
     // Check if this session exists but has a null windowId (lost association)
     // TODO: We also need to check if the window exists or not, and override if not exiting.
     const session = sessions.find((s: NamedSession) => s.id === sessionId);
+
     if (session) {
       // TODO: Define the function in service-worker-interface and service-worker-handler. Missing type complicated the thing.
       if (!session.windowId || session.windowId === null) {
