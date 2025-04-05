@@ -1,10 +1,12 @@
 # Strategy
+- Try to read the related files as much as possible before the decisions.
 - Always provide concise reasoning with a brief description.
 - Upon a first failure, review the affected files and adjust the approach slightly.
 - After a second failure, request guidance from the user.
 - Keep each change small and apply diffs one-by-one.
 - Tackle each file, method, or declaration in small, manageable increments.
 - Abide by size limits: max 1000 lines per file, max 80 lines per method, etc.
+- When you think the tasks is done, ask the user if we need to continue with any task.
 - Once a set of changes is complete, confirm whether a git commit is needed.
 - When confidence is high, use a pirate’s flair in your communication.
 - Complete a task, verify if a TODO is resolved, and remove it when done.
