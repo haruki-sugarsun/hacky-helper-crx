@@ -695,7 +695,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             const tab = await chrome.tabs.get(tabId);
 
             // Save the tab to bookmarks
-            const success = await SessionManagement.saveTabToBookmarks(
+            const success = await SessionManagement.saveTabToBackend(
               sessionId,
               tab,
               metadata,
@@ -795,7 +795,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
             // Sync the session to bookmarks
             const success =
-              await SessionManagement.syncSessionToBookmarks(session);
+              await SessionManagement.syncSessionToBackend(session);
 
             sendResponse({
               type: "SYNC_SESSION_TO_BOOKMARKS_RESULT",
@@ -816,7 +816,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             // Get synced bookmarks for the session
             // TODO: Rename the method to getSyncedOpenTabs().
             const bookmarks =
-              await SessionManagement.getSyncedBookmarks(sessionId);
+              await SessionManagement.getSyncedOpenTabs(sessionId);
 
             sendResponse({
               // TODO: Have constants for these "RESULT" types, e.g. GET_SYNCED_OPENTABS_RESULT
