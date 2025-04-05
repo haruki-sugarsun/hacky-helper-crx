@@ -181,6 +181,7 @@ export class BookmarkStorage {
 
   /**
    * Syncs the opened pages for a session to bookmarks
+   * TODO: Rename to have consistentcy with concepts.
    */
   private async syncOpenedPages(
     sessionFolder: BookmarkSessionFolder,

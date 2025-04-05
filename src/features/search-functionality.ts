@@ -326,6 +326,8 @@ function addResultsCategory(
   const resultComponents: SearchResultComponent[] = [];
   results.forEach((result) => {
     // Use SearchResultComponent instead of createElement
+    // TODO: Check https://stackoverflow.com/questions/55581839/passing-values-to-constructor-of-custom-htmlelement
+    //       and https://html.spec.whatwg.org/multipage/custom-elements.html#custom-element-conformance
     const searchResult = new SearchResultComponent({
       resultLabel: result.label,
       resultSubLabel: result.subLabel,

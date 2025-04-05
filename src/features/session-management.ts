@@ -653,7 +653,7 @@ export async function activateSessionById(sessionId: string): Promise<void> {
    Auto-save Management
 ============================ */
 
-// Auto-save timer
+// Auto-save timer. TODO: Implement a proper timer.
 let autoSaveTimer: number | null = null;
 
 /**

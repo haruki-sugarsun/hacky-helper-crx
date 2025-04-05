@@ -50,6 +50,11 @@ Tabs UI is an extention component
 
 ### Named Sessions (`[Named]`)
 
+- Named Sessions has action menu to trigger several actions:
+  - Rename the session
+  - Clone the session
+  - Delete the session
+
 ### Unnamed Sessions (`[Unnamed]`)
 
 ### Closed Sessions (`[Closed]`)
