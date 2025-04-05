@@ -242,6 +242,21 @@ export class BookmarkStorage {
   }
 
   /**
+   * Public method to sync opened pages for a session
+   * TODO: Have consistent working OpenedPages -> OpenTabs.
+   */
+  public async syncOpenedPagesForSession(
+    sessionId: string,
+    tabs: NamedSessionTab[],
+  ): Promise<void> {
+    const sessionFolder = this.sessionFolders.get(sessionId);
+    if (!sessionFolder) {
+      throw new Error(`Session folder not found for session ID: ${sessionId}`);
+    }
+    await this.syncOpenedPages(sessionFolder, tabs);
+  }
+
+  /**
    * Saves a tab as a bookmark in the "Saved Pages" folder for a session
    */
   public async saveTabToBookmarks(
@@ -448,5 +463,55 @@ export class BookmarkStorage {
       console.error("Error getting closed named sessions:", error);
       return [];
     }
+  }
+
+  /**
+   * Creates a session folder to store the session data in bookmarks (without syncing tabs).
+   */
+  public async createSessionFolder(
+    session: NamedSession,
+  ): Promise<BookmarkSessionFolder> {
+    if (!session.name) {
+      throw new Error("Session name is required");
+    }
+
+    await this.initialize();
+
+    // Check if we already have a folder for this session
+    let existingSessionFolder = this.sessionFolders.get(session.id);
+    if (existingSessionFolder) {
+      // If the folder already exists, throw an error.
+      throw new Error(
+        `Session folder already exists for session ID: ${session.id}`,
+      );
+    }
+
+    // Create a new folder for the session
+    const folderTitle = `${session.name} (${session.id})`; // TODO: Have methods to encode/decode title and ID.
+    const newFolder = await chrome.bookmarks.create({
+      parentId: this.parentFolderId!,
+      title: folderTitle,
+    });
+
+    // Create "Opened Pages" and "Saved Pages" subfolders
+    const openedPagesFolder = await chrome.bookmarks.create({
+      parentId: newFolder.id,
+      title: "Opened Pages",
+    });
+    const savedPagesFolder = await chrome.bookmarks.create({
+      parentId: newFolder.id,
+      title: "Saved Pages",
+    });
+
+    const sessionFolder = {
+      id: newFolder.id,
+      name: session.name,
+      sessionId: session.id,
+      openedPagesId: openedPagesFolder.id,
+      savedPagesId: savedPagesFolder.id,
+    };
+
+    this.sessionFolders.set(session.id, sessionFolder);
+    return sessionFolder;
   }
 }
