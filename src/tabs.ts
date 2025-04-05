@@ -136,16 +136,30 @@ async function restoreSessionWindowAssociation() {
             windowId: currentWindow.id,
           },
         });
-
         if (
           updateResponse &&
           updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
         ) {
           console.log("Successfully restored session-window association");
         }
+      } else if (session.windowId !== currentWindow.id) {
+        // TODO: De-dup this logic. as it maybe useful in other methods and actually we have another similar code.
+        console.log(
+          `Duplicate Tabs UI instance detected for session ${sessionId}: already associated with window ${session.windowId} (current window: ${currentWindow.id}). Skipping update.`,
+        );
+        if (chrome.notifications) {
+          // Ensure permission added in manifest
+          chrome.notifications.create({
+            type: "basic",
+            iconUrl: chrome.runtime.getURL("icon.png"),
+            title: "Duplicate Tabs UI Instance",
+            message:
+              "Another Tabs UI instance is already active for this session.",
+          });
+        }
       } else {
         console.log(
-          `Session ${sessionId} already associated with window ${session.windowId}`,
+          `Session ${sessionId} is already properly associated with the current window ${currentWindow.id}`,
         );
       }
     } else if (sessionName) {
