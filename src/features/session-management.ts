@@ -358,10 +358,28 @@ export async function updateNamedSessionTabs(
     return false;
   }
 
-  // Update windowId if provided
+  // Update windowId if provided, but ignore if session already has a valid windowId that is different
   if (windowId !== undefined) {
-    session.windowId = windowId;
-    console.log(`Updated windowId for session ${sessionId} to ${windowId}`);
+    if (session.windowId && session.windowId !== windowId) {
+      // TODO: We also need to check if the exisitng `session.windowId` exisits in the bwoser. or check that in getNamedSessinoFromStroage()?
+      console.log(
+        `Duplicate Tabs UI instance for session ${sessionId}: existing windowId ${session.windowId} vs new windowId ${windowId}. Skipping update.`,
+      );
+      if (chrome.notifications) {
+        // TODO: Add the permission in the manifest.
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: chrome.runtime.getURL("icon.png"),
+          title: "Duplicate Tabs UI Instance",
+          message:
+            "Another Tabs UI instance is already active for this session.",
+        });
+      }
+      return false;
+    } else {
+      session.windowId = windowId;
+      console.log(`Updated windowId for session ${sessionId} to ${windowId}`);
+    }
   }
 
   // If windowId is still null, we can't update tabs

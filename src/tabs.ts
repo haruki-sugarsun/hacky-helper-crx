@@ -123,7 +123,8 @@ async function restoreSessionWindowAssociation() {
     const session = sessions.find((s: NamedSession) => s.id === sessionId);
 
     if (session) {
-      if (session.windowId === null) {
+      // TODO: Define the function in service-worker-interface and service-worker-handler. Missing type complicated the thing.
+      if (!session.windowId || session.windowId === null) {
         console.log(
           `Restoring session-window association for session ${sessionId} with window ${currentWindow.id}`,
         );
