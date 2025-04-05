@@ -12,6 +12,7 @@ import {
   REASSOCIATE_NAMED_SESSION,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
+
 /**
  * Handles incoming messages to the service worker.
  * Returns true if handled implmented message.
