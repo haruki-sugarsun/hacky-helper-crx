@@ -37,6 +37,16 @@ import { initSearchFunctionality } from "./features/search-functionality";
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
 
+// TODO: Consider showing a message in UI instead of alert().
+// TODO: And better to kick initialization via SessionManager instead of direcly calling bookmarkStorage here.
+// TODO: Check if BookmarkStorage is setup and initialized. If not, show a message to fix the issue.
+(async () => {
+  const bookmarkFolder = await CONFIG_STORE.get("bookmarkParentId");
+  if (!bookmarkFolder) {
+    alert("Bookmark folder is not set. Please set it in extension settings.");
+  }
+})();
+
 // References to the fixed elements and handler setup:
 // TODO: Gather all the references by ID in the top-level, so that we can know the necessary HTML elements to be modified.
 const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
