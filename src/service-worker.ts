@@ -350,6 +350,7 @@ async function maybeQueueTaskForProcessing(
 }
 
 // Setup periodic alarm for auto session sync, triggers every 10 minutes
+// TODO: extract these alarm strings to CONSTANTS.
 chrome.alarms.create("autoSessionSyncAlarm", { periodInMinutes: 10 });
 
 // Setup a periodic call of processNextTask every 1 minute

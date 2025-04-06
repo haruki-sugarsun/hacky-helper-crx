@@ -854,6 +854,7 @@ async function autoSaveAllSessions() {
 }
 
 // TODO: Doc.
+// TODO: Implement.
 export async function triggerAutoSessionSync(): Promise<void> {
   console.log("autoSessionSync called - skeleton implementation");
 }

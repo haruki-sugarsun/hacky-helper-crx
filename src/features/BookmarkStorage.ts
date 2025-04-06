@@ -105,7 +105,23 @@ export class BookmarkStorage {
   private extractSessionDataFromTitle(
     title: string,
   ): { sessionId: string; sessionName: string } | null {
-    const match = title.match(/^(.+) \(([a-f0-9-]+)\)$/i);
+    // Try new logic with JSON metadata
+    let match = title.match(/^(.+?) (\{.*\})$/);
+    if (match) {
+      try {
+        const metadata = JSON.parse(match[2]);
+        if (metadata && metadata.id) {
+          return {
+            sessionName: match[1],
+            sessionId: metadata.id,
+          };
+        }
+      } catch (e) {
+        console.error("Failed to parse session metadata:", e);
+      }
+    }
+    // Fallback to old logic for backward compatibility
+    match = title.match(/^(.+) \(([a-f0-9-]+)\)$/i);
     if (match) {
       return {
         sessionName: match[1],
