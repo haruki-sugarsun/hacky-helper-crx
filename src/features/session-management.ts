@@ -12,7 +12,6 @@ import {
   NamedSessionTab,
 } from "../lib/types";
 import { BookmarkStorage } from "./BookmarkStorage";
-import { getConfig } from "./config-store";
 
 // Storage key for named sessions
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
@@ -829,6 +828,7 @@ export async function activateSessionById(sessionId: string): Promise<void> {
 
 /**
  * Auto-saves all named sessions to bookmarks
+ * TODO: Implement proper time-out control and comparison with the backend.
  */
 async function autoSaveAllSessions() {
   try {
@@ -856,5 +856,6 @@ async function autoSaveAllSessions() {
 // TODO: Doc.
 // TODO: Implement.
 export async function triggerAutoSessionSync(): Promise<void> {
-  console.log("autoSessionSync called - skeleton implementation");
+  console.log("triggerAutoSessionSync");
+  autoSaveAllSessions();
 }
