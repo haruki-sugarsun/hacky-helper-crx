@@ -325,6 +325,29 @@ describe("takeoverTab", () => {
     );
   });
 
+  it("should successfully take over a tab", async () => {
+    const mockSyncedTabs = [
+      {
+        id: "test-tab-id",
+        url: "https://example.com",
+        owner: "other-instance",
+        title: "Test Tab",
+        sessionId: "test-session-id",
+      },
+    ];
+    (mockBookmarkStorage.getSyncedOpenTabs as jest.Mock).mockResolvedValueOnce(
+      mockSyncedTabs,
+    );
+
+    await takeoverTab("test-tab-id", "test-session-id");
+
+    expect(mockBookmarkStorage.getSyncedOpenTabs).toHaveBeenCalled();
+    expect(mockBookmarkStorage.updateTabOwner).toHaveBeenCalledWith(
+      "test-tab-id",
+      expect.objectContaining({ owner: expect.any(String) }),
+    );
+  });
+
   it("should throw an error if the tab is not found", async () => {
     // Empty array means no tabs found
     mockBookmarkStorage.getSyncedOpenTabs.mockResolvedValue([]);
