@@ -40,3 +40,4 @@ We have unstructured, just-idea notes here:
 - Keeping pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.
 - Support migrate to a closed Named Session. We may update the existing UI in Tabs UI or Popup with a search for named sessions.
 - Improve session restoration on browser start. We can refer the sessionId in URL, but it is not working well yet.
+- Action label for "force sync" session should say "to Backend".

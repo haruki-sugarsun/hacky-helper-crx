@@ -70,6 +70,11 @@
 
 - **Tab Synchronization**
   - The backend bookmark folder is updated by a timer of manual trigger.
+  - Duration between the triggers can be configured in Settings UI
+  - When the trigger runs on the Extension with clientId "C", for the Open Named Sessions,
+    - If the last syncedAt metadata is
+    - If the set of the current Open Tabs differs from the Open Tabs synced in the backend with the same ownerId "C", save back to the backend, creating, updating, and deleting them. This automatic sync only processes the owned (by "C").
+  - The user can let the extension "take over" the synced Open Tabs using the UI in Tabs UI.
 
 ## Bookmark as URL Store
 
