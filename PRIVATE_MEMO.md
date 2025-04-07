@@ -4,7 +4,7 @@
 
 ```
 $ npm run dev
-$ find *.html src/ *.md designdocs/ | entr sh -c 'clear; npx prettier . --write; npx tsc --noEmit; echo ===DONE==='
+$ find *.html src/ *.md designdocs/ | entr sh -c 'clear; npx tsc --noEmit && npx prettier . --write; echo ===DONE==='
 ```
 
 ## Config

@@ -1,4 +1,9 @@
-// TODO: File Comment.
+/**
+ * @file session-management.ts
+ *
+ * This file manages open named sessions "in local" using Chrome extensions' local storage API
+ * and syncs them with the backend when necessary.
+ */
 // TODO: Document about the methods that session-management manages open named sessions "in local" using chrome extensions local strorage API, and sync that with the backedn when necessary.
 
 import {
