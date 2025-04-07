@@ -145,6 +145,12 @@
 - TS files directly in src/ are the main entrypoints for each UI/page, so they are considered as an application context.
 - HTML files directly in src/ are the UI definitions, and provides the basic strucutre of the UI. src/ui/ files are basically for replacing a part of the structure.
 
+## Style Theming Strategy
+
+To ensure a consistent look across the extension, all styled colors are centralized in `style.css`. All CSS files (e.g. `src/ui/session-label.css`) should reference these themed colors rather than using hardcoded values. This strategy simplifies future updates to the theme and ensures a unified appearance across all components.
+
+Future improvements include refactoring individual CSS files to utilize CSS variables and common classes defined in `style.css`, and documenting any new theme variables here.
+
 # Fullfilled Dev Plans
 
 ## Disable heavy processing based on battery mode
