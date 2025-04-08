@@ -1,7 +1,5 @@
 const LOCAL_STORAGE_PREFIX = "hacky_helper_";
 
-// TODO: Encapsulte in a class.
-
 // Class representing configurable values.
 export class Config {
   key: string;
@@ -101,7 +99,7 @@ export class ConfigStore implements ConfigStoreRO {
   static OPENAI_API_BASE_URL = new StringConfig(
     "OPENAI_API_BASE_URL",
     "OpenAI API Base URL",
-    "The URL of the OpenAI API endpoint (default to OpenAI client lib default).",
+    "The URL of the OpenAI API endpoint. Defaults to the client library's built-in value if not provided.",
   );
 
   static USE_OLLAMA = new BoolConfig(

@@ -16,7 +16,7 @@ import {
 import "./style.css";
 import "./settings.css";
 
-// TODO: Check if snabbdom is still necessary in package.json or not.
+// TODO: Replace implementations and remove dependency to snabbdom.
 // Initialize snabbdom patch function
 const patch = init([propsModule, eventListenersModule]);
 

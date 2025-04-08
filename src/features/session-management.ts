@@ -191,6 +191,7 @@ export async function syncSessionToBackend(
     });
 
     // Convert tabs to NamedSessionTab format
+    // TODO: Have a typical type conversion utilities.
     const sessionTabs: NamedSessionTab[] = validTabs.map((tab) => ({
       tabId: tab.id || null,
       title: tab.title || "Untitled",

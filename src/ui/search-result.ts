@@ -20,7 +20,6 @@ export class SearchResultComponent extends BaseComponent {
     if (sessionId) this.setAttribute("session-id", sessionId);
     if (isCurrent) this.classList.add("current");
     if (onClick) this.addEventListener("click", onClick);
-    // TODO: Build the structure using using innerHTML.
     // Build structure using innerHTML for a cleaner markup and improved order.
     this.shadow.innerHTML = `
       <div class="search-result-item">
