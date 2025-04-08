@@ -1,6 +1,7 @@
 This is a work stack. Take the top one and process it.
 
-- Update bookmark_storage.ts according to bookmark_storage_encodings.md.
+- Have a config for the current intsnce/clientId in config-store and Settings UI.
+- Update BookmarkStorage.ts according to bookmark_storage_encodings.md.
 
   - Read from bookmark folder title for sessions.
   - Write to bookmark folder title for sessions.

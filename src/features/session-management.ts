@@ -236,6 +236,7 @@ export async function syncSessionToBackend(
       url: tab.url || "",
       updatedAt: Date.now(),
       owner: "current", // Default owner, could be configurable in the future
+      // TODO: Have a config for the current intsnce/clientId.
     }));
 
     const result = await BookmarkStorage.getInstance().syncSessionToBookmarks(
@@ -838,6 +839,7 @@ async function autoSaveAllSessions() {
     const sessions = Object.values(await getActiveNamedSessionsInLocal());
 
     // Filter to only include sessions with names
+    // TODO: This filtering is almost meaningless. Can we remove it?
     const namedSessionsOnly = sessions.filter((session) => session.name);
 
     // Sync each session to bookmarks
