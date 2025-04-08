@@ -13,6 +13,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Use general purpose variables as much as possible. */
+  /* TODO: Use more variables everywhere */
+  --session-menu-hover-bg: #444466;
+  --session-menu-hover-color: white;
 }
 
 a {

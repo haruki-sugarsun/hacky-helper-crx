@@ -44,8 +44,7 @@ class SessionLabelComponent extends BaseComponent {
       e.preventDefault();
       this.dropdownMenu.classList.toggle("show");
 
-      // Close other open menus
-      // TODO: Check if this actually works or not.
+      // Close other open menus to ensure only this menu is open.
       document.querySelectorAll("session-label").forEach((label) => {
         if (label !== this) {
           (label as SessionLabelComponent).closeMenu();

@@ -4,7 +4,10 @@
 }
 
 #response {
-  font-size: large; /* TODO: Add a configuration. */
+  font-size: var(
+    --response-font-size,
+    large
+  ); /* TODO: Add a configurable settings in the UI. */
 }
 
 #debuglog {
