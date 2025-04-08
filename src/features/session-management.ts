@@ -132,6 +132,44 @@ async function deleteOpenNamedSessionInLocal(sessionId: string): Promise<void> {
   }
 }
 
+export async function reassociateNamedSessionInLocal(
+  sessionId: string,
+  windowId: number,
+): Promise<{ success: boolean }> {
+  // TODO: We would rather check if we have a closed named session with the given sessionId.
+  //       and if found only update the session association in-local.
+  // Check for closed session
+  const activeSessions = await getOpenNamedSessionsInLocal();
+  const activeSessionIds = Object.keys(activeSessions);
+  const closedSessions =
+    await BookmarkStorage.getInstance().getClosedNamedSessions(
+      activeSessionIds,
+    );
+  const closedSession = closedSessions.find((s) => s.id === sessionId);
+  if (closedSession) {
+    // Transform closedSession into a NamedSession by adding missing properties.
+    const updatedSession: NamedSession = {
+      id: closedSession.id,
+      name: closedSession.name,
+      windowId: windowId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    try {
+      await saveOpenNamedSessionInLocal(updatedSession);
+      console.log(
+        `Reassociated closed session ${sessionId} to window ${windowId}`,
+      );
+      return { success: true };
+    } catch (error) {
+      console.error("Error during reassociation of closed session:", error);
+      return { success: false };
+    }
+  }
+  console.error(`Session ${sessionId} not found during reassociation.`);
+  return { success: false };
+}
+
 /* ============================
    Backend Sync & Utilities
 ============================ */
@@ -364,10 +402,28 @@ export async function updateNamedSessionTabs(
     return false;
   }
 
-  // Update windowId if provided
+  // Update windowId if provided, but ignore if session already has a valid windowId that is different
   if (windowId !== undefined) {
-    session.windowId = windowId;
-    console.log(`Updated windowId for session ${sessionId} to ${windowId}`);
+    if (session.windowId && session.windowId !== windowId) {
+      // TODO: We also need to check if the exisitng `session.windowId` exisits in the bwoser. or check that in getNamedSessinoFromStroage()?
+      console.log(
+        `Duplicate Tabs UI instance for session ${sessionId}: existing windowId ${session.windowId} vs new windowId ${windowId}. Skipping update.`,
+      );
+      if (chrome.notifications) {
+        // TODO: Add the permission in the manifest.
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: chrome.runtime.getURL("icon.png"),
+          title: "Duplicate Tabs UI Instance",
+          message:
+            "Another Tabs UI instance is already active for this session.",
+        });
+      }
+      return false;
+    } else {
+      session.windowId = windowId;
+      console.log(`Updated windowId for session ${sessionId} to ${windowId}`);
+    }
   }
 
   // If windowId is still null, we can't update tabs

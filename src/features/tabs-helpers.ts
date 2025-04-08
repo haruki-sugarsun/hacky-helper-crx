@@ -94,8 +94,8 @@ export async function openTabsPage() {
       await chrome.windows.update(existingTab.windowId!, { focused: true });
       await chrome.tabs.update(existingTab.id!, { active: true });
       // Reload the tab to refresh its content with the current URL
-      // TODO: We want to replace this with sending a reset-UI message.
-      await chrome.tabs.update(existingTab.id!, { url: tabsUrl });
+      // TODO: We want to replace this with sending a reset-UI message if the tabs UI is connected.
+      await chrome.tabs.update(existingTab.id!, { url: existingTab.url });
       console.log("Focused on existing tabs.html tab and updated it");
     } else {
       // If tabs.html is not open, create a new tab with tabs.html in pinned status.

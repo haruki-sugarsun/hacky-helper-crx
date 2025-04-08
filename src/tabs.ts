@@ -118,65 +118,83 @@ function getSessionParamsFromUrl(): {
 
 // Restore session-window association if needed
 async function restoreSessionWindowAssociation() {
-  const { sessionId, sessionName } = getSessionParamsFromUrl();
+  const { sessionId: sessionIdFromUrl, sessionName: sessionNameFromUrl } =
+    getSessionParamsFromUrl();
 
-  if (!sessionId) return;
+  if (!sessionIdFromUrl) return;
 
   try {
     // Get current window
     const currentWindow = await chrome.windows.getCurrent();
 
     // Get all named sessions
+    // TODO: We actually need only the session by Id.
     const sessions = await serviceWorkerInterface.getNamedSessions();
 
     // Check if this session exists but has a null windowId (lost association)
     // TODO: We also need to check if the window exists or not, and override if not exiting.
-    const session = sessions.find((s: NamedSession) => s.id === sessionId);
-
+    const session = sessions.find(
+      (s: NamedSession) => s.id === sessionIdFromUrl,
+    );
     if (session) {
-      if (session.windowId === null) {
+      // TODO: Define the function in service-worker-interface and service-worker-handler. Missing type complicated the thing.
+      if (!session.windowId || session.windowId === null) {
         console.log(
-          `Restoring session-window association for session ${sessionId} with window ${currentWindow.id}`,
+          `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`,
         );
         // Update the session with the current window ID
-        const updateResponse = await chrome.runtime.sendMessage({
-          type: UPDATE_NAMED_SESSION_TABS,
-          payload: {
-            sessionId: sessionId,
-            windowId: currentWindow.id,
-          },
-        });
-
+        const updateResponse =
+          await serviceWorkerInterface.reassociateNamedSession({
+            sessionId: sessionIdFromUrl,
+            windowId: currentWindow.id!,
+          });
         if (
           updateResponse &&
-          updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
+          "success" in updateResponse &&
+          updateResponse.success
         ) {
           console.log("Successfully restored session-window association");
         }
+      } else if (session.windowId !== currentWindow.id) {
+        // TODO: De-dup this logic. as it maybe useful in other methods and actually we have another similar code.
+        console.log(
+          `Duplicate Tabs UI instance detected for session ${sessionIdFromUrl}: already associated with window ${session.windowId} (current window: ${currentWindow.id}). Skipping update.`,
+        );
+        if (chrome.notifications) {
+          // Ensure permission added in manifest
+          chrome.notifications.create({
+            type: "basic",
+            iconUrl: chrome.runtime.getURL("icon.png"),
+            title: "Duplicate Tabs UI Instance",
+            message:
+              "Another Tabs UI instance is already active for this session.",
+          });
+        }
       } else {
         console.log(
-          `Session ${sessionId} already associated with window ${session.windowId}`,
+          `Session ${sessionIdFromUrl} is already properly associated with the current window ${currentWindow.id}`,
         );
       }
-    } else if (sessionName) {
+    } else if (sessionNameFromUrl) {
+      // TODO: This check looks naive. Let's reconsider the condition more.
       // If the session doesn't exist but we have a name, create it
       console.log(
-        `Creating new named session ${sessionName} for window ${currentWindow.id}`,
+        `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`,
       );
-
-      const createResponse = await chrome.runtime.sendMessage({
-        type: CREATE_NAMED_SESSION,
+      // Update the session with the current window ID
+      const updateResponse = await chrome.runtime.sendMessage({
+        type: UPDATE_NAMED_SESSION_TABS,
         payload: {
+          sessionId: sessionIdFromUrl,
           windowId: currentWindow.id,
-          sessionName: sessionName,
         },
       });
 
       if (
-        createResponse &&
-        createResponse.type === "CREATE_NAMED_SESSION_RESULT"
+        updateResponse &&
+        updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
       ) {
-        console.log("Successfully created named session");
+        console.log("Successfully restored session-window association");
       }
     }
   } catch (error) {
@@ -236,11 +254,12 @@ async function init() {
     });
 }
 
-// Initialize the page
-init();
-
-// Initialize search functionality
-initSearchFunctionality();
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize the page
+  init();
+  // Initialize search functionality
+  initSearchFunctionality();
+});
 
 // Add event listener for the toggle bookmarks button
 const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(

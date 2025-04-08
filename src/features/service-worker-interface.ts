@@ -5,6 +5,7 @@ import { GET_CLOSED_NAMED_SESSIONS, ACTIVATE_SESSION } from "../lib/constants";
 import { NamedSession, ClosedNamedSession } from "../lib/types";
 import {
   SuccessResult,
+  ErrorResult,
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
 } from "./service-worker-messages";
@@ -86,6 +87,30 @@ class ServiceWorkerInterface {
       });
     } catch (error) {
       console.error("Error in cloneNamedSession:", error);
+    }
+    return { success: false };
+  }
+
+  /**
+   * Reassociates a named session with the current window.
+   *
+   * @param params - An object containing the sessionId and windowId.
+   * @returns A promise that resolves to a SuccessResult indicating the outcome.
+   */
+  async reassociateNamedSession({
+    sessionId,
+    windowId,
+  }: {
+    sessionId: string;
+    windowId: number;
+  }): Promise<SuccessResult | ErrorResult> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: "REASSOCIATE_NAMED_SESSION",
+        payload: { sessionId, windowId },
+      });
+    } catch (error) {
+      console.error("Error in reassociateNamedSession:", error);
     }
     return { success: false };
   }
