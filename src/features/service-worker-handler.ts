@@ -4,10 +4,14 @@
  */
 
 import { ACTIVATE_SESSION, GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
-import { GET_NAMED_SESSIONS } from "./service-worker-messages";
+import {
+  SuccessResult,
+  ErrorResult,
+  CLONE_NAMED_SESSION,
+  GET_NAMED_SESSIONS,
+  REASSOCIATE_NAMED_SESSION,
+} from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
-import { SuccessResult, CLONE_NAMED_SESSION } from "./service-worker-messages";
-
 /**
  * Handles incoming messages to the service worker.
  * Returns true if handled implmented message.
@@ -35,6 +39,10 @@ export function handleServiceWorkerMessage(
 
     case CLONE_NAMED_SESSION:
       handleCloneNamedSession(message, sendResponse);
+      break;
+
+    case REASSOCIATE_NAMED_SESSION:
+      handleReassociateNamedSession(message, sendResponse);
       break;
 
     default:
@@ -122,5 +130,33 @@ async function handleCloneNamedSession(
   } catch (error) {
     console.error("Error cloning session:", error);
     sendResponse({ error: "Failed to clone session" });
+  }
+}
+
+async function handleReassociateNamedSession(
+  message: { payload: { sessionId: string; windowId: number } },
+  sendResponse: (response: SuccessResult | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId, windowId } = message.payload;
+  if (!sessionId) {
+    console.error(
+      "Session ID is missing in REASSOCIATE_NAMED_SESSION message.",
+    );
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+  try {
+    const result = await SessionManagement.reassociateNamedSessionInLocal(
+      sessionId,
+      windowId,
+    );
+    if (result) {
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ error: "Failed to reassociate session" });
+    }
+  } catch (error) {
+    console.error("Error in reassociating session:", error);
+    sendResponse({ error: "Failed to reassociate session" });
   }
 }
