@@ -62,10 +62,8 @@ export function initSearchFunctionality(): void {
         item.classList.contains("highlighted"),
       );
 
-      // Remove current highlight
-      if (currentIndex !== -1) {
-        results[currentIndex].classList.remove("highlighted");
-      } else if (event.key === "Enter") {
+      if (event.key === "Enter") {
+        // TODO: Check if this is equivalent to results[currentIndex] and dedup the logic if same.
         const current = Array.from(results).find((item) =>
           item.classList.contains("highlighted"),
         );
@@ -74,9 +72,13 @@ export function initSearchFunctionality(): void {
           console.log(current);
           // TODO: This is not working as expected now.
           current.dispatchEvent(new Event("click"));
+          return;
         }
       }
-
+      // Remove current highlight
+      if (currentIndex !== -1) {
+        results[currentIndex].classList.remove("highlighted");
+      }
       // Update index based on key
       if (event.key === "ArrowUp") {
         currentIndex = (currentIndex - 1 + results.length) % results.length;
