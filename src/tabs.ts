@@ -33,6 +33,7 @@ import "./ui/search-results.css";
 import "./ui/session-metadata";
 import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
+import { CONFIG_STORE } from "./features/config-store";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
