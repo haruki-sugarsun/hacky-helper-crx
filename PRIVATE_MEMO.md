@@ -33,6 +33,7 @@ Read the file .clinerules to follow the rules first.
 
 We have unstructured, just-idea notes here:
 
+- Drag-n-Drop for Tab Migrations.
 - Tabs UI updates based on the window/tabs/sessions(open tabs/saved bookmarks) updates.
 - Use some webfont for emojis?
 - Make sure to generate keywords only for the generateKeywords function maybe by specifiying JSON output? -　Show the current LLMTasks status in the popup? e.g. number of the pending tasks, currently-running task etc.
@@ -44,3 +45,6 @@ We have unstructured, just-idea notes here:
 - Action label for "force sync" session should say "to Backend".
 - Replace the new-tab-page with the minimal UI like Tabs UI.
 - Allow migration to the closed named session. Migrated tab is just added to the Open Tab in the chosen (closed named) session.
+- Function and hotkey to copy the current page title+URL for easier sharing.
+- Add a flag for saved bookmarks and open them automatically when the session gets activated.
+- In the search result, show the name of the session the open tab belongs to.
