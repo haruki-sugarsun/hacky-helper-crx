@@ -32,12 +32,9 @@
 
 - Consists of sessions stored in Chrome's Bookmarks. This backup enables session restoration even when the associated window is closed.
 
-### Open Named Sessions
+### Active Named Sessions
 
-- A session
-- Hence, associated with a window in the current browser.
-
-- Open Named Sessions are managed locally using Chrome's storage API under the key "hacky_helper_named_sessions". They represent active sessions associated with current browser windows and are updated in real-time.
+Active Named Sessions represent sessions that are currently active and bound to their respective browser windows. They are managed locally via Chrome's storage API using the key "hacky_helper_named_sessions" and are continuously updated in real-time to reflect the current state.
 
 ### Closed Named Sessions
 
@@ -67,7 +64,7 @@
   <tr>
     <td rowspan="3">Session</td>
     <td rowspan="2">Named</td>
-    <td>Open</td>
+    <td>Active</td>
     <td>✅</td>
     <td>✅</td>
     <td>✅</td>
@@ -91,8 +88,7 @@
     <td>-</td>
   </tr>
   <tr>
-    <td rowspan="2">Open Tabs</td>
-    <td rowspan="2"><i>n/a</i></td>
+    <td rowspan="2" colspan="2">Open Tabs</td>
     <td>Synced</td>
     <td>✅</td>
     <td></i>depends</i></td>

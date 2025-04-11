@@ -39,7 +39,7 @@ Tabs UI is an extention component
 
 - Incremental search on user typing.
 - Search results shows results for categorized into these:
-  - Open Named Sessions
+  - Active Named Sessions
   - Closed Named Sessions
   - Open Tabs in any of the windows
 
