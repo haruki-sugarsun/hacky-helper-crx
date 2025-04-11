@@ -244,6 +244,7 @@ interface ConfigRO {
 }
 /**
  * Retrieves all configuration settings.
+ * TODO: Replace the callers with ConfigStoreRO.
  * @returns An object containing all configuration settings.
  */
 export async function getConfig(): Promise<ConfigRO> {

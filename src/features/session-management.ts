@@ -410,7 +410,6 @@ export async function updateNamedSessionTabs(
         `Duplicate Tabs UI instance for session ${sessionId}: existing windowId ${session.windowId} vs new windowId ${windowId}. Skipping update.`,
       );
       if (chrome.notifications) {
-        // TODO: Add the permission in the manifest.
         chrome.notifications.create({
           type: "basic",
           iconUrl: chrome.runtime.getURL("icon.png"),
