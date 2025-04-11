@@ -393,8 +393,10 @@ requestTabSummariesButton.addEventListener("click", async () => {
           const date = new Date(digest.timestamp);
           const formattedDate = date.toLocaleString();
           summarySnippet = `
-                        <div class="summary-timestamp">Generated: ${formattedDate}</div>
-                        <div class="summary-text">${digest.summary}</div>`;
+            <div class="summary-timestamp">Generated: ${formattedDate}</div>
+            <div class="summary-text">${digest.summary}</div>
+            ${digest.keywords ? `<div class="summary-keywords">${digest.keywords.map((kw) => kw.toLowerCase()).join(", ")}</div>` : ""}
+                        `;
         }
         // Create the row with tab ID, URL, and a placeholder for summary
 
@@ -1406,9 +1408,12 @@ async function updateTabsTable(
         const digest = tabSummary.summaries[0]; // Get the most recent summary
         const date = new Date(digest.timestamp);
         const formattedDate = date.toLocaleString();
+        // TODO: We have similar summarySnippet generation code? Dedup.
         summarySnippet = `
-                    <div class="summary-timestamp">Generated: ${formattedDate}</div>
-                    <div class="summary-text">${digest.summary}</div>`;
+          <div class="summary-timestamp">Generated: ${formattedDate}</div>
+          <div class="summary-text">${digest.summary}</div>
+          ${digest.keywords ? `<div class="summary-keywords">${digest.keywords.map((kw) => kw.toLowerCase()).join(", ")}</div>` : ""}
+                        `;
       }
     }
 

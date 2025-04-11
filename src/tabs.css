@@ -731,3 +731,10 @@ content {
 .tab-action-button:hover {
   background-color: #5555aa;
 }
+
+.summary-keywords {
+  font-size: 0.9em;
+  color: #807500;
+  font-weight: bold;
+  margin-top: 5px;
+}
