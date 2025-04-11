@@ -320,6 +320,7 @@ let llmTasks: {
   resolve: (summary: string, keywords: string[], embeddings: number[]) => void;
 }[] = [];
 let runningLlmTask: Promise<void> | undefined = undefined;
+let lastRunningLlmTaskTimestamp: number = 0;
 
 async function maybeQueueTaskForProcessing(
   url: string,
@@ -411,6 +412,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 async function processNextTask() {
   // TODO: Check if we enable the LLM service via LLM_ENABLED config. and clear the queue if disabled.
 
+  if (lastRunningLlmTaskTimestamp) {
+    const durationPassed = Date.now() - lastRunningLlmTaskTimestamp;
+    console.log(`Duration since last runningLlmTask: ${durationPassed} ms`);
+  }
   // Check the llmTasks if we have anything to execute:
   console.log(`Number of tasks in the queue: ${llmTasks.length}`);
   if (
@@ -418,6 +423,7 @@ async function processNextTask() {
     (runningLlmTask &&
       (await getPromiseState(runningLlmTask)).state == "pending")
   ) {
+    console.log("The last LLM Task is running. Waiting....");
     // Nothing to do.
     return;
   }
@@ -427,6 +433,7 @@ async function processNextTask() {
     const { url, timestamp, title, content, resolve } = task;
 
     // TODO: Refactor to breakdown the generation requests into multi-tasks.
+    lastRunningLlmTaskTimestamp = Date.now();
     runningLlmTask = new Promise<void>(async (resolveTask, rejectTask) => {
       try {
         let embeddings = await generateEmbeddings(content);
