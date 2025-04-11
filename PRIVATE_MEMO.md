@@ -44,3 +44,5 @@ We have unstructured, just-idea notes here:
 - Action label for "force sync" session should say "to Backend".
 - Replace the new-tab-page with the minimal UI like Tabs UI.
 - Allow migration to the closed named session. Migrated tab is just added to the Open Tab in the chosen (closed named) session.
+- Search for the "saved bookmarks" as well.
+- Close Window in the action menu in Tabs UI.
