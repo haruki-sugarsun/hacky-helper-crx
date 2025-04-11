@@ -154,8 +154,9 @@ async function showSearchResults(query: string): Promise<void> {
       await serviceWorkerInterface.getNamedSessions();
     const closedSessions: ClosedNamedSession[] =
       await serviceWorkerInterface.getClosedNamedSessions();
-    // Calculate openNamedSessions by excluding closed sessions from named sessions
-    const openNamedSessions: NamedSession[] = namedSessions.filter(
+    // TODO: we can actually fetch active named sessions direclty.
+    // Calculate activeNamedSessions by excluding closed sessions from named sessions
+    const activeNamedSessions: NamedSession[] = namedSessions.filter(
       (session: NamedSession) =>
         !closedSessions.find(
           (closed: ClosedNamedSession) => closed.id === session.id,
@@ -163,7 +164,7 @@ async function showSearchResults(query: string): Promise<void> {
     );
 
     // Filter sessions based on query
-    const matchingNamedSessions = openNamedSessions
+    const matchingNamedSessions = activeNamedSessions
       .filter((session: NamedSession) =>
         session.name.toLowerCase().includes(normalizedQuery),
       )
@@ -337,7 +338,7 @@ function addResultsCategory(
       onClick: () => {
         hideSearchResults();
         // TODO: instead of passing a click event, we want to trigger desired actions per results.
-        //       - Activate the session for Open Named Sessions.
+        //       - Activate the window for Active Named Sessions.
         //       - Restore the session for Closed Named Sessions.
         //       - Activate the tab for a open tab in any of the windows.
         if (result.session) {

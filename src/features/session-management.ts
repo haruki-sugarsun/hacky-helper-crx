@@ -1,10 +1,10 @@
 /**
  * @file session-management.ts
  *
- * This file manages open named sessions "in local" using Chrome extensions' local storage API
+ * This file manages active named sessions "in local" using Chrome extensions' local storage API
  * and syncs them with the backend when necessary.
  */
-// TODO: Document about the methods that session-management manages open named sessions "in local" using chrome extensions local strorage API, and sync that with the backedn when necessary.
+// TODO: Document about the methods that session-management manages active named sessions "in local" using chrome extensions local strorage API, and sync that with the backedn when necessary.
 
 import {
   ClosedNamedSession,
@@ -26,7 +26,7 @@ const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
 /**
  * Gets all named sessions from storage and verifies window existence.
  */
-async function getOpenNamedSessionsInLocal(): Promise<
+async function getActiveNamedSessionsInLocal(): Promise<
   Record<string, NamedSession>
 > {
   try {
@@ -86,23 +86,22 @@ async function getOpenNamedSessionsInLocal(): Promise<
 
 /**
  * Gets a specific named session from storage by ID
- * TODO: Have a better naming. This only returns open sessions.
  */
-async function getOpenNamedSessionInLocal(
+async function getActiveNamedSession(
   sessionId: string,
 ): Promise<NamedSession | null> {
-  const sessions = await getOpenNamedSessionsInLocal();
+  const sessions = await getActiveNamedSessionsInLocal();
   return sessions[sessionId] || null;
 }
 
 /**
  * Saves a named session to storage
  */
-async function saveOpenNamedSessionInLocal(
+async function saveActiveNamedSessionInLocal(
   session: NamedSession,
 ): Promise<void> {
   try {
-    const sessions = await getOpenNamedSessionsInLocal();
+    const sessions = await getActiveNamedSessionsInLocal();
     sessions[session.id] = session;
     // TODO: Ideally we want to save data per session.
     await chrome.storage.local.set({
@@ -117,9 +116,11 @@ async function saveOpenNamedSessionInLocal(
 /**
  * Deletes a named session from storage
  */
-async function deleteOpenNamedSessionInLocal(sessionId: string): Promise<void> {
+async function deleteActiveNamedSessionInLocal(
+  sessionId: string,
+): Promise<void> {
   try {
-    const sessions = await getOpenNamedSessionsInLocal();
+    const sessions = await getActiveNamedSessionsInLocal();
     if (sessions[sessionId]) {
       delete sessions[sessionId];
       await chrome.storage.local.set({
@@ -139,7 +140,7 @@ export async function reassociateNamedSessionInLocal(
   // TODO: We would rather check if we have a closed named session with the given sessionId.
   //       and if found only update the session association in-local.
   // Check for closed session
-  const activeSessions = await getOpenNamedSessionsInLocal();
+  const activeSessions = await getActiveNamedSessionsInLocal();
   const activeSessionIds = Object.keys(activeSessions);
   const closedSessions =
     await BookmarkStorage.getInstance().getClosedNamedSessions(
@@ -156,7 +157,7 @@ export async function reassociateNamedSessionInLocal(
       updatedAt: Date.now(),
     };
     try {
-      await saveOpenNamedSessionInLocal(updatedSession);
+      await saveActiveNamedSessionInLocal(updatedSession);
       console.log(
         `Reassociated closed session ${sessionId} to window ${windowId}`,
       );
@@ -364,7 +365,7 @@ export async function createNamedSession(
   };
 
   // Save to persistent storage
-  await saveOpenNamedSessionInLocal(session);
+  await saveActiveNamedSessionInLocal(session);
 
   // Save session to Bookmark API for syncing if it has a name and is not being restored from bookmarks
   if (sessionName && !isRestoringFromBookmarks) {
@@ -394,7 +395,7 @@ export async function updateNamedSessionTabs(
   windowId?: number,
   isRestoringFromBookmarks: boolean = false,
 ) {
-  const session = await getOpenNamedSessionInLocal(sessionId);
+  const session = await getActiveNamedSession(sessionId);
   if (!session) {
     console.warn(
       `Cannot update Named Session tabs: Session not found for session ${sessionId}`,
@@ -410,7 +411,6 @@ export async function updateNamedSessionTabs(
         `Duplicate Tabs UI instance for session ${sessionId}: existing windowId ${session.windowId} vs new windowId ${windowId}. Skipping update.`,
       );
       if (chrome.notifications) {
-        // TODO: Add the permission in the manifest.
         chrome.notifications.create({
           type: "basic",
           iconUrl: chrome.runtime.getURL("icon.png"),
@@ -439,7 +439,7 @@ export async function updateNamedSessionTabs(
     session.updatedAt = Date.now();
 
     // Save updated session to storage
-    await saveOpenNamedSessionInLocal(session);
+    await saveActiveNamedSessionInLocal(session);
 
     // Update Bookmark API to reflect new tabs if the session has a name and we're not restoring from bookmarks
     // TODO: if-structure can be simplified?
@@ -477,7 +477,7 @@ export async function renameNamedSession(
   }
 
   // Get the session from storage
-  const session = await getOpenNamedSessionInLocal(sessionId);
+  const session = await getActiveNamedSession(sessionId);
   if (!session) {
     console.warn(
       `Cannot rename session: Session not found for ID ${sessionId}`,
@@ -490,7 +490,7 @@ export async function renameNamedSession(
   session.updatedAt = Date.now();
 
   // Save to persistent storage
-  await saveOpenNamedSessionInLocal(session);
+  await saveActiveNamedSessionInLocal(session);
 
   // Update the session in bookmark storage
   await syncSessionToBackend(session);
@@ -501,11 +501,11 @@ export async function renameNamedSession(
 
 /**
  * Deletes a Named Session by its sessionId.
- * Checks both storage and bookmark storage for closed sessions.
+ * Checks both in-local for active and in-backendfor closed sessions.
  */
 export async function deleteNamedSession(sessionId: string) {
   // Check if the session exists in storage
-  const session = await getOpenNamedSessionInLocal(sessionId);
+  const session = await getActiveNamedSession(sessionId);
   if (session) {
     // Remove corresponding Bookmark folder if the session has a name
     if (session.name) {
@@ -513,13 +513,13 @@ export async function deleteNamedSession(sessionId: string) {
     }
 
     // Remove from storage
-    await deleteOpenNamedSessionInLocal(sessionId);
+    await deleteActiveNamedSessionInLocal(sessionId);
 
     console.log(`Deleted Named Session ${sessionId}`);
     return true;
   } else {
     // Check if this is a closed session in bookmark storage
-    const activeSessions = await getOpenNamedSessionsInLocal();
+    const activeSessions = await getActiveNamedSessionsInLocal();
     const activeSessionIds = Object.keys(activeSessions);
     const closedSessions =
       await BookmarkStorage.getInstance().getClosedNamedSessions(
@@ -561,7 +561,7 @@ export async function cloneNamedSession(
   originalSessionId: string,
 ): Promise<NamedSession | null> {
   // We assume the orignal session is open.
-  const originalSession = await getOpenNamedSessionInLocal(originalSessionId);
+  const originalSession = await getActiveNamedSession(originalSessionId);
   if (!originalSession || !originalSession.windowId) {
     console.error(
       `Cannot clone session: session ${originalSessionId} not found or invalid.`,
@@ -641,7 +641,7 @@ export async function cloneNamedSession(
  */
 export async function getNamedSessions(): Promise<NamedSession[]> {
   // Get active sessions from storage
-  const activeSessions = await getOpenNamedSessionsInLocal();
+  const activeSessions = await getActiveNamedSessionsInLocal();
   const activeSessionsArray = Object.values(activeSessions);
 
   // Get closed sessions from bookmarks
@@ -673,7 +673,7 @@ export async function getNamedSessions(): Promise<NamedSession[]> {
 export async function getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
   try {
     // Get all active session IDs from storage
-    const sessions = await getOpenNamedSessionsInLocal();
+    const sessions = await getActiveNamedSessionsInLocal();
     const activeSessionIds = Object.keys(sessions);
 
     // Get closed sessions from bookmark storage
@@ -717,7 +717,7 @@ export async function restoreClosedSession(
 ): Promise<NamedSession | null> {
   try {
     // Get the closed session from bookmarks
-    const sessions = await getOpenNamedSessionsInLocal();
+    const sessions = await getActiveNamedSessionsInLocal();
     const activeSessionIds = Object.keys(sessions);
     const closedSessions =
       await BookmarkStorage.getInstance().getClosedNamedSessions(
@@ -878,7 +878,7 @@ async function autoSaveAllSessions() {
     console.log("Auto-saving all named sessions to bookmarks");
 
     // Get all named sessions from storage
-    const sessions = Object.values(await getOpenNamedSessionsInLocal());
+    const sessions = Object.values(await getActiveNamedSessionsInLocal());
 
     // Filter to only include sessions with names
     const namedSessionsOnly = sessions.filter((session) => session.name);

@@ -69,9 +69,10 @@
   - When the user restores a session, the saved tabs are reopened.
 
 - **Tab Synchronization**
+  (TODO: Improve this section)
   - The backend bookmark folder is updated by a timer of manual trigger.
   - Duration between the triggers can be configured in Settings UI
-  - When the trigger runs on the Extension with clientId "C", for the Open Named Sessions,
+  - When the trigger runs on the Extension with clientId "C", for the active named sessions,
     - If the last syncedAt metadata is
     - If the set of the current Open Tabs differs from the Open Tabs synced in the backend with the same ownerId "C", save back to the backend, creating, updating, and deleting them. This automatic sync only processes the owned (by "C").
   - The user can let the extension "take over" the synced Open Tabs using the UI in Tabs UI.
