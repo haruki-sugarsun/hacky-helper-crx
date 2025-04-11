@@ -10,6 +10,8 @@ import {
 } from "../lib/constants";
 import { Ollama } from "ollama";
 import OpenAI from "openai";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 // Base class for LLM services
 // This base class is useful for:
@@ -285,16 +287,28 @@ export class OllamaLLMService extends BaseLLMService {
   }
 
   protected async doCreateSummary(content: string): Promise<string> {
+    const SummarySchema = z.object({ summary: z.string() });
     const response = await this.client.generate({
       model: this.model,
       prompt: this.getSummaryPrompt(content),
       stream: false,
+      format: zodToJsonSchema(SummarySchema),
     });
 
-    const summary = response.response.trim();
-    console.log("Ollama Summary Generated:", summary);
-
-    return summary;
+    try {
+      const result = SummarySchema.parse(JSON.parse(response.response));
+      console.log(
+        "Ollama Summary Generated with structured output:",
+        result.summary.trim(),
+      );
+      return result.summary.trim();
+    } catch (error) {
+      console.error(
+        "Failed to parse JSON output, returning raw output:",
+        error,
+      );
+      return response.response.trim();
+    }
   }
 
   protected async doListKeywords(content: string): Promise<string[]> {
