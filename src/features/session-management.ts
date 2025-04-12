@@ -484,6 +484,19 @@ export async function renameNamedSession(
   return true;
 }
 
+export async function updateSessionUpdatedAt(sessionId: string): Promise<void> {
+  const session = await getActiveNamedSession(sessionId);
+  if (session) {
+    session.updatedAt = Date.now();
+    await saveActiveNamedSessionInLocal(session);
+    console.log(
+      `Updated session ${sessionId}'s updatedAt to ${session.updatedAt}`,
+    );
+  } else {
+    console.warn(`Session ${sessionId} not found in updateSessionUpdatedAt`);
+  }
+}
+
 /**
  * Deletes a Named Session by its sessionId.
  * Checks both in-local for active and in-backendfor closed sessions.

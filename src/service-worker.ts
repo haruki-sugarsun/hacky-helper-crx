@@ -270,6 +270,40 @@ async function initializeTabManagement() {
 // TODO: Catch error and log or workaround.
 initializeTabManagement();
 
+// New integration: Update session updatedAt on window/tab events
+async function updateSessionForWindow(windowId: number) {
+  const sessions = await SessionManagement.getNamedSessions();
+  sessions.forEach((session) => {
+    if (session.windowId === windowId) {
+      SessionManagement.updateSessionUpdatedAt(session.id);
+    }
+  });
+}
+
+chrome.windows.onCreated.addListener((window) => {
+  if (window && window.id) {
+    updateSessionForWindow(window.id); // TODO: Can it be meaninful?
+  }
+});
+chrome.windows.onRemoved.addListener((windowId) => {
+  updateSessionForWindow(windowId); // TODO: This should be something else?
+});
+chrome.tabs.onCreated.addListener((tab) => {
+  if (tab && tab.windowId) {
+    updateSessionForWindow(tab.windowId);
+  }
+});
+chrome.tabs.onUpdated.addListener((_tabId, _changeInfo, tab) => {
+  if (tab && tab.windowId) {
+    updateSessionForWindow(tab.windowId);
+  }
+});
+chrome.tabs.onRemoved.addListener((_tabId, removeInfo) => {
+  if (removeInfo && removeInfo.windowId) {
+    updateSessionForWindow(removeInfo.windowId);
+  }
+});
+
 // Queue of the background LLM related tasks:
 // TODO: Implement the limit for the llmTasks count.
 const LLM_TASK_QUEUE_MAX_LENGTH = 10; // or any appropriate value
