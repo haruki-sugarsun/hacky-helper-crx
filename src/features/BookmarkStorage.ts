@@ -7,6 +7,13 @@ import {
   SavedBookmark,
 } from "../lib/types";
 
+import {
+  encodeSessionTitle,
+  decodeSessionTitle,
+  encodeTabTitle,
+  decodeTabTitle,
+} from "./bookmark-storage/bookmark-storage-helpers";
+
 /**
  * Manages bookmark storage for named sessions and saved pages
  */
@@ -65,7 +72,7 @@ export class BookmarkStorage {
 
       for (const folder of children) {
         // Check if this is a session folder by looking for metadata in the title
-        const sessionData = this.extractSessionDataFromTitle(folder.title);
+        const sessionData = decodeSessionTitle(folder.title);
         if (sessionData) {
           const { sessionId, sessionName } = sessionData;
 
@@ -99,23 +106,6 @@ export class BookmarkStorage {
   }
 
   /**
-   * Extracts session data from a bookmark folder title
-   * Format: "Session Name (session_id)"
-   */
-  private extractSessionDataFromTitle(
-    title: string,
-  ): { sessionId: string; sessionName: string } | null {
-    const match = title.match(/^(.+) \(([a-f0-9-]+)\)$/i);
-    if (match) {
-      return {
-        sessionName: match[1],
-        sessionId: match[2],
-      };
-    }
-    return null;
-  }
-
-  /**
    * Creates or updates a bookmark folder for a named session
    */
   public async syncSessionToBookmarks(
@@ -132,11 +122,13 @@ export class BookmarkStorage {
 
       if (sessionFolder) {
         // Update the existing folder if the name changed
-        if (sessionFolder.name !== session.name) {
+        // TODO: Reconsider the properties of BookmarkSessionFolder.
+        const encodedTitle = encodeSessionTitle(session);
+        if (sessionFolder.name !== encodedTitle) {
           await chrome.bookmarks.update(sessionFolder.id, {
-            title: `${session.name} (${session.id})`,
+            title: encodedTitle,
           });
-          sessionFolder.name = session.name;
+          sessionFolder.name = encodedTitle;
         }
       } else {
         // Create a new session folder
@@ -213,9 +205,9 @@ export class BookmarkStorage {
 
         if (existingBookmark) {
           // Update the bookmark if the title changed
-          if (existingBookmark.title !== tab.title) {
+          if (existingBookmark.title !== encodeTabTitle(tab)) {
             await chrome.bookmarks.update(existingBookmark.id, {
-              title: tab.title,
+              title: encodeTabTitle(tab),
             });
           }
 
@@ -225,7 +217,7 @@ export class BookmarkStorage {
           // Create a new bookmark for this tab
           await chrome.bookmarks.create({
             parentId: sessionFolder.openedPagesId,
-            title: tab.title,
+            title: encodeTabTitle(tab),
             url: tab.url,
           });
         }
@@ -233,6 +225,7 @@ export class BookmarkStorage {
 
       // Remove any bookmarks that no longer exist in the tabs
       for (const [_, bookmark] of existingBookmarksByUrl) {
+        // TODO: Only delete the ones owned by the current Hacky-Helper-CRX instance.
         await chrome.bookmarks.remove(bookmark.id);
       }
     } catch (error) {
@@ -338,6 +331,7 @@ export class BookmarkStorage {
 
   /**
    * Gets all synced bookmarks from the "Opened Pages" folder for a session
+   * TODO: Have consistent naming and types.
    */
   public async getSyncedBookmarks(sessionId: string): Promise<SavedBookmark[]> {
     try {
@@ -353,11 +347,13 @@ export class BookmarkStorage {
       return bookmarks
         .filter((bookmark) => bookmark.url)
         .map((bookmark) => {
+          const { title, metadata } = decodeTabTitle(bookmark.title);
           return {
             id: bookmark.id,
-            title: bookmark.title,
+            title,
             url: bookmark.url!,
             sessionId: sessionId,
+            metadata,
           };
         });
     } catch (error) {
@@ -452,6 +448,8 @@ export class BookmarkStorage {
           id: sessionId,
           name: folder.name,
           tabs: tabs,
+          createdAt: 0, // TODO: Read from the backend (metadata)
+          updatedAt: 0, // TODO: Read from the backend (metadata)
         };
 
         closedSessions.push(closedSession);
@@ -486,7 +484,7 @@ export class BookmarkStorage {
     }
 
     // Create a new folder for the session
-    const folderTitle = `${session.name} (${session.id})`; // TODO: Have methods to encode/decode title and ID.
+    const folderTitle = encodeSessionTitle(session);
     const newFolder = await chrome.bookmarks.create({
       parentId: this.parentFolderId!,
       title: folderTitle,
@@ -512,5 +510,46 @@ export class BookmarkStorage {
 
     this.sessionFolders.set(session.id, sessionFolder);
     return sessionFolder;
+  }
+
+  /**
+   * Retrieves a session using local bookmark storage data.
+   * This reconstructs a NamedSession from stored bookmark folder data.
+   *
+   * @param sessionId - The unique identifier for the session.
+   * @returns The corresponding NamedSession, or null if not found.
+   */
+  public async getSession(sessionId: string): Promise<NamedSession | null> {
+    const sessionFolder = this.sessionFolders.get(sessionId);
+    if (!sessionFolder) {
+      return null;
+    }
+
+    try {
+      const bookmarks = await chrome.bookmarks.get(sessionFolder.id);
+      if (bookmarks && bookmarks.length > 0) {
+        const decoded = decodeSessionTitle(bookmarks[0].title);
+        if (decoded) {
+          return {
+            id: sessionId,
+            name: decoded.sessionName,
+            windowId: undefined,
+            createdAt: 0, // Not stored; extend as needed.  TODO: Store in the backend as well.
+            updatedAt: decoded.updatedAt || 0,
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching session bookmark:", error);
+    }
+    console.log("Fallback in case decoding fails for ${sessionId}");
+    // Fallback in case decoding fails
+    return {
+      id: sessionId,
+      name: sessionFolder.name,
+      windowId: undefined,
+      createdAt: 0,
+      updatedAt: 0,
+    };
   }
 }

@@ -270,6 +270,40 @@ async function initializeTabManagement() {
 // TODO: Catch error and log or workaround.
 initializeTabManagement();
 
+// New integration: Update session updatedAt on window/tab events
+async function updateSessionForWindow(windowId: number) {
+  const sessions = await SessionManagement.getNamedSessions();
+  sessions.forEach((session) => {
+    if (session.windowId === windowId) {
+      SessionManagement.updateSessionUpdatedAt(session.id);
+    }
+  });
+}
+
+chrome.windows.onCreated.addListener((window) => {
+  if (window && window.id) {
+    updateSessionForWindow(window.id); // TODO: Can it be meaninful?
+  }
+});
+chrome.windows.onRemoved.addListener((windowId) => {
+  updateSessionForWindow(windowId); // TODO: This should be something else?
+});
+chrome.tabs.onCreated.addListener((tab) => {
+  if (tab && tab.windowId) {
+    updateSessionForWindow(tab.windowId);
+  }
+});
+chrome.tabs.onUpdated.addListener((_tabId, _changeInfo, tab) => {
+  if (tab && tab.windowId) {
+    updateSessionForWindow(tab.windowId);
+  }
+});
+chrome.tabs.onRemoved.addListener((_tabId, removeInfo) => {
+  if (removeInfo && removeInfo.windowId) {
+    updateSessionForWindow(removeInfo.windowId);
+  }
+});
+
 // Queue of the background LLM related tasks:
 // TODO: Implement the limit for the llmTasks count.
 const LLM_TASK_QUEUE_MAX_LENGTH = 10; // or any appropriate value
@@ -349,16 +383,24 @@ async function maybeQueueTaskForProcessing(
   }
 }
 
+// Setup periodic alarm for auto session sync, triggers every 10 minutes
+// TODO: extract these alarm strings to CONSTANTS.
+chrome.alarms.create("autoSessionSyncAlarm", { periodInMinutes: 10 });
+
 // Setup a periodic call of processNextTask every 1 minute
 chrome.alarms.create("processTasksAlarm", {
   periodInMinutes: 1,
 });
 
 // Listen for the alarm and process tasks
+// Alarm listener: handle processTasksAlarm and autoSessionSyncAlarm
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "processTasksAlarm") {
     console.log("Periodic task processing triggered", new Date());
     processNextTask();
+  } else if (alarm.name === "autoSessionSyncAlarm") {
+    console.log("Auto session sync alarm triggered", new Date());
+    SessionManagement.triggerAutoSessionSync();
   }
 });
 async function processNextTask() {
@@ -853,6 +895,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               },
             });
           }
+          break;
+        case "DEBUG_TRIGGER":
+          // For dedugging:
+          console.log("Auto session sync alarm triggered", new Date());
+          SessionManagement.triggerAutoSessionSync();
           break;
         default:
           // TODO: Migrate the handlers to `service-worker-handler.ts`.

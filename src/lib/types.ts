@@ -42,8 +42,29 @@ export interface NamedSession {
   windowId: number | undefined;
   /** Timestamp when the session was created */
   createdAt: number;
-  /** Timestamp when the session was last updated */
+  /** Timestamp when the session was last updated. Affected by session renaming or Open Tabs update. */
   updatedAt: number;
+  // TODO: We also need lastSynced or syncedAt to represent when we last try syncing with the backend.
+  // We might need to consider which of updatedAt or syncedAt should stored in the backend.
+}
+
+/**
+ * Represents a closed Named Session that is stored in bookmarks but not currently open in a window.
+ * This is a subset of the information stored in BookmarkSessionFolder.
+ * TODO: Merge this type into NamedSession, or consider introducing sub-typing of Active/Closed Named Sessions.
+ */
+export interface ClosedNamedSession {
+  /** A unique identifier for the session (UUID) */
+  id: string;
+  /** The user-defined name of the session */
+  name: string;
+  /** Timestamp when the session was created */
+  createdAt: number;
+  /** Timestamp when the session was last updated (if available) */
+  updatedAt: number;
+  /** List of tabs associated with the session */
+  // TODO: Refactor to extract this out from Session data types. We raraly uses this field.
+  tabs: NamedSessionTab[];
 }
 
 /**
@@ -105,20 +126,4 @@ export interface SavedBookmark {
     /** Any other custom metadata */
     [key: string]: any;
   };
-}
-
-/**
- * Represents a closed Named Session that is stored in bookmarks but not currently open in a window.
- * This is a subset of the information stored in BookmarkSessionFolder.
- * TODO: Merge this type into NamedSession, or consider introducing sub-typing of Active/Closed Named Sessions.
- */
-export interface ClosedNamedSession {
-  /** A unique identifier for the session (UUID) */
-  id: string;
-  /** The user-defined name of the session */
-  name: string;
-  /** Timestamp when the session was last updated (if available) */
-  updatedAt?: number;
-  /** List of tabs associated with the session */
-  tabs: NamedSessionTab[];
 }

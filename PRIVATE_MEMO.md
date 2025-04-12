@@ -48,3 +48,4 @@ We have unstructured, just-idea notes here:
 - Function and hotkey to copy the current page title+URL for easier sharing.
 - Add a flag for saved bookmarks and open them automatically when the session gets activated.
 - In the search result, show the name of the session the open tab belongs to.
+- Session Name should be reflected if updated by other instance. We can compare the timestamp metadata.

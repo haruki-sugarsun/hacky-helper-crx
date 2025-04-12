@@ -6,13 +6,10 @@
  */
 // TODO: Document about the methods that session-management manages active named sessions "in local" using chrome extensions local strorage API, and sync that with the backedn when necessary.
 
-import {
-  ClosedNamedSession,
-  NamedSession,
-  NamedSessionTab,
-} from "../lib/types";
+import { ClosedNamedSession, NamedSession } from "../lib/types";
 import { BookmarkStorage } from "./BookmarkStorage";
-import { getConfig } from "./config-store";
+import { CONFIG_RO } from "../features/config-store";
+import { convertTabsToNamedSessionTabs } from "./session-management/session-management-helpers";
 
 // Storage key for named sessions
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
@@ -153,8 +150,8 @@ export async function reassociateNamedSessionInLocal(
       id: closedSession.id,
       name: closedSession.name,
       windowId: windowId,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: closedSession.createdAt, // TODO: propagate from the backend.
+      updatedAt: Date.now(), // TODO: propagate from the backend.
     };
     try {
       await saveActiveNamedSessionInLocal(updatedSession);
@@ -229,15 +226,8 @@ export async function syncSessionToBackend(
       return /^https?:|^chrome-extension:/.test(tab.url);
     });
 
-    // Convert tabs to NamedSessionTab format
-    // TODO: Have a typical type conversion utilities.
-    const sessionTabs: NamedSessionTab[] = validTabs.map((tab) => ({
-      tabId: tab.id || null,
-      title: tab.title || "Untitled",
-      url: tab.url || "",
-      updatedAt: Date.now(),
-      owner: "current", // Default owner, could be configurable in the future
-    }));
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const sessionTabs = convertTabsToNamedSessionTabs(validTabs, instanceId);
 
     const result = await BookmarkStorage.getInstance().syncSessionToBookmarks(
       session,
@@ -375,11 +365,6 @@ export async function createNamedSession(
   console.log(
     `Created Named Session: ${finalSessionId} for window ${windowId}`,
   );
-
-  // Start auto-save timer if not already running
-  // TODO: Consider a better place to have the timer/scheduled alarm.
-  startAutoSaveTimer();
-
   return session;
 }
 
@@ -499,6 +484,19 @@ export async function renameNamedSession(
   return true;
 }
 
+export async function updateSessionUpdatedAt(sessionId: string): Promise<void> {
+  const session = await getActiveNamedSession(sessionId);
+  if (session) {
+    session.updatedAt = Date.now();
+    await saveActiveNamedSessionInLocal(session);
+    console.log(
+      `Updated session ${sessionId}'s updatedAt to ${session.updatedAt}`,
+    );
+  } else {
+    console.warn(`Session ${sessionId} not found in updateSessionUpdatedAt`);
+  }
+}
+
 /**
  * Deletes a Named Session by its sessionId.
  * Checks both in-local for active and in-backendfor closed sessions.
@@ -576,13 +574,11 @@ export async function cloneNamedSession(
       windowId: originalSession.windowId,
       pinned: false,
     });
-    const namedSessionTabs: NamedSessionTab[] = originalTabs.map((tab) => ({
-      tabId: tab.id || null,
-      title: tab.title || "Untitled",
-      url: tab.url || "",
-      updatedAt: Date.now(),
-      owner: "current",
-    }));
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const namedSessionTabs = convertTabsToNamedSessionTabs(
+      originalTabs,
+      instanceId,
+    );
 
     await BookmarkStorage.getInstance().syncOpenedPagesForSession(
       newSession.id,
@@ -832,66 +828,49 @@ export async function activateSessionById(sessionId: string): Promise<void> {
    Auto-save Management
 ============================ */
 
-// Auto-save timer. TODO: Implement a proper timer.
-let autoSaveTimer: number | null = null;
-
-/**
- * Starts the auto-save timer for syncing sessions to bookmarks
- * TODO: We also would like to reset the timer on some activity in the session.
- * TODO: setTimer might not work as expected in service-worker. replace it with proper alarm triggers.
- *       We see `Error starting auto-save timer: ReferenceError: window is not defined`.
- */
-export async function startAutoSaveTimer() {
-  // If timer is already running, don't start another one
-  if (autoSaveTimer !== null) return;
-
-  try {
-    // Get auto-save idle time from config
-    const config = await getConfig();
-    const idleTimeMinutes = parseInt(
-      config.bookmarkAutoSaveIdleTime || "5",
-      10,
-    );
-
-    // Convert to milliseconds
-    const idleTimeMs = idleTimeMinutes * 60 * 1000;
-
-    // Start timer
-    autoSaveTimer = window.setTimeout(async () => {
-      await autoSaveAllSessions();
-      autoSaveTimer = null;
-    }, idleTimeMs);
-
-    console.log(
-      `Auto-save timer started with ${idleTimeMinutes} minutes idle time`,
-    );
-  } catch (error) {
-    console.error("Error starting auto-save timer:", error);
-  }
-}
-
 /**
  * Auto-saves all named sessions to bookmarks
+ * TODO: Implement proper time-out control and comparison with the backend.
  */
 async function autoSaveAllSessions() {
   try {
     console.log("Auto-saving all named sessions to bookmarks");
 
     // Get all named sessions from storage
-    const sessions = Object.values(await getActiveNamedSessionsInLocal());
-
-    // Filter to only include sessions with names
-    const namedSessionsOnly = sessions.filter((session) => session.name);
+    const sessions: NamedSession[] = Object.values(
+      await getActiveNamedSessionsInLocal(),
+    );
 
     // Sync each session to bookmarks
-    for (const session of namedSessionsOnly) {
-      await syncSessionToBackend(session);
+    for (const session of sessions) {
+      // Fetch backend session and compare timestamps.
+      const backendSession = await BookmarkStorage.getInstance().getSession(
+        session.id,
+      );
+      if (!backendSession) {
+        // TODO: Implement handling of session removal by other instance.
+        console.log(`Session ${session.id} is missing the backend.`);
+      } else if (session.updatedAt > backendSession.updatedAt) {
+        // TODO: Introduce the graceful timeout before the auto-sync. and have it configurable in Settings UI.
+        // We have bookmarkAutoSaveIdleTime config already.
+        await syncSessionToBackend(session);
+        console.log(
+          `Synced session ${session.id} as local data is more recent.`,
+        );
+      } else {
+        console.log(`Session ${session.id} is up-to-date. Skipping sync.`);
+      }
     }
 
-    console.log(
-      `Auto-saved ${namedSessionsOnly.length} named sessions to bookmarks`,
-    );
+    console.log(`Auto-saved ${sessions.length} named sessions to bookmarks`);
   } catch (error) {
     console.error("Error auto-saving sessions:", error);
   }
+}
+
+// TODO: Doc.
+// TODO: Implement.
+export async function triggerAutoSessionSync(): Promise<void> {
+  console.log("triggerAutoSessionSync");
+  autoSaveAllSessions();
 }

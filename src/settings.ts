@@ -6,6 +6,8 @@ import {
   Config,
   BoolConfig,
   StringConfig,
+  CONFIG_RO,
+  CONFIG_STORE,
 } from "./features/config-store";
 import {
   OLLAMA_API_URL_DEFAULT,
@@ -83,6 +85,38 @@ async function initializeForm() {
     settingsBookmarkUl,
     ConfigStore.BOOKMARK_PARENT_ID,
   );
+
+  // Update Instance ID field in settings UI
+  const instanceIdInput = document.getElementById(
+    "instance_id",
+  ) as HTMLInputElement;
+  if (instanceIdInput) {
+    let instanceId = await CONFIG_RO.INSTANCE_ID();
+    if (!instanceId) {
+      instanceId = Math.random().toString(36).substring(2, 10);
+      // TODO: Implement a setter method in COFIG_STORE instead of set() for instance ID. So that we can ensure validation.
+      CONFIG_STORE.updateInstanceId(instanceId);
+    }
+    instanceIdInput.value = instanceId;
+    instanceIdInput.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      if (!CONFIG_STORE.updateInstanceId(target.value)) {
+        // TODO: Show a message in UI in not-interrupting way (toast + style change?) if it fails.
+        alert("Invalid instance ID: must be alphanumerical.");
+      }
+    });
+    const regenerateBtn = document.createElement("button");
+    regenerateBtn.textContent = "Regenerate Instance ID";
+    regenerateBtn.addEventListener("click", async () => {
+      let newId = Math.random().toString(36).substring(2, 10);
+      CONFIG_STORE.updateInstanceId(newId);
+      instanceIdInput.value = newId;
+    });
+    instanceIdInput.parentNode?.insertBefore(
+      regenerateBtn,
+      instanceIdInput.nextSibling,
+    );
+  }
 }
 
 // Function to create a bookmark folder chooser

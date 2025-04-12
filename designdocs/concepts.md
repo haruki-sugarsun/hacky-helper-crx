@@ -1,5 +1,13 @@
 # Design Doc: Terminology, Concepts, and Relations
 
+## Instance ID
+
+- The Hacky-Helper-CRX extenation can run one multiple browsers.
+- Each extention has "instance ID" to distinguish it from others.
+- The instance ID is a string of alphanumerical characters.
+- The instance ID is set randomly if not set.
+- The user can mofigy it in the Settings UI.
+
 ## Session
 
 - A manageable unit of user tasks, tightly connected with a browser window and the tabs in it.
@@ -26,7 +34,8 @@
 
 ##### Synced Open Tabs
 
--
+- Open Tabs those also exist in the backend.
+- Existence is defined by the URL and the `owner` field.
 
 #### Saved Tabs/Bookmarks
 
