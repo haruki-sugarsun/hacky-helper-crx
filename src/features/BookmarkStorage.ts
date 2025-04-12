@@ -72,7 +72,7 @@ export class BookmarkStorage {
 
       for (const folder of children) {
         // Check if this is a session folder by looking for metadata in the title
-        const sessionData = this.extractSessionDataFromTitle(folder.title);
+        const sessionData = decodeSessionTitle(folder.title);
         if (sessionData) {
           const { sessionId, sessionName } = sessionData;
 
@@ -106,20 +106,6 @@ export class BookmarkStorage {
   }
 
   /**
-   * Extracts session data from a bookmark folder title
-   * Format: "Session Name (session_id)"
-   */
-  private extractSessionDataFromTitle(
-    title: string,
-  ): { sessionId: string; sessionName: string } | null {
-    const decoded = decodeSessionTitle(title);
-    if (decoded) {
-      return { sessionName: decoded.sessionName, sessionId: decoded.sessionId };
-    }
-    return null;
-  }
-
-  /**
    * Creates or updates a bookmark folder for a named session
    */
   public async syncSessionToBookmarks(
@@ -136,11 +122,13 @@ export class BookmarkStorage {
 
       if (sessionFolder) {
         // Update the existing folder if the name changed
-        if (sessionFolder.name !== session.name) {
+        // TODO: Reconsider the properties of BookmarkSessionFolder.
+        const encodedTitle = encodeSessionTitle(session);
+        if (sessionFolder.name !== encodedTitle) {
           await chrome.bookmarks.update(sessionFolder.id, {
-            title: encodeSessionTitle(session),
+            title: encodedTitle,
           });
-          sessionFolder.name = session.name;
+          sessionFolder.name = encodedTitle;
         }
       } else {
         // Create a new session folder
@@ -460,6 +448,8 @@ export class BookmarkStorage {
           id: sessionId,
           name: folder.name,
           tabs: tabs,
+          createdAt: 0, // TODO: Read from the backend (metadata)
+          updatedAt: 0, // TODO: Read from the backend (metadata)
         };
 
         closedSessions.push(closedSession);
@@ -520,5 +510,46 @@ export class BookmarkStorage {
 
     this.sessionFolders.set(session.id, sessionFolder);
     return sessionFolder;
+  }
+
+  /**
+   * Retrieves a session using local bookmark storage data.
+   * This reconstructs a NamedSession from stored bookmark folder data.
+   *
+   * @param sessionId - The unique identifier for the session.
+   * @returns The corresponding NamedSession, or null if not found.
+   */
+  public async getSession(sessionId: string): Promise<NamedSession | null> {
+    const sessionFolder = this.sessionFolders.get(sessionId);
+    if (!sessionFolder) {
+      return null;
+    }
+
+    try {
+      const bookmarks = await chrome.bookmarks.get(sessionFolder.id);
+      if (bookmarks && bookmarks.length > 0) {
+        const decoded = decodeSessionTitle(bookmarks[0].title);
+        if (decoded) {
+          return {
+            id: sessionId,
+            name: decoded.sessionName,
+            windowId: undefined,
+            createdAt: 0, // Not stored; extend as needed.  TODO: Store in the backend as well.
+            updatedAt: decoded.updatedAt || 0,
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching session bookmark:", error);
+    }
+    console.log("Fallback in case decoding fails for ${sessionId}");
+    // Fallback in case decoding fails
+    return {
+      id: sessionId,
+      name: sessionFolder.name,
+      windowId: undefined,
+      createdAt: 0,
+      updatedAt: 0,
+    };
   }
 }

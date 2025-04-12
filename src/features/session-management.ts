@@ -152,8 +152,8 @@ export async function reassociateNamedSessionInLocal(
       id: closedSession.id,
       name: closedSession.name,
       windowId: windowId,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: closedSession.createdAt, // TODO: propagate from the backend.
+      updatedAt: Date.now(), // TODO: propagate from the backend.
     };
     try {
       await saveActiveNamedSessionInLocal(updatedSession);
@@ -862,26 +862,46 @@ export async function startAutoSaveTimer() {
 
 /**
  * Auto-saves all named sessions to bookmarks
+ * TODO: Implement proper time-out control and comparison with the backend.
  */
 async function autoSaveAllSessions() {
   try {
     console.log("Auto-saving all named sessions to bookmarks");
 
     // Get all named sessions from storage
-    const sessions = Object.values(await getActiveNamedSessionsInLocal());
-
-    // Filter to only include sessions with names
-    const namedSessionsOnly = sessions.filter((session) => session.name);
+    const sessions: NamedSession[] = Object.values(
+      await getActiveNamedSessionsInLocal(),
+    );
 
     // Sync each session to bookmarks
-    for (const session of namedSessionsOnly) {
-      await syncSessionToBackend(session);
+    for (const session of sessions) {
+      // Fetch backend session and compare timestamps.
+      const backendSession = await BookmarkStorage.getInstance().getSession(
+        session.id,
+      );
+      if (!backendSession) {
+        // TODO: Implement handling of session removal by other instance.
+        console.log(`Session ${session.id} is missing the backend.`);
+      } else if (session.updatedAt > backendSession.updatedAt) {
+        // TODO: Introduce the graceful timeout before the auto-sync. and have it configurable in Settings UI.
+        await syncSessionToBackend(session);
+        console.log(
+          `Synced session ${session.id} as local data is more recent.`,
+        );
+      } else {
+        console.log(`Session ${session.id} is up-to-date. Skipping sync.`);
+      }
     }
 
-    console.log(
-      `Auto-saved ${namedSessionsOnly.length} named sessions to bookmarks`,
-    );
+    console.log(`Auto-saved ${sessions.length} named sessions to bookmarks`);
   } catch (error) {
     console.error("Error auto-saving sessions:", error);
   }
+}
+
+// TODO: Doc.
+// TODO: Implement.
+export async function triggerAutoSessionSync(): Promise<void> {
+  console.log("triggerAutoSessionSync");
+  autoSaveAllSessions();
 }

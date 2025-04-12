@@ -5,7 +5,7 @@ import { NamedSession, NamedSessionTab } from "../../lib/types";
  */
 export function encodeSessionTitle(session: NamedSession): string {
   // TODO: lastModified should be a part of data managed by session-management.ts.
-  return `${session.name} ${JSON.stringify({ id: session.id, lastModified: Date.now() })}`;
+  return `${session.name} ${JSON.stringify({ id: session.id, updatedAt: session.updatedAt })}`;
 }
 
 /**
@@ -13,7 +13,7 @@ export function encodeSessionTitle(session: NamedSession): string {
  */
 export function decodeSessionTitle(
   title: string,
-): { sessionName: string; sessionId: string; lastModified?: number } | null {
+): { sessionName: string; sessionId: string; updatedAt?: number } | null {
   let match = title.match(/^(.+?) (\{.*\})$/);
   if (match) {
     try {
@@ -22,7 +22,7 @@ export function decodeSessionTitle(
         return {
           sessionName: match[1],
           sessionId: metadata.id,
-          lastModified: metadata.lastModified,
+          updatedAt: metadata.updatedAt,
         };
       }
     } catch (e) {
