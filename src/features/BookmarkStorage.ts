@@ -7,6 +7,13 @@ import {
   SavedBookmark,
 } from "../lib/types";
 
+import {
+  encodeSessionTitle,
+  decodeSessionTitle,
+  encodeTabTitle,
+  decodeTabTitle,
+} from "./bookmark-storage/bookmark-storage-helpers";
+
 /**
  * Manages bookmark storage for named sessions and saved pages
  */
@@ -105,12 +112,9 @@ export class BookmarkStorage {
   private extractSessionDataFromTitle(
     title: string,
   ): { sessionId: string; sessionName: string } | null {
-    const match = title.match(/^(.+) \(([a-f0-9-]+)\)$/i);
-    if (match) {
-      return {
-        sessionName: match[1],
-        sessionId: match[2],
-      };
+    const decoded = decodeSessionTitle(title);
+    if (decoded) {
+      return { sessionName: decoded.sessionName, sessionId: decoded.sessionId };
     }
     return null;
   }
@@ -134,7 +138,7 @@ export class BookmarkStorage {
         // Update the existing folder if the name changed
         if (sessionFolder.name !== session.name) {
           await chrome.bookmarks.update(sessionFolder.id, {
-            title: `${session.name} (${session.id})`,
+            title: encodeSessionTitle(session),
           });
           sessionFolder.name = session.name;
         }
@@ -213,9 +217,9 @@ export class BookmarkStorage {
 
         if (existingBookmark) {
           // Update the bookmark if the title changed
-          if (existingBookmark.title !== tab.title) {
+          if (existingBookmark.title !== encodeTabTitle(tab)) {
             await chrome.bookmarks.update(existingBookmark.id, {
-              title: tab.title,
+              title: encodeTabTitle(tab),
             });
           }
 
@@ -225,7 +229,7 @@ export class BookmarkStorage {
           // Create a new bookmark for this tab
           await chrome.bookmarks.create({
             parentId: sessionFolder.openedPagesId,
-            title: tab.title,
+            title: encodeTabTitle(tab),
             url: tab.url,
           });
         }
@@ -233,6 +237,7 @@ export class BookmarkStorage {
 
       // Remove any bookmarks that no longer exist in the tabs
       for (const [_, bookmark] of existingBookmarksByUrl) {
+        // TODO: Only delete the ones owned by the current Hacky-Helper-CRX instance.
         await chrome.bookmarks.remove(bookmark.id);
       }
     } catch (error) {
@@ -338,6 +343,7 @@ export class BookmarkStorage {
 
   /**
    * Gets all synced bookmarks from the "Opened Pages" folder for a session
+   * TODO: Have consistent naming and types.
    */
   public async getSyncedBookmarks(sessionId: string): Promise<SavedBookmark[]> {
     try {
@@ -353,11 +359,13 @@ export class BookmarkStorage {
       return bookmarks
         .filter((bookmark) => bookmark.url)
         .map((bookmark) => {
+          const { title, metadata } = decodeTabTitle(bookmark.title);
           return {
             id: bookmark.id,
-            title: bookmark.title,
+            title,
             url: bookmark.url!,
             sessionId: sessionId,
+            metadata,
           };
         });
     } catch (error) {
@@ -486,7 +494,7 @@ export class BookmarkStorage {
     }
 
     // Create a new folder for the session
-    const folderTitle = `${session.name} (${session.id})`; // TODO: Have methods to encode/decode title and ID.
+    const folderTitle = encodeSessionTitle(session);
     const newFolder = await chrome.bookmarks.create({
       parentId: this.parentFolderId!,
       title: folderTitle,
