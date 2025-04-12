@@ -151,13 +151,39 @@ export class ConfigStore implements ConfigStoreRO {
     "When enabled, LLM services will be available for content processing. When disabled, no LLM processing will occur.",
   );
 
+  private static INSTANCE_ID = new StringConfig(
+    "INSTANCE_ID",
+    "Instance ID",
+    "A unique alphanumerical identifier for this instance. Editable via Settings UI.",
+  );
+
   constructor() {
     // Initialize configurations if needed
   }
+
+  async INSTANCE_ID(): Promise<string> {
+    let id = await ConfigStore.INSTANCE_ID.get();
+    if (!id) {
+      id = Math.random().toString(36).substring(2, 10);
+      ConfigStore.INSTANCE_ID.set(id);
+    }
+    return id;
+  }
+
+  public updateInstanceId(value: string): boolean {
+    if (!/^[a-zA-Z0-9]+$/.test(value)) {
+      console.error("Invalid instance ID: must be alphanumerical.");
+      return false;
+    }
+    this.set("INSTANCE_ID", value);
+    return true;
+  }
+
   async OPENAI_API_KEY(): Promise<string> {
     return await ConfigStore.OPENAI_API_KEY.get();
   }
 
+  // TODO: We would like to make this private.
   set(key: string, value: any) {
     this.config[key] = value;
 
@@ -228,6 +254,7 @@ export const CONFIG_STORE = new ConfigStore();
 // Other pages/features should use this interface.
 export interface ConfigStoreRO {
   OPENAI_API_KEY(): Promise<string>;
+  INSTANCE_ID(): Promise<string>;
 }
 export const CONFIG_RO = CONFIG_STORE.asConfigStoreRO();
 
