@@ -6,12 +6,11 @@
  */
 // TODO: Document about the methods that session-management manages active named sessions "in local" using chrome extensions local strorage API, and sync that with the backedn when necessary.
 
-import {
-  ClosedNamedSession,
-  NamedSession,
-  NamedSessionTab,
-} from "../lib/types";
+import { ClosedNamedSession, NamedSession } from "../lib/types";
 import { BookmarkStorage } from "./BookmarkStorage";
+import { CONFIG_RO } from "../features/config-store";
+import { convertTabsToNamedSessionTabs } from "./session-management/session-management-helpers";
+
 import { getConfig } from "./config-store";
 
 // Storage key for named sessions
@@ -229,15 +228,8 @@ export async function syncSessionToBackend(
       return /^https?:|^chrome-extension:/.test(tab.url);
     });
 
-    // Convert tabs to NamedSessionTab format
-    // TODO: Have a typical type conversion utilities.
-    const sessionTabs: NamedSessionTab[] = validTabs.map((tab) => ({
-      tabId: tab.id || null,
-      title: tab.title || "Untitled",
-      url: tab.url || "",
-      updatedAt: Date.now(),
-      owner: "current", // Default owner, could be configurable in the future
-    }));
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const sessionTabs = convertTabsToNamedSessionTabs(validTabs, instanceId);
 
     const result = await BookmarkStorage.getInstance().syncSessionToBookmarks(
       session,
@@ -576,13 +568,11 @@ export async function cloneNamedSession(
       windowId: originalSession.windowId,
       pinned: false,
     });
-    const namedSessionTabs: NamedSessionTab[] = originalTabs.map((tab) => ({
-      tabId: tab.id || null,
-      title: tab.title || "Untitled",
-      url: tab.url || "",
-      updatedAt: Date.now(),
-      owner: "current",
-    }));
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const namedSessionTabs = convertTabsToNamedSessionTabs(
+      originalTabs,
+      instanceId,
+    );
 
     await BookmarkStorage.getInstance().syncOpenedPagesForSession(
       newSession.id,

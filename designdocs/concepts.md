@@ -34,7 +34,8 @@
 
 ##### Synced Open Tabs
 
--
+- Open Tabs those also exist in the backend.
+- Existence is defined by the URL and the `owner` field.
 
 #### Saved Tabs/Bookmarks
 
