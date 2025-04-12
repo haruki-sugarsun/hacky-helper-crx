@@ -349,16 +349,24 @@ async function maybeQueueTaskForProcessing(
   }
 }
 
+// Setup periodic alarm for auto session sync, triggers every 10 minutes
+// TODO: extract these alarm strings to CONSTANTS.
+chrome.alarms.create("autoSessionSyncAlarm", { periodInMinutes: 10 });
+
 // Setup a periodic call of processNextTask every 1 minute
 chrome.alarms.create("processTasksAlarm", {
   periodInMinutes: 1,
 });
 
 // Listen for the alarm and process tasks
+// Alarm listener: handle processTasksAlarm and autoSessionSyncAlarm
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "processTasksAlarm") {
     console.log("Periodic task processing triggered", new Date());
     processNextTask();
+  } else if (alarm.name === "autoSessionSyncAlarm") {
+    console.log("Auto session sync alarm triggered", new Date());
+    SessionManagement.triggerAutoSessionSync();
   }
 });
 async function processNextTask() {
@@ -853,6 +861,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               },
             });
           }
+          break;
+        case "DEBUG_TRIGGER":
+          // For dedugging:
+          console.log("Auto session sync alarm triggered", new Date());
+          SessionManagement.triggerAutoSessionSync();
           break;
         default:
           // TODO: Migrate the handlers to `service-worker-handler.ts`.

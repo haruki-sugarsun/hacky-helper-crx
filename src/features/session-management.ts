@@ -11,8 +11,6 @@ import { BookmarkStorage } from "./BookmarkStorage";
 import { CONFIG_RO } from "../features/config-store";
 import { convertTabsToNamedSessionTabs } from "./session-management/session-management-helpers";
 
-import { getConfig } from "./config-store";
-
 // Storage key for named sessions
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
 
@@ -367,11 +365,6 @@ export async function createNamedSession(
   console.log(
     `Created Named Session: ${finalSessionId} for window ${windowId}`,
   );
-
-  // Start auto-save timer if not already running
-  // TODO: Consider a better place to have the timer/scheduled alarm.
-  startAutoSaveTimer();
-
   return session;
 }
 
@@ -822,44 +815,6 @@ export async function activateSessionById(sessionId: string): Promise<void> {
    Auto-save Management
 ============================ */
 
-// Auto-save timer. TODO: Implement a proper timer.
-let autoSaveTimer: number | null = null;
-
-/**
- * Starts the auto-save timer for syncing sessions to bookmarks
- * TODO: We also would like to reset the timer on some activity in the session.
- * TODO: setTimer might not work as expected in service-worker. replace it with proper alarm triggers.
- *       We see `Error starting auto-save timer: ReferenceError: window is not defined`.
- */
-export async function startAutoSaveTimer() {
-  // If timer is already running, don't start another one
-  if (autoSaveTimer !== null) return;
-
-  try {
-    // Get auto-save idle time from config
-    const config = await getConfig();
-    const idleTimeMinutes = parseInt(
-      config.bookmarkAutoSaveIdleTime || "5",
-      10,
-    );
-
-    // Convert to milliseconds
-    const idleTimeMs = idleTimeMinutes * 60 * 1000;
-
-    // Start timer
-    autoSaveTimer = window.setTimeout(async () => {
-      await autoSaveAllSessions();
-      autoSaveTimer = null;
-    }, idleTimeMs);
-
-    console.log(
-      `Auto-save timer started with ${idleTimeMinutes} minutes idle time`,
-    );
-  } catch (error) {
-    console.error("Error starting auto-save timer:", error);
-  }
-}
-
 /**
  * Auto-saves all named sessions to bookmarks
  * TODO: Implement proper time-out control and comparison with the backend.
@@ -884,6 +839,7 @@ async function autoSaveAllSessions() {
         console.log(`Session ${session.id} is missing the backend.`);
       } else if (session.updatedAt > backendSession.updatedAt) {
         // TODO: Introduce the graceful timeout before the auto-sync. and have it configurable in Settings UI.
+        // We have bookmarkAutoSaveIdleTime config already.
         await syncSessionToBackend(session);
         console.log(
           `Synced session ${session.id} as local data is more recent.`,
