@@ -4,7 +4,7 @@ import {
   ClosedNamedSession,
   NamedSession,
   NamedSessionTab,
-  SavedBookmark,
+  SyncedTabEntity,
 } from "../lib/types";
 
 import {
@@ -203,11 +203,12 @@ export class BookmarkStorage {
 
         const existingBookmark = existingBookmarksByUrl.get(tab.url);
 
+        const encodedBookmarkTitle = encodeTabTitle(tab);
         if (existingBookmark) {
           // Update the bookmark if the title changed
-          if (existingBookmark.title !== encodeTabTitle(tab)) {
+          if (existingBookmark.title !== encodedBookmarkTitle) {
             await chrome.bookmarks.update(existingBookmark.id, {
-              title: encodeTabTitle(tab),
+              title: encodedBookmarkTitle,
             });
           }
 
@@ -217,7 +218,7 @@ export class BookmarkStorage {
           // Create a new bookmark for this tab
           await chrome.bookmarks.create({
             parentId: sessionFolder.openedPagesId,
-            title: encodeTabTitle(tab),
+            title: encodedBookmarkTitle,
             url: tab.url,
           });
         }
@@ -253,30 +254,23 @@ export class BookmarkStorage {
    */
   public async saveTabToBookmarks(
     sessionId: string,
-    tab: chrome.tabs.Tab,
-    metadata?: any,
-  ): Promise<SavedBookmark | null> {
+    tab: NamedSessionTab,
+  ): Promise<SyncedTabEntity | null> {
     try {
       await this.initialize();
 
       const sessionFolder = this.sessionFolders.get(sessionId);
       if (!sessionFolder || !tab.url) return null;
 
-      // Create metadata JSON
-      const metadataObj = {
-        savedAt: Date.now(),
-        ...metadata,
-      };
+      const encodedBookmarkTitle = encodeTabTitle(tab);
 
       // Encode metadata in the title
-      const metadataStr = JSON.stringify(metadataObj);
       const title = tab.title || tab.url;
-      const bookmarkTitle = `${title} [${metadataStr}]`;
 
       // Create the bookmark
       const bookmark = await chrome.bookmarks.create({
         parentId: sessionFolder.savedPagesId,
-        title: bookmarkTitle,
+        title: encodedBookmarkTitle,
         url: tab.url,
       });
 
@@ -285,7 +279,7 @@ export class BookmarkStorage {
         title: title,
         url: tab.url,
         sessionId: sessionId,
-        metadata: metadataObj,
+        owner: tab.owner,
       };
     } catch (error) {
       console.error("Error saving tab to bookmarks:", error);
@@ -296,7 +290,9 @@ export class BookmarkStorage {
   /**
    * Gets all saved bookmarks for a session
    */
-  public async getSavedBookmarks(sessionId: string): Promise<SavedBookmark[]> {
+  public async getSavedBookmarks(
+    sessionId: string,
+  ): Promise<SyncedTabEntity[]> {
     try {
       await this.initialize();
 
@@ -311,16 +307,14 @@ export class BookmarkStorage {
         .filter((bookmark) => bookmark.url)
         .map((bookmark) => {
           // Extract metadata from the title
-          const { title, metadata } = this.extractMetadataFromTitle(
-            bookmark.title,
-          );
+          const { title, metadata } = decodeTabTitle(bookmark.title);
 
           return {
             id: bookmark.id,
             title: title,
             url: bookmark.url!,
             sessionId: sessionId,
-            metadata: metadata,
+            owner: metadata?.owner || "Unknown",
           };
         });
     } catch (error) {
@@ -330,10 +324,11 @@ export class BookmarkStorage {
   }
 
   /**
-   * Gets all synced bookmarks from the "Opened Pages" folder for a session
-   * TODO: Have consistent naming and types.
+   * Gets all synced open tabs from the "Opened Pages" folder for a session
    */
-  public async getSyncedBookmarks(sessionId: string): Promise<SavedBookmark[]> {
+  public async getSyncedOpenTabs(
+    sessionId: string,
+  ): Promise<SyncedTabEntity[]> {
     try {
       await this.initialize();
 
@@ -353,37 +348,13 @@ export class BookmarkStorage {
             title,
             url: bookmark.url!,
             sessionId: sessionId,
-            metadata,
+            owner: metadata.owner,
           };
         });
     } catch (error) {
       console.error("Error getting synced bookmarks:", error);
       return [];
     }
-  }
-
-  /**
-   * Extracts the actual title and metadata from a bookmark title
-   * Format: "Title [{"savedAt":1234567890,"tags":["tag1","tag2"]}]"
-   */
-  private extractMetadataFromTitle(title: string): {
-    title: string;
-    metadata?: any;
-  } {
-    const match = title.match(/^(.+) \[(.*)\]$/);
-    if (match) {
-      try {
-        const metadata = JSON.parse(match[2]);
-        return {
-          title: match[1],
-          metadata: metadata,
-        };
-      } catch (e) {
-        // If JSON parsing fails, return the original title
-        return { title: title };
-      }
-    }
-    return { title: title };
   }
 
   /**

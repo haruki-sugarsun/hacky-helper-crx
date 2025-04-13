@@ -105,25 +105,17 @@ export interface BookmarkSessionFolder {
 }
 
 /**
- * Represents a saved bookmark
- * TODO: Rename it to represent a tab in mind, rather than the backend bookmark.
+ * Represents a tab info synced to the backend.
  */
-export interface SavedBookmark {
-  /** The bookmark ID */
+export interface SyncedTabEntity {
+  /** The ID associated in the backend (e.g. bookmark ID) */
   id: string;
-  /** The title of the bookmark */
+  /** The title of the Tab Entity */
   title: string;
-  /** The URL of the bookmark */
+  /** The URL of the Tab Entity  */
   url: string;
-  /** The session ID this bookmark belongs to */
+  /** The session ID this Tab Entiry belongs to */
   sessionId: string;
-  /** Optional metadata encoded in JSON */
-  metadata?: {
-    /** When the bookmark was saved */
-    savedAt?: number;
-    /** Custom tags or categories */
-    tags?: string[];
-    /** Any other custom metadata */
-    [key: string]: any;
-  };
+  /** The owner client (browser instance) of the tab */
+  owner: string;
 }

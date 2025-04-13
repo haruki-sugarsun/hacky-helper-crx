@@ -52,7 +52,7 @@ export function encodeTabTitle(tab: NamedSessionTab): string {
  */
 export function decodeTabTitle(title: string): {
   title: string;
-  metadata?: any;
+  metadata?: any; // TODO: Define a proper type for metadata.
 } {
   let match = title.match(/^(.+?) (\{.*\})$/);
   if (match) {

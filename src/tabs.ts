@@ -13,13 +13,12 @@ import {
   RESTORE_CLOSED_SESSION,
   GET_SAVED_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
-  GET_SYNCED_OPENTABS,
 } from "./lib/constants";
 import { ensureTabsHtmlInWindow } from "./features/tabs-helpers";
 import {
   ClosedNamedSession,
   NamedSession,
-  SavedBookmark,
+  SyncedTabEntity,
   TabSummary,
 } from "./lib/types";
 import "./style.css";
@@ -1322,26 +1321,15 @@ async function updateTabsTable(
 
   // Get synced bookmarks and saved bookmarks for the current session if it exists
   // TODO: Rename the variable to syncedOpenTabs.
-  let syncedBookmarks: SavedBookmark[] = [];
-  let savedBookmarks: SavedBookmark[] = [];
+  let syncedBookmarks: SyncedTabEntity[] = [];
+  let savedBookmarks: SyncedTabEntity[] = [];
 
   if (currentSession) {
     try {
       // Get synced bookmarks via session_management abstraction
-      const syncedResponse = await chrome.runtime.sendMessage({
-        type: GET_SYNCED_OPENTABS,
-        payload: {
-          sessionId: currentSession.id,
-        },
-      });
-
-      if (
-        syncedResponse &&
-        syncedResponse.type === "GET_SYNCED_OPENTABS_RESULT" &&
-        syncedResponse.payload.bookmarks
-      ) {
-        syncedBookmarks = syncedResponse.payload.bookmarks;
-      }
+      syncedBookmarks = await serviceWorkerInterface.getSyncedOpenTabs(
+        currentSession.id,
+      );
 
       // Get saved bookmarks
       const savedResponse = await chrome.runtime.sendMessage({
@@ -2017,10 +2005,6 @@ async function saveTabToBookmarks(tabId: number) {
       payload: {
         sessionId,
         tabId,
-        metadata: {
-          savedAt: Date.now(),
-          tags: ["saved-tab"],
-        },
       },
     });
 
@@ -2092,24 +2076,14 @@ async function fetchAndDisplaySyncedTabs(sessionId: string) {
   try {
     // Get synced tabs for the session
     // TODO: We have duplicated calls for GET_SYNCED_OPENTABS here and in updateTabsTable. Consider refactoring.
-    const response = await chrome.runtime.sendMessage({
-      type: GET_SYNCED_OPENTABS,
-      payload: {
-        sessionId,
-      },
-    });
+    const syncedTabs =
+      await serviceWorkerInterface.getSyncedOpenTabs(sessionId);
 
-    if (
-      !response ||
-      response.type !== "GET_SYNCED_OPENTABS_RESULT" ||
-      !response.payload.bookmarks
-    ) {
-      console.error("Error fetching synced tabs:", response);
+    if (!syncedTabs) {
+      console.error("Error fetching synced tabs:", syncedTabs);
       clearSyncedTabs();
       return;
     }
-
-    const syncedTabs: SavedBookmark[] = response.payload.bookmarks;
 
     // Get all currently open tabs in the current window
     const currentWindow = await chrome.windows.getCurrent();
@@ -2132,7 +2106,7 @@ async function fetchAndDisplaySyncedTabs(sessionId: string) {
 /**
  * Displays synced tabs in the synced tabs section
  */
-function displaySyncedTabs(tabs: SavedBookmark[]) {
+function displaySyncedTabs(tabs: SyncedTabEntity[]) {
   const syncedTabsContainer =
     document.querySelector<HTMLDivElement>("#synced_tabs")!;
   const tabsList = syncedTabsContainer.querySelector("ul")!;
@@ -2158,6 +2132,18 @@ function displaySyncedTabs(tabs: SavedBookmark[]) {
     titleContainer.textContent = tab.title || tab.url;
     titleContainer.title = tab.url;
     listItem.appendChild(titleContainer);
+    // Insert owner info container with visibility weight and indicator if different
+    const ownerContainer = document.createElement("div");
+    ownerContainer.className = "synced-tab-owner";
+    // TODO: Fix this as this is a tentative stub implementation.
+    const owner = tab.owner;
+    if (owner && owner !== "local") {
+      ownerContainer.textContent = "Owner: " + owner + " (Different)";
+      ownerContainer.classList.add("different-owner");
+    } else {
+      ownerContainer.textContent = "Owner: " + (owner || "Unknown");
+    }
+    listItem.appendChild(ownerContainer);
 
     // Create tab actions container
     const actionsContainer = document.createElement("div");
@@ -2221,7 +2207,7 @@ async function fetchAndDisplaySavedBookmarks(sessionId: string) {
       response.type === "GET_SAVED_BOOKMARKS_RESULT" &&
       response.payload.bookmarks
     ) {
-      const bookmarks: SavedBookmark[] = response.payload.bookmarks;
+      const bookmarks: SyncedTabEntity[] = response.payload.bookmarks;
       displaySavedBookmarks(bookmarks);
     } else {
       console.error("Error fetching saved bookmarks:", response);
@@ -2236,7 +2222,7 @@ async function fetchAndDisplaySavedBookmarks(sessionId: string) {
 /**
  * Displays saved bookmarks in the saved bookmarks section
  */
-function displaySavedBookmarks(bookmarks: SavedBookmark[]) {
+function displaySavedBookmarks(bookmarks: SyncedTabEntity[]) {
   const savedBookmarksContainer =
     document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
   const bookmarksList = savedBookmarksContainer.querySelector("ul")!;
@@ -2299,22 +2285,6 @@ function displaySavedBookmarks(bookmarks: SavedBookmark[]) {
     actionsContainer.appendChild(removeButton);
 
     listItem.appendChild(actionsContainer);
-
-    // Add metadata if available
-    if (bookmark.metadata && bookmark.metadata.savedAt) {
-      const metadataContainer = document.createElement("div");
-      metadataContainer.className = "bookmark-metadata";
-
-      const savedDate = new Date(bookmark.metadata.savedAt);
-      metadataContainer.textContent = `Saved: ${savedDate.toLocaleString()}`;
-
-      // Add tags if available
-      if (bookmark.metadata.tags && bookmark.metadata.tags.length > 0) {
-        metadataContainer.textContent += ` | Tags: ${bookmark.metadata.tags.join(", ")}`;
-      }
-
-      listItem.appendChild(metadataContainer);
-    }
 
     bookmarksList.appendChild(listItem);
   });
@@ -2458,7 +2428,7 @@ async function openAllBookmarks() {
       return;
     }
 
-    const bookmarks: SavedBookmark[] = bookmarksResponse.payload.bookmarks;
+    const bookmarks: SyncedTabEntity[] = bookmarksResponse.payload.bookmarks;
     if (bookmarks.length === 0) {
       alert("No bookmarks found for this session");
       return;
@@ -2531,23 +2501,8 @@ async function openAllSyncedTabs() {
     }
 
     // Get all synced tabs for this session
-    const syncedTabsResponse = await chrome.runtime.sendMessage({
-      type: GET_SYNCED_OPENTABS,
-      payload: {
-        sessionId,
-      },
-    });
-
-    if (
-      !syncedTabsResponse ||
-      syncedTabsResponse.type !== "GET_SYNCED_OPENTABS_RESULT" ||
-      !syncedTabsResponse.payload.bookmarks
-    ) {
-      alert("Error fetching synced tabs");
-      return;
-    }
-
-    const syncedTabs: SavedBookmark[] = syncedTabsResponse.payload.bookmarks;
+    const syncedTabs: SyncedTabEntity[] =
+      await serviceWorkerInterface.getSyncedOpenTabs(sessionId);
     if (syncedTabs.length === 0) {
       alert("No synced tabs found for this session");
       return;

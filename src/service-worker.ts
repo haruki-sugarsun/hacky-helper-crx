@@ -44,7 +44,6 @@ import {
   GET_SAVED_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
-  GET_SYNCED_OPENTABS,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   REMOVE_SAVED_BOOKMARK,
@@ -718,7 +717,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           break;
         case SAVE_TAB_TO_BOOKMARKS:
           {
-            const { sessionId, tabId, metadata } = payload;
+            const { sessionId, tabId } = payload;
             if (!sessionId || !tabId) {
               throw new Error("Session ID and Tab ID are required");
             }
@@ -730,7 +729,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             const success = await SessionManagement.saveTabToBackend(
               sessionId,
               tab,
-              metadata,
             );
 
             sendResponse({
@@ -833,28 +831,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               type: "SYNC_SESSION_TO_BOOKMARKS_RESULT",
               payload: {
                 success,
-                sessionId,
-              },
-            });
-          }
-          break;
-        case GET_SYNCED_OPENTABS:
-          {
-            const { sessionId } = payload;
-            if (!sessionId) {
-              throw new Error("Session ID is required");
-            }
-
-            // Get synced bookmarks for the session
-            // TODO: Rename the method to getSyncedOpenTabs().
-            const bookmarks =
-              await SessionManagement.getSyncedOpenTabs(sessionId);
-
-            sendResponse({
-              // TODO: Have constants for these "RESULT" types, e.g. GET_SYNCED_OPENTABS_RESULT
-              type: "GET_SYNCED_OPENTABS_RESULT",
-              payload: {
-                bookmarks,
                 sessionId,
               },
             });
