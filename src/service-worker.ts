@@ -50,7 +50,7 @@ import {
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
-import { CONFIG_STORE } from "./features/config-store.ts";
+import { CONFIG_RO } from "./features/config-store.ts";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
 
@@ -136,14 +136,15 @@ chrome.commands.onCommand.addListener((command) => {
 let llmService: LLMService;
 
 async function initializeLLMService() {
-  const useOllama = await CONFIG_STORE.get("USE_OLLAMA"); // TODO: use the read-only config.
+  const useOllama = await CONFIG_RO.USE_OLLAMA(); // TODO: use the read-only config.
+  // TODO: Make the LLM option configurable in the settings UI.
   if (useOllama) {
     const ollamaApiUrl =
-      (await CONFIG_STORE.get("OLLAMA_API_URL")) || OLLAMA_API_URL_DEFAULT;
+      (await CONFIG_RO.OLLAMA_API_URL()) || OLLAMA_API_URL_DEFAULT;
     const ollamaModel =
-      (await CONFIG_STORE.get("OLLAMA_MODEL")) || OLLAMA_MODEL_DEFAULT;
+      (await CONFIG_RO.OLLAMA_MODEL()) || OLLAMA_MODEL_DEFAULT;
     const ollamaEmbeddingsModel =
-      (await CONFIG_STORE.get("OLLAMA_EMBEDDINGS_MODEL")) ||
+      (await CONFIG_RO.OLLAMA_EMBEDDINGS_MODEL()) ||
       OLLAMA_EMBEDDINGS_MODEL_DEFAULT;
     console.log(
       `Using Ollama LLM service with model ${ollamaModel} and embeddings model ${ollamaEmbeddingsModel} at ${ollamaApiUrl}`,
@@ -323,7 +324,7 @@ async function maybeQueueTaskForProcessing(
 ) {
   try {
     // Check if LLM services are enabled
-    const llmEnabled = await CONFIG_STORE.get("LLM_ENABLED");
+    const llmEnabled = await CONFIG_RO.LLM_ENABLED();
     if (llmEnabled === false) {
       console.log("Skipping task as LLM services are disabled.");
       // TODO: We can also clear the pending llmTasks.

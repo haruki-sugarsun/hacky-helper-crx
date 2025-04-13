@@ -77,12 +77,28 @@ export class StringConfig extends Config {
   }
 }
 
-export class ConfigStore implements ConfigStoreRO {
+export class ConfigStore {
   asConfigStoreRO() {
-    return this;
+    return {
+      // TODO: This might just needs some wrapper functions. and we can remove the each method definitions.
+      SORT_ON_TAB_SWITCH: this.SORT_ON_TAB_SWITCH.bind(this),
+      OPENAI_API_KEY: this.OPENAI_API_KEY.bind(this),
+      OPENAI_API_BASE_URL: this.OPENAI_API_BASE_URL.bind(this),
+      USE_OLLAMA: this.USE_OLLAMA.bind(this),
+      OLLAMA_API_URL: this.OLLAMA_API_URL.bind(this),
+      OLLAMA_MODEL: this.OLLAMA_MODEL.bind(this),
+      OLLAMA_EMBEDDINGS_MODEL: this.OLLAMA_EMBEDDINGS_MODEL.bind(this),
+      BOOKMARK_PARENT_ID: this.BOOKMARK_PARENT_ID.bind(this),
+      BOOKMARK_AUTO_SAVE_IDLE_TIME:
+        this.BOOKMARK_AUTO_SAVE_IDLE_TIME.bind(this),
+      DISABLE_LLM_ON_BATTERY: this.DISABLE_LLM_ON_BATTERY.bind(this),
+      LLM_ENABLED: this.LLM_ENABLED.bind(this),
+      INSTANCE_ID: this.INSTANCE_ID.bind(this),
+    };
   }
   private config: Record<string, any> = {};
 
+  // TODO: Reorder the instances and getters to group them by features.
   static SORT_ON_TAB_SWITCH = new BoolConfig(
     "SORT_ON_TAB_SWITCH",
     "Reorder Tabs on the end-to-start circular tab switch.",
@@ -127,14 +143,15 @@ export class ConfigStore implements ConfigStoreRO {
   );
 
   static BOOKMARK_PARENT_ID = new StringConfig(
-    "bookmarkParentId",
+    "BOOKMARK_PARENT_ID",
     "Bookmark Parent ID",
     "The parent folder ID where named sessions and bookmarks are stored.",
   );
 
   // TODO: settings.html misses a config menu for this.
+  // TODO: Use this for auto-sync feature.
   static BOOKMARK_AUTO_SAVE_IDLE_TIME = new StringConfig(
-    "bookmarkAutoSaveIdleTime",
+    "BOOKMARK_AUTO_SAVE_IDLE_TIME",
     "Auto-save Idle Time (minutes)",
     "The idle time in minutes after which named sessions will be automatically saved to bookmarks.",
   );
@@ -161,7 +178,7 @@ export class ConfigStore implements ConfigStoreRO {
     // Initialize configurations if needed
   }
 
-  async INSTANCE_ID(): Promise<string> {
+  public async INSTANCE_ID(): Promise<string> {
     let id = await ConfigStore.INSTANCE_ID.get();
     if (!id) {
       id = Math.random().toString(36).substring(2, 10);
@@ -179,8 +196,48 @@ export class ConfigStore implements ConfigStoreRO {
     return true;
   }
 
-  async OPENAI_API_KEY(): Promise<string> {
+  public async OPENAI_API_KEY(): Promise<string> {
     return await ConfigStore.OPENAI_API_KEY.get();
+  }
+
+  public async SORT_ON_TAB_SWITCH(): Promise<boolean> {
+    return await ConfigStore.SORT_ON_TAB_SWITCH.get();
+  }
+
+  public async OPENAI_API_BASE_URL(): Promise<string> {
+    return await ConfigStore.OPENAI_API_BASE_URL.get();
+  }
+
+  public async USE_OLLAMA(): Promise<boolean> {
+    return await ConfigStore.USE_OLLAMA.get();
+  }
+
+  public async OLLAMA_API_URL(): Promise<string> {
+    return await ConfigStore.OLLAMA_API_URL.get();
+  }
+
+  public async OLLAMA_MODEL(): Promise<string> {
+    return await ConfigStore.OLLAMA_MODEL.get();
+  }
+
+  public async OLLAMA_EMBEDDINGS_MODEL(): Promise<string> {
+    return await ConfigStore.OLLAMA_EMBEDDINGS_MODEL.get();
+  }
+
+  public async BOOKMARK_PARENT_ID(): Promise<string> {
+    return await ConfigStore.BOOKMARK_PARENT_ID.get();
+  }
+
+  public async BOOKMARK_AUTO_SAVE_IDLE_TIME(): Promise<string> {
+    return await ConfigStore.BOOKMARK_AUTO_SAVE_IDLE_TIME.get();
+  }
+
+  public async DISABLE_LLM_ON_BATTERY(): Promise<boolean> {
+    return await ConfigStore.DISABLE_LLM_ON_BATTERY.get();
+  }
+
+  public async LLM_ENABLED(): Promise<boolean> {
+    return await ConfigStore.LLM_ENABLED.get();
   }
 
   // TODO: We would like to make this private.
@@ -248,57 +305,22 @@ export class ConfigStore implements ConfigStoreRO {
   }
 }
 
-// This is only used by settings UI.
+// This is only used by Settings UI or other features that need to set the config.
 export const CONFIG_STORE = new ConfigStore();
 
 // Other pages/features should use this interface.
 export interface ConfigStoreRO {
+  SORT_ON_TAB_SWITCH(): Promise<boolean>;
   OPENAI_API_KEY(): Promise<string>;
+  OPENAI_API_BASE_URL(): Promise<string>;
+  USE_OLLAMA(): Promise<boolean>;
+  OLLAMA_API_URL(): Promise<string>;
+  OLLAMA_MODEL(): Promise<string>;
+  OLLAMA_EMBEDDINGS_MODEL(): Promise<string>;
+  BOOKMARK_PARENT_ID(): Promise<string>;
+  BOOKMARK_AUTO_SAVE_IDLE_TIME(): Promise<string>;
+  DISABLE_LLM_ON_BATTERY(): Promise<boolean>;
+  LLM_ENABLED(): Promise<boolean>;
   INSTANCE_ID(): Promise<string>;
 }
 export const CONFIG_RO = CONFIG_STORE.asConfigStoreRO();
-
-interface ConfigRO {
-  bookmarkParentId: string;
-  bookmarkAutoSaveIdleTime: string;
-  OPENAI_API_KEY: string;
-  USE_OLLAMA: boolean;
-  OLLAMA_API_URL: string;
-  OLLAMA_MODEL: string;
-  OLLAMA_EMBEDDINGS_MODEL: string;
-  DISABLE_LLM_ON_BATTERY: boolean;
-  LLM_ENABLED: boolean;
-}
-/**
- * Retrieves all configuration settings.
- * TODO: Replace the callers with ConfigStoreRO.
- * @returns An object containing all configuration settings.
- */
-export async function getConfig(): Promise<ConfigRO> {
-  // TODO: Make the field names consistent.
-  const bookmarkParentId = await CONFIG_STORE.get("bookmarkParentId");
-  const bookmarkAutoSaveIdleTime = await CONFIG_STORE.get(
-    "bookmarkAutoSaveIdleTime",
-  );
-  const openaiApiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
-  const useOllama = await CONFIG_STORE.get("USE_OLLAMA");
-  const ollamaApiUrl = await CONFIG_STORE.get("OLLAMA_API_URL");
-  const ollamaModel = await CONFIG_STORE.get("OLLAMA_MODEL");
-  const ollamaEmbeddingsModel = await CONFIG_STORE.get(
-    "OLLAMA_EMBEDDINGS_MODEL",
-  );
-  const disableLlmOnBattery = await CONFIG_STORE.get("DISABLE_LLM_ON_BATTERY");
-  const llmEnabled = await CONFIG_STORE.get("LLM_ENABLED");
-
-  return {
-    bookmarkParentId,
-    bookmarkAutoSaveIdleTime: bookmarkAutoSaveIdleTime || "5",
-    OPENAI_API_KEY: openaiApiKey,
-    USE_OLLAMA: useOllama || false,
-    OLLAMA_API_URL: ollamaApiUrl || "http://localhost:11434",
-    OLLAMA_MODEL: ollamaModel || "llama2",
-    OLLAMA_EMBEDDINGS_MODEL: ollamaEmbeddingsModel || "nomic-embed-text",
-    DISABLE_LLM_ON_BATTERY: disableLlmOnBattery || false,
-    LLM_ENABLED: llmEnabled !== false, // Default to true if not set
-  };
-}

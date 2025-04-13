@@ -33,7 +33,7 @@ import "./ui/search-results.css";
 import "./ui/session-metadata";
 import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
-import { CONFIG_STORE } from "./features/config-store";
+import { CONFIG_RO } from "./features/config-store";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -42,7 +42,7 @@ console.log("tabs.ts", new Date());
 // TODO: And better to kick initialization via SessionManager instead of direcly calling bookmarkStorage here.
 // TODO: Check if BookmarkStorage is setup and initialized. If not, show a message to fix the issue.
 (async () => {
-  const bookmarkFolder = await CONFIG_STORE.get("bookmarkParentId");
+  const bookmarkFolder = await CONFIG_RO.BOOKMARK_PARENT_ID();
   if (!bookmarkFolder) {
     alert("Bookmark folder is not set. Please set it in extension settings.");
   }

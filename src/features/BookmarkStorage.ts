@@ -1,4 +1,4 @@
-import { getConfig } from "./config-store";
+import { CONFIG_RO } from "./config-store";
 import {
   BookmarkSessionFolder,
   ClosedNamedSession,
@@ -43,8 +43,7 @@ export class BookmarkStorage {
     if (this.initialized) return true;
 
     try {
-      const config = await getConfig();
-      this.parentFolderId = config.bookmarkParentId || null;
+      this.parentFolderId = await CONFIG_RO.BOOKMARK_PARENT_ID();
 
       if (!this.parentFolderId) {
         console.warn("No parent bookmark folder configured");

@@ -1,6 +1,7 @@
 # Strategy
 - Try to read the related files as much as possible before the decisions.
 - Always provide concise reasoning with a brief description.
+- When failed, check CLINE rules again to make sure we use the tools properly.
 - Upon a first failure, review the affected files and adjust the approach slightly.
 - After a second failure, request guidance from the user.
 - Keep each change small and apply diffs one-by-one.
@@ -27,6 +28,16 @@
 - Check recent commits using `git log --oneline -10` for context.
 - If needed, use `git --no-pager diff --staged` to inspect staged changes.
 - When the user says "resolve conflict," address git conflicts appropriately.
+
+# CLINE tool usage
+- Use the following replace_in_file pattern properly to edit files.
+```
+    <<<<<<< SEARCH
+    original content
+    =======
+    updated content
+    >>>>>>> REPLACE
+```
 
 # Naming Convention
 - For TS file representing a class, which is exported as default, we use PascalCase names.
