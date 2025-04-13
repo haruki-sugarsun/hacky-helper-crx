@@ -197,6 +197,9 @@ describe("BookmarkStorage", () => {
       updatedAt: Date.now(),
       owner: "owner2",
     };
+    const savedBookmarkId = "saved-bookmark-id";
+    const encodedTabTitle = encodeTabTitle(tab);
+    const savedPagesFolderId = "mock-saved-pages-id"; // Assume this ID exists
 
     // Mock internal state
     (bookmarkStorage as any).sessionFolders.set(testSessionId, {
