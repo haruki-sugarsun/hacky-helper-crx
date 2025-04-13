@@ -2,12 +2,17 @@
  * Typed abstraction layer for interacting with service-worker via messages.
  */
 import { GET_CLOSED_NAMED_SESSIONS, ACTIVATE_SESSION } from "../lib/constants";
-import { NamedSession, ClosedNamedSession } from "../lib/types";
+import {
+  NamedSession,
+  ClosedNamedSession,
+  SyncedTabEntity,
+} from "../lib/types";
 import {
   SuccessResult,
   ErrorResult,
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
+  GET_SYNCED_OPENTABS,
 } from "./service-worker-messages";
 
 /**
@@ -113,6 +118,23 @@ class ServiceWorkerInterface {
       console.error("Error in reassociateNamedSession:", error);
     }
     return { success: false };
+  }
+
+  /**
+   * Retrieves synced open tabs.
+   *
+   * @returns A promise resolving to an array of synced open tab objects.
+   */
+  async getSyncedOpenTabs(sessionId: string): Promise<SyncedTabEntity[]> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: GET_SYNCED_OPENTABS,
+        payload: { sessionId },
+      });
+    } catch (error) {
+      console.error("Error in getSyncedOpenTabs:", error);
+      return [];
+    }
   }
 }
 

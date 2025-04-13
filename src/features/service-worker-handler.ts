@@ -4,12 +4,14 @@
  */
 
 import { ACTIVATE_SESSION, GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
+import { SyncedTabEntity } from "../lib/types";
 import {
   SuccessResult,
   ErrorResult,
   CLONE_NAMED_SESSION,
   GET_NAMED_SESSIONS,
   REASSOCIATE_NAMED_SESSION,
+  GET_SYNCED_OPENTABS,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 /**
@@ -43,6 +45,10 @@ export function handleServiceWorkerMessage(
 
     case REASSOCIATE_NAMED_SESSION:
       handleReassociateNamedSession(message, sendResponse);
+      break;
+
+    case GET_SYNCED_OPENTABS:
+      handleGetSyncedOpenTabs(message, sendResponse);
       break;
 
     default:
@@ -159,4 +165,25 @@ async function handleReassociateNamedSession(
     console.error("Error in reassociating session:", error);
     sendResponse({ error: "Failed to reassociate session" });
   }
+}
+
+/**
+ * Handles the retrieval of synced open tabs.
+ * This is a stub implementation: returns an empty list of bookmarks.
+ * Replace with actual logic as needed.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleGetSyncedOpenTabs(
+  message: any,
+  sendResponse: (response?: SyncedTabEntity[]) => void,
+): Promise<void> {
+  const sessionId = message.payload?.sessionId;
+  if (!sessionId) {
+    throw new Error("Session ID is required");
+  }
+
+  // Get synced bookmarks for the session
+  // TODO: Rename the method to getSyncedOpenTabs().
+  const bookmarks = await SessionManagement.getSyncedOpenTabs(sessionId);
+  sendResponse(bookmarks);
 }

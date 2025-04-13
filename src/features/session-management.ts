@@ -9,7 +9,10 @@
 import { ClosedNamedSession, NamedSession } from "../lib/types";
 import { BookmarkStorage } from "./BookmarkStorage";
 import { CONFIG_RO } from "../features/config-store";
-import { convertTabsToNamedSessionTabs } from "./session-management/session-management-helpers";
+import {
+  convertTabsToNamedSessionTabs,
+  convertTabToNamedSessionTab,
+} from "./session-management/session-management-helpers";
 
 // Storage key for named sessions
 const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
@@ -246,13 +249,13 @@ export async function syncSessionToBackend(
 export async function saveTabToBackend(
   sessionId: string,
   tab: chrome.tabs.Tab,
-  metadata?: any,
 ): Promise<boolean> {
   try {
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const namedSessionTab = convertTabToNamedSessionTab(tab, instanceId);
     const result = await BookmarkStorage.getInstance().saveTabToBookmarks(
       sessionId,
-      tab,
-      metadata,
+      namedSessionTab,
     );
     return !!result;
   } catch (error) {
@@ -273,7 +276,7 @@ export async function getSavedBookmarks(sessionId: string) {
  * TODO: Improve the comment.
  */
 export async function getSyncedOpenTabs(sessionId: string) {
-  return await BookmarkStorage.getInstance().getSyncedBookmarks(sessionId);
+  return await BookmarkStorage.getInstance().getSyncedOpenTabs(sessionId);
 }
 
 /**
@@ -595,20 +598,12 @@ export async function cloneNamedSession(
       for (const bookmark of savedBookmarks) {
         // TODO: saveTabToBookmarks() actually needs just a partial data from tab. Define own tiny version of Tab for it.
         const fakeTab = {
-          id: -1,
-          index: -1,
-          pinned: false,
-          highlighted: false,
-          windowId: 0,
+          tabId: null,
           title: bookmark.title,
           url: bookmark.url,
-          favIconUrl: "",
-          status: "complete",
-          discarded: false,
-          autoDiscardable: true,
-          active: false,
-          incognito: false,
-        } as unknown as chrome.tabs.Tab;
+          updatedAt: Date.now(),
+          owner: "bookmark",
+        };
         await BookmarkStorage.getInstance().saveTabToBookmarks(
           newSession.id,
           fakeTab,
