@@ -26,7 +26,7 @@ const NAMED_SESSIONS_STORAGE_KEY = "hacky_helper_named_sessions";
 /**
  * Gets all named sessions from storage and verifies window existence.
  */
-async function getActiveNamedSessionsInLocal(): Promise<
+export async function getActiveNamedSessionsInLocal(): Promise<
   Record<string, NamedSession>
 > {
   try {
@@ -97,7 +97,7 @@ async function getActiveNamedSession(
 /**
  * Saves a named session to storage
  */
-async function saveActiveNamedSessionInLocal(
+export async function saveActiveNamedSessionInLocal(
   session: NamedSession,
 ): Promise<void> {
   try {
@@ -116,7 +116,7 @@ async function saveActiveNamedSessionInLocal(
 /**
  * Deletes a named session from storage
  */
-async function deleteActiveNamedSessionInLocal(
+export async function deleteActiveNamedSessionInLocal(
   sessionId: string,
 ): Promise<void> {
   try {
