@@ -324,6 +324,7 @@ async function createClosedNamedSessionInBackend(
 
 /**
  * Creates a new Named Session for the given window.
+ * This modifies both in-local session and in-backend session if necessary.
  * Returns the created NamedSession.
  * @param windowId - The ID of the window to create a session for
  * @param sessionName - The name of the session (required, cannot be empty)

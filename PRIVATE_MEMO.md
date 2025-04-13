@@ -49,3 +49,9 @@ We have unstructured, just-idea notes here:
 - Add a flag for saved bookmarks and open them automatically when the session gets activated.
 - In the search result, show the name of the session the open tab belongs to.
 - Session Name should be reflected if updated by other instance. We can compare the timestamp metadata.
+- Allow the user to rename the saved bookmarks.
+- Search for the "saved bookmarks" as well.
+- Close Window in the action menu in Tabs UI.
+- Refactoring Tasks:
+  - Replace config accesses to read values with CONFIG_RO.
+  - Replace sendMessage usage with service-worker-interface.ts, service-worker-handler.ts, and service-worker-messages.ts.
