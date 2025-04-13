@@ -9,6 +9,7 @@ global.localStorage = {
   length: 0,
 } as unknown as Storage;
 
+// @ts-expect-error - Mocking chrome API
 global.chrome = {
   cast: {
     initialize: vi.fn(),
