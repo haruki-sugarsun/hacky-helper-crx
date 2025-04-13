@@ -1,4 +1,4 @@
-import { CONFIG_STORE } from "./config-store";
+import { CONFIG_RO } from "./config-store";
 import {
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,
@@ -134,7 +134,7 @@ export class OpenAILLMService extends BaseLLMService {
 
   protected async setupDynamicFromConfig() {
     // TODO: Rewrite using getConfig()
-    const apiKey = await CONFIG_STORE.get("OPENAI_API_KEY");
+    const apiKey = await CONFIG_RO.OPENAI_API_KEY();
     if (!apiKey) {
       console.error("OpenAI API key not set.");
       throw new Error("OpenAI API key not set.");
@@ -143,7 +143,7 @@ export class OpenAILLMService extends BaseLLMService {
     // Update the API key dynamically
     this.client.apiKey = apiKey;
 
-    const baseURL = await CONFIG_STORE.get("OPENAI_API_BASE_URL");
+    const baseURL = await CONFIG_RO.OPENAI_API_BASE_URL();
     if (baseURL) {
       // Update the API key dynamically
       this.client.baseURL = baseURL;

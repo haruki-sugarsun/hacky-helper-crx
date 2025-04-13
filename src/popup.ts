@@ -1,6 +1,6 @@
 import "./style.css";
 import "./popup.css";
-import { CONFIG_STORE } from "./features/config-store";
+import { CONFIG_STORE, CONFIG_RO } from "./features/config-store";
 import { MIGRATE_TAB } from "./lib/constants";
 import serviceWorkerInterface from "./features/service-worker-interface";
 
@@ -18,8 +18,8 @@ async function initializeToggles() {
   }
 
   // Get current configuration values
-  const llmEnabled = await CONFIG_STORE.get("LLM_ENABLED");
-  const disableOnBattery = await CONFIG_STORE.get("DISABLE_LLM_ON_BATTERY");
+  const llmEnabled = await CONFIG_RO.LLM_ENABLED();
+  const disableOnBattery = await CONFIG_RO.DISABLE_LLM_ON_BATTERY();
 
   // Set toggle states
   llmToggle.checked = llmEnabled !== false; // Default to true if not set

@@ -4,7 +4,7 @@ import {
   OllamaLLMService,
   LLMService,
 } from "./features/llm-service.ts";
-import { CONFIG_STORE } from "./features/config-store.ts";
+import { CONFIG_RO } from "./features/config-store.ts";
 import { OLLAMA_API_URL_DEFAULT } from "./lib/constants.ts";
 import { component_model } from "./components.ts";
 import "./sidepanel.css";
@@ -20,7 +20,7 @@ async function getLLMService(serviceName: string): Promise<LLMService> {
   if (serviceName === "ollama") {
     if (!ollamaService) {
       const ollamaApiUrl =
-        (await CONFIG_STORE.get("OLLAMA_API_URL")) || OLLAMA_API_URL_DEFAULT;
+        (await CONFIG_RO.OLLAMA_API_URL()) || OLLAMA_API_URL_DEFAULT;
       ollamaService = new OllamaLLMService(
         ollamaApiUrl as string,
         selectedModel,
