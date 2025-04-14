@@ -621,9 +621,9 @@ describe("takeoverTab", () => {
   it("should throw an error if the tab is not found", async () => {
     mockBookmarkStorage.getSyncedOpenTabs.mockResolvedValue([]);
 
-    await expect(takeoverTab("non-existent-tab-id", "test-session-id")).rejects.toThrow(
-      "Tab with ID non-existent-tab-id not found.",
-    );
+    await expect(
+      takeoverTab("non-existent-tab-id", "test-session-id"),
+    ).rejects.toThrow("Tab with ID non-existent-tab-id not found.");
   });
 
   it("should throw an error if updating the tab owner fails", async () => {
@@ -643,7 +643,9 @@ describe("takeoverTab", () => {
       new Error("Update failed"),
     );
 
-    await expect(takeoverTab("test-tab-id", "test-session-id")).rejects.toThrow("Update failed");
+    await expect(takeoverTab("test-tab-id", "test-session-id")).rejects.toThrow(
+      "Update failed",
+    );
   });
 
   it("should throw an error if updating the tab owner fails", async () => {
