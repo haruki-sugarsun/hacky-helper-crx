@@ -19,6 +19,9 @@ And always refer `.clinerules` as well.
   2. Test the implementation to ensure proper functionality and no unintended side effects.
 
 - In Tabs UI, provide a feature to "takeover" the tabs opened by the other instances. This will open them in the current window, and update the owner fields.
+
   1. Modify `tabs.html` to include a button for the "takeover" action.
   2. Update `src/tabs.ts` to handle the button's click event.
   3. Test the feature to ensure proper functionality and UI responsiveness.
+
+- Takover all should be fixed to open only the inactive tabs, i.e. tabs not open in the window.
