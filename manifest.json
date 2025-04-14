@@ -40,6 +40,12 @@
         "default": "Alt+S"
       },
       "description": "Focus the search bar in Tabs UI of the current window."
+    },
+    "copy-page-info": {
+      "suggested_key": {
+        "default": "Alt+Shift+C"
+      },
+      "description": "Copy the current page title and URL for sharing."
     }
   }
 }

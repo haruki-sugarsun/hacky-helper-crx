@@ -60,6 +60,7 @@ import * as DigestManagement from "./features/digest-management";
 import { BookmarkStorage } from "./features/BookmarkStorage.ts";
 import { openTabsPage } from "./features/tabs-helpers.ts";
 import { handleServiceWorkerMessage } from "./features/service-worker-handler";
+import { triggerCopyPageInfo } from "./popup/popup-messages";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -109,6 +110,11 @@ chrome.commands.onCommand.addListener((command) => {
           }
         },
       );
+      break;
+
+    case "copy-page-info":
+      console.log("Triggering copy-page-info command");
+      triggerCopyPageInfo();
       break;
 
     default:

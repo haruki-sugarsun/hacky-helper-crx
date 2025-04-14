@@ -3,6 +3,11 @@ import "./popup.css";
 import { CONFIG_STORE, CONFIG_RO } from "./features/config-store";
 import { MIGRATE_TAB } from "./lib/constants";
 import serviceWorkerInterface from "./features/service-worker-interface";
+import { handleMessages } from "./popup/popup-messages";
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  return handleMessages(message, sender, sendResponse);
+});
 
 // Function to initialize the toggle states from configuration
 async function initializeToggles() {
