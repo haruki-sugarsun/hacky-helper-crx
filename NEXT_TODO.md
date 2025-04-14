@@ -9,3 +9,4 @@ And always refer `.clinerules` as well.
 ## Strategy and Next Steps (UPDATE THIS SECTION TO TRACK THE CURRENT STATUS)
 
 - n/a
+- Consider applying https://www.npmjs.com/package/sinon-chrome
