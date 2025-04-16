@@ -47,6 +47,8 @@ Tabs UI is an extention component
 
 - This is a Scroallable Area
 - Sessions are sorted alphabetically in each categories.
+- The action menu for session (active/unnamed) commonly has
+  - Close window
 
 ### Named Sessions (`[Named]`)
 
