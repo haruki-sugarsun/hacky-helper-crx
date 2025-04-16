@@ -19,6 +19,61 @@ export class Config {
   set(_value: any) {
     throw new Error("Method implemented in subclasses.");
   }
+
+  protected static cache: Record<string, any> = {};
+
+  protected static async _get(key: string): Promise<any> {
+    if (this.cache[key] !== undefined) {
+      return this.cache[key];
+    }
+    try {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
+        let res = await chrome.storage.local.get(LOCAL_STORAGE_PREFIX + key);
+        if (
+          Object.keys(res).length > 0 &&
+          res[LOCAL_STORAGE_PREFIX + key] !== undefined
+        ) {
+          this.cache[key] = JSON.parse(res[LOCAL_STORAGE_PREFIX + key]);
+        }
+      } else {
+        const item = localStorage.getItem(LOCAL_STORAGE_PREFIX + key);
+        if (item) {
+          this.cache[key] = JSON.parse(item);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to get value from storage:", error);
+    }
+    return this.cache[key];
+  }
+
+  protected static _set(key: string, value: any): void {
+    this.cache[key] = value;
+    if (
+      typeof chrome !== "undefined" &&
+      chrome.storage &&
+      chrome.storage.local
+    ) {
+      chrome.storage.local.set(
+        { [LOCAL_STORAGE_PREFIX + key]: JSON.stringify(value) },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("Failed to set value:", chrome.runtime.lastError);
+          }
+        },
+      );
+    } else {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_PREFIX + key, JSON.stringify(value));
+      } catch (error) {
+        console.error("Failed to set value in localStorage:", error);
+      }
+    }
+  }
 }
 
 export class BoolConfig extends Config {
@@ -27,7 +82,7 @@ export class BoolConfig extends Config {
   }
 
   async get() {
-    const value = await CONFIG_STORE.get(this.key);
+    const value = await Config._get(this.key);
     if (typeof value === "boolean") {
       return value;
     } else {
@@ -40,7 +95,7 @@ export class BoolConfig extends Config {
 
   set(value: boolean) {
     try {
-      CONFIG_STORE.set(this.key, value);
+      Config._set(this.key, value);
       return true;
     } catch (error) {
       console.error("Failed to set value:", error);
@@ -55,7 +110,7 @@ export class StringConfig extends Config {
   }
 
   async get() {
-    const value = await CONFIG_STORE.get(this.key);
+    const value = await Config._get(this.key);
     if (typeof value === "string") {
       return value;
     } else {
@@ -68,7 +123,7 @@ export class StringConfig extends Config {
 
   set(value: string) {
     try {
-      CONFIG_STORE.set(this.key, value);
+      Config._set(this.key, value);
       return true;
     } catch (error) {
       console.error("Failed to set value:", error);
@@ -96,7 +151,6 @@ export class ConfigStore {
       INSTANCE_ID: this.INSTANCE_ID.bind(this),
     };
   }
-  private config: Record<string, any> = {};
 
   // TODO: Reorder the instances and getters to group them by features.
   static SORT_ON_TAB_SWITCH = new BoolConfig(
@@ -187,12 +241,13 @@ export class ConfigStore {
     return id;
   }
 
+  // TODO: Introduce this method integrated with the INSTANCE_ID's setter.
   public updateInstanceId(value: string): boolean {
     if (!/^[a-zA-Z0-9]+$/.test(value)) {
       console.error("Invalid instance ID: must be alphanumerical.");
       return false;
     }
-    this.set("INSTANCE_ID", value);
+    ConfigStore.INSTANCE_ID.set(value);
     return true;
   }
 
@@ -238,70 +293,6 @@ export class ConfigStore {
 
   public async LLM_ENABLED(): Promise<boolean> {
     return await ConfigStore.LLM_ENABLED.get();
-  }
-
-  // TODO: We would like to make this private.
-  set(key: string, value: any) {
-    this.config[key] = value;
-
-    // Check if chrome.storage is available (in extension context)
-    if (
-      typeof chrome !== "undefined" &&
-      chrome.storage &&
-      chrome.storage.local
-    ) {
-      chrome.storage.local.set(
-        { [LOCAL_STORAGE_PREFIX + key]: JSON.stringify(value) },
-        () => {
-          if (chrome.runtime.lastError) {
-            console.error("Failed to set value:", chrome.runtime.lastError);
-          }
-        },
-      );
-    } else {
-      // Fallback to localStorage in browser context
-      try {
-        localStorage.setItem(LOCAL_STORAGE_PREFIX + key, JSON.stringify(value));
-      } catch (error) {
-        console.error("Failed to set value in localStorage:", error);
-      }
-    }
-  }
-
-  async get(key: string) {
-    // If we already have the value in memory, return it
-    if (this.config[key] !== undefined) {
-      return this.config[key];
-    }
-
-    // Try to get from storage
-    try {
-      // Check if chrome.storage is available (in extension context)
-      if (
-        typeof chrome !== "undefined" &&
-        chrome.storage &&
-        chrome.storage.local
-      ) {
-        let res = await chrome.storage.local.get(LOCAL_STORAGE_PREFIX + key);
-        console.log(res);
-        if (
-          Object.keys(res).length > 0 &&
-          res[LOCAL_STORAGE_PREFIX + key] !== undefined
-        ) {
-          this.config[key] = JSON.parse(res[LOCAL_STORAGE_PREFIX + key]);
-        }
-      } else {
-        // Fallback to localStorage in browser context
-        const item = localStorage.getItem(LOCAL_STORAGE_PREFIX + key);
-        if (item) {
-          this.config[key] = JSON.parse(item);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to get value from storage:", error);
-    }
-
-    return this.config[key];
   }
 }
 
