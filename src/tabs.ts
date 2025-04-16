@@ -51,7 +51,6 @@ const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
 const sessionMetadataElement =
   document.querySelector<SessionMetadataComponent>("#session_metadata")!;
 
-// Page State
 var windowIds: (number | undefined)[] = []; // IDs of all windows
 var state_windows: chrome.windows.Window[]; // All windows
 var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window. This is mostly redundant now that we have tabs in state_windows. TODO: Remove it.
@@ -519,8 +518,8 @@ requestTabSummariesButton.addEventListener("click", async () => {
     } else {
       // Add rows for each tab (excluding pinned tabs)
       filteredStateTabs.forEach((tab: chrome.tabs.Tab) => {
+        // TODO: This is not enough. Also consider updateUI().
         const row = document.createElement("tr");
-
         let summarySnippet = "No summary available yet."; // TODO: Use summry from allTabSummaries.
         // Find the summary for this tab
         const tabSummary = allTabSummaries.find(
@@ -1108,6 +1107,30 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
   // Clear existing table rows
   const tableBody = tabsTable.querySelector("tbody")!;
   tableBody.innerHTML = "";
+  if (!tableBody.hasAttribute("drag-drop-listeners")) {
+    tableBody.setAttribute("drag-drop-listeners", "true");
+    tableBody.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+    tableBody.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const draggedTabId = parseInt(
+        e.dataTransfer?.getData("text/plain") || "0",
+      );
+      console.log("Dropped tab with id in updateTabsTable:", draggedTabId);
+      const selectedWindowId = state_windows.find((w) => w.focused)?.id;
+      handleTabDrop(e, selectedWindowId);
+    });
+  }
+  tableBody.addEventListener("dragover", (e) => {
+    e.preventDefault();
+  });
+  tableBody.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const draggedTabId = parseInt(e.dataTransfer?.getData("text/plain") || "0");
+    console.log("Dropped tab with id in updateTabsTable:", draggedTabId);
+    // TODO: Implement tab migration to session and update session state accordingly.
+  });
 
   if (closedSession.tabs.length === 0) {
     // No tabs available - add a message row
@@ -1661,7 +1684,6 @@ async function updateTabsTable(
     console.error("Error fetching tab summaries:", error);
   }
 
-  // Add rows for each tab (using the filtered list that excludes pinned tabs)
   filteredTabs.forEach((tab) => {
     const row = document.createElement("tr");
     row.setAttribute("draggable", "true"); // Make the row draggable
