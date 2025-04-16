@@ -1,6 +1,6 @@
 import "./style.css";
 import "./popup.css";
-import { CONFIG_STORE, CONFIG_RO } from "./features/config-store";
+import { CONFIG_RO, ConfigStore } from "./features/config-store";
 import { MIGRATE_TAB } from "./lib/constants";
 import serviceWorkerInterface from "./features/service-worker-interface";
 import { handleMessages } from "./popup/popup-messages";
@@ -32,12 +32,12 @@ async function initializeToggles() {
 
   // Add event listeners
   llmToggle.addEventListener("change", () => {
-    CONFIG_STORE.set("LLM_ENABLED", llmToggle.checked);
+    ConfigStore.LLM_ENABLED.set(llmToggle.checked);
     console.log(`LLM services ${llmToggle.checked ? "enabled" : "disabled"}`);
   });
 
   batteryToggle.addEventListener("change", () => {
-    CONFIG_STORE.set("DISABLE_LLM_ON_BATTERY", batteryToggle.checked);
+    ConfigStore.DISABLE_LLM_ON_BATTERY.set(batteryToggle.checked);
     console.log(
       `Disable on battery ${batteryToggle.checked ? "enabled" : "disabled"}`,
     );
@@ -111,17 +111,17 @@ async function updateBatteryStatus(
   statusElement.className = `battery-status ${isCharging ? "charging" : "discharging"}`;
 
   // Check if we should disable LLM based on battery status
-  const disableOnBattery = await CONFIG_STORE.get("DISABLE_LLM_ON_BATTERY");
+  const disableOnBattery = await CONFIG_RO.DISABLE_LLM_ON_BATTERY();
 
   if (disableOnBattery && !isCharging) {
     // Disable LLM services when on battery
     llmToggle.checked = false;
-    CONFIG_STORE.set("LLM_ENABLED", false);
+    ConfigStore.LLM_ENABLED.set(false);
     console.log("LLM services automatically disabled due to battery mode");
   } else if (disableOnBattery && isCharging) {
     // Re-enable LLM services when charging resumes
     llmToggle.checked = true;
-    CONFIG_STORE.set("LLM_ENABLED", true);
+    ConfigStore.LLM_ENABLED.set(true);
     console.log("LLM services automatically enabled due to charging");
   }
 }

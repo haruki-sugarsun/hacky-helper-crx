@@ -347,7 +347,7 @@ export class BookmarkStorage {
             title,
             url: bookmark.url!,
             sessionId: sessionId,
-            owner: metadata?.owner || "Unknown",  // Safely access metadata.owner with a fallback
+            owner: metadata?.owner || "Unknown", // Safely access metadata.owner with a fallback
           };
         });
     } catch (error) {
