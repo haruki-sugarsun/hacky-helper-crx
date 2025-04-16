@@ -54,12 +54,37 @@ const tabs_tablist = document.querySelector<HTMLDivElement>("#tabs_tablist")!;
 const sessionMetadataElement =
   document.querySelector<SessionMetadataComponent>("#session_metadata")!;
 
-// Page State
 var windowIds: (number | undefined)[] = []; // IDs of all windows
 var state_windows: chrome.windows.Window[]; // All windows
 var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window. This is mostly redundant now that we have tabs in state_windows. TODO: Remove it.
 var state_sessions: NamedSession[] = []; // Named Sessions from the service worker
 var currentTabId: number | undefined; // ID of the current tab
+
+/**
+ * Helper function to handle a drop event for a tab item.
+ * Handles tab migration to another window or session.
+ */
+function handleTabDrop(e: DragEvent, windowId: number | undefined) {
+  e.preventDefault();
+  const draggedTabIdStr = e.dataTransfer?.getData("text/plain");
+  const draggedTabId = parseInt(draggedTabIdStr || "0");
+  console.log("Dropped tab with id:", draggedTabId, "in window:", windowId);
+
+  // Validate dragged tab ID
+  if (!draggedTabId) {
+    console.error("Invalid tab ID received during drop event.");
+    return;
+  }
+
+  // Perform tab migration
+  migrateTab(draggedTabId, windowId || -1)
+    .then(() => {
+      console.log(`Tab ${draggedTabId} successfully migrated.`);
+    })
+    .catch((error) => {
+      console.error("Error during tab migration:", error);
+    });
+}
 
 // Check if this is a duplicate tabs.html page in the same window
 async function checkForDuplicates() {
@@ -447,8 +472,8 @@ requestTabSummariesButton.addEventListener("click", async () => {
     } else {
       // Add rows for each tab (excluding pinned tabs)
       filteredStateTabs.forEach((tab: chrome.tabs.Tab) => {
+        // TODO: This is not enough. Also consider updateUI().
         const row = document.createElement("tr");
-
         let summarySnippet = "No summary available yet."; // TODO: Use summry from allTabSummaries.
         // Find the summary for this tab
         const tabSummary = allTabSummaries.find(
@@ -554,7 +579,72 @@ function createSessionListItem(
 
   li.appendChild(sessionLabel);
 
+  // Add dragover, dragleave, and drop event listeners for drag-and-drop functionality
+  li.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    li.classList.add("drag-over"); // Optional: Add a visual indicator for drag-over
+  });
+
+  li.addEventListener("dragleave", () => {
+    li.classList.remove("drag-over"); // Remove visual indicator
+  });
+
+  li.addEventListener("drop", (event) => {
+    event.preventDefault();
+    const draggedTabId = parseInt(
+      event.dataTransfer?.getData("text/plain") || "0",
+    );
+    const sessionId = sessionLabel?.getAttribute("data-session-id");
+    console.log(`Tab ${draggedTabId} dropped on session ${sessionId}`);
+
+    // TODO: We also have unnamed session case.
+    if (sessionId) {
+      migrateTabToSession(draggedTabId, sessionId);
+    } else {
+      console.error("No session ID found for the drop target.");
+    }
+
+    li.classList.remove("drag-over"); // Clean up visual indicator
+  });
+
   return li;
+}
+
+/**
+ * Migrates a tab to a specific session.
+ * @param tabId - The ID of the tab to migrate.
+ * @param sessionId - The ID of the session to migrate the tab to.
+ */
+async function migrateTabToSession(tabId: number, sessionId: string) {
+  try {
+    // TODO: This feature is not implemented yet. We need to implement the migration logic in the service worker.
+    const response = await chrome.runtime.sendMessage({
+      type: "MIGRATE_TAB_TO_SESSION", // TODO: Define this constant in your backend.
+      payload: {
+        tabId,
+        sessionId,
+      },
+    });
+
+    if (
+      response &&
+      response.type === "MIGRATE_TAB_TO_SESSION_RESULT" &&
+      response.payload.success
+    ) {
+      console.log(`Tab ${tabId} successfully migrated to session ${sessionId}`);
+      // Optionally refresh the UI or provide feedback to the user
+    } else {
+      console.error(
+        `Failed to migrate tab ${tabId} to session ${sessionId}:`,
+        response,
+      );
+    }
+  } catch (error) {
+    console.error(
+      `Error migrating tab ${tabId} to session ${sessionId}:`,
+      error,
+    );
+  }
 }
 
 /**
@@ -917,6 +1007,30 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
   // Clear existing table rows
   const tableBody = tabsTable.querySelector("tbody")!;
   tableBody.innerHTML = "";
+  if (!tableBody.hasAttribute("drag-drop-listeners")) {
+    tableBody.setAttribute("drag-drop-listeners", "true");
+    tableBody.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+    tableBody.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const draggedTabId = parseInt(
+        e.dataTransfer?.getData("text/plain") || "0",
+      );
+      console.log("Dropped tab with id in updateTabsTable:", draggedTabId);
+      const selectedWindowId = state_windows.find((w) => w.focused)?.id;
+      handleTabDrop(e, selectedWindowId);
+    });
+  }
+  tableBody.addEventListener("dragover", (e) => {
+    e.preventDefault();
+  });
+  tableBody.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const draggedTabId = parseInt(e.dataTransfer?.getData("text/plain") || "0");
+    console.log("Dropped tab with id in updateTabsTable:", draggedTabId);
+    // TODO: Implement tab migration to session and update session state accordingly.
+  });
 
   if (closedSession.tabs.length === 0) {
     // No tabs available - add a message row
@@ -1436,9 +1550,36 @@ async function updateTabsTable(
     console.error("Error fetching tab summaries:", error);
   }
 
-  // Add rows for each tab (using the filtered list that excludes pinned tabs)
   filteredTabs.forEach((tab) => {
     const row = document.createElement("tr");
+    row.setAttribute("draggable", "true");
+
+    // Add dragstart event listener
+    row.addEventListener("dragstart", (e) => {
+      const idStr = tab.id !== undefined ? tab.id.toString() : "0";
+      e.dataTransfer?.setData("text/plain", idStr);
+      row.classList.add("dragging");
+      // TODO: Style update for dragging effect
+    });
+
+    // Add dragend event listener
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+    });
+
+    // TODO: If we addListener for drop and dragover on the document, we add it just once at the initialization.
+    document.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      // TODO: Style effect?
+    });
+
+    document.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const draggedTabId = event.dataTransfer?.getData("text/plain");
+      console.log("Tab dropped with ID:", draggedTabId, "on ", event.target);
+
+      // TODO: Implement logic for Tab migration.
+    });
 
     // Find the summary for this tab
     let summarySnippet = "No summary available yet.";
