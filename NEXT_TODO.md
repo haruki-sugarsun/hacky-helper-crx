@@ -6,7 +6,8 @@
 - Break down the plan in "Strategy and Next Steps" and add details as much as possible.
   - Refer the "Example Plan" for example steps.
 - Repeat until we get to the confidence about what to do and where to change.
-- Typically, start implementation with "Work on this. with checking whether each change plan is already done or not."
+- Typically, instruct the agent to start implementation with 
+  - "Work on the Strategy and Next Steps. with checking whether each change plan is already done or not."
 
 ## Example Plan
 
@@ -26,11 +27,11 @@
 3. DONE: (src/ui/session-label.ts) No changes needed for the "⋮" emoji in the menu button.
 4. DONE: (src/tabs.ts) Update emoji usage in status indicators:
    - Replace "⭐", "✓", "⚠️" with Twemoji versions
-5. (src/sidepanel.ts) Update emoji usage in status messages:
+5. DONE: (src/sidepanel.ts) Update emoji usage in status messages:
    - Replace "🚀", "✨", "🤔", "⏳", "😴", "🚫", "💤" with Twemoji versions
-6. (tabs.html) Update emoji usage in the bookmark toggle button:
+6. DONE: (tabs.html) Update emoji usage in the bookmark toggle button:
    - Replace "🔖" with Twemoji version
-7. (src/style.css) Add CSS to properly style Twemoji elements.
+7. DONE: (src/style.css) Add CSS to properly style Twemoji elements.
 8. (vite.config.js) Ensure Vite is configured to properly bundle the Twemoji package.
 9. Test the implementation in Chrome to ensure consistent emoji rendering.
 
