@@ -18,13 +18,13 @@
 
 ### Implement Emoji Support Using Twemoji
 
-1. (package.json) Add "twemoji" npm package dependency and "@types/twemoji" for TypeScript type definitions.
-2. (src/lib/emoji-helper.ts) Create a new helper module for emoji rendering:
+1. DONE: (package.json) Add "twemoji" npm package dependency and "@types/twemoji" for TypeScript type definitions.
+2. DONE: (src/lib/emoji-helper.ts) Create a new helper module for emoji rendering:
    - Implement a `renderEmoji` function to parse text and replace emoji characters with Twemoji SVGs/PNGs
    - Implement a `createEmojiElement` function to create an emoji element for a specific character
    - Add configuration options for size (SVG or PNG), CSS classes, etc.
-3. (src/ui/session-label.ts) No changes needed for the "⋮" emoji in the menu button.
-4. (src/tabs.ts) Update emoji usage in status indicators:
+3. DONE: (src/ui/session-label.ts) No changes needed for the "⋮" emoji in the menu button.
+4. DONE: (src/tabs.ts) Update emoji usage in status indicators:
    - Replace "⭐", "✓", "⚠️" with Twemoji versions
 5. (src/sidepanel.ts) Update emoji usage in status messages:
    - Replace "🚀", "✨", "🤔", "⏳", "😴", "🚫", "💤" with Twemoji versions
