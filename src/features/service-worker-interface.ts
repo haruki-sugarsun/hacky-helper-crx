@@ -13,6 +13,7 @@ import {
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
   GET_SYNCED_OPENTABS,
+  TAKEOVER_TAB,
 } from "./service-worker-messages";
 
 /**
@@ -37,6 +38,27 @@ class ServiceWorkerInterface {
     } catch (error) {
       console.error("Error in getNamedSessions:", error);
       return [];
+    }
+  }
+
+  /**
+   * Takes over a tab by its backendTabId.
+   *
+   * @param backendTabId - The ID of the tab to take over.
+   * @returns A promise that resolves when the operation is complete.
+   */
+  async takeoverTab(
+    backendTabId: string,
+    sessionId: string,
+  ): Promise<SuccessResult | ErrorResult> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: TAKEOVER_TAB,
+        payload: { backendTabId, sessionId },
+      });
+    } catch (error) {
+      console.error("Error in takeoverTab:", error);
+      throw error;
     }
   }
 

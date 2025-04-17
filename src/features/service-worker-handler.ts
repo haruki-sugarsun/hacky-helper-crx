@@ -12,6 +12,7 @@ import {
   GET_NAMED_SESSIONS,
   REASSOCIATE_NAMED_SESSION,
   GET_SYNCED_OPENTABS,
+  TAKEOVER_TAB,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 /**
@@ -51,12 +52,44 @@ export function handleServiceWorkerMessage(
       handleGetSyncedOpenTabs(message, sendResponse);
       break;
 
+    case TAKEOVER_TAB:
+      handleTakeoverTab(message, sendResponse);
+      break;
+
     default:
       console.warn("Unknown message type:", message.type);
       sendResponse({ error: "Unknown message type" });
       return false;
   }
   return true;
+}
+
+/**
+ * Handles the takeover of a tab by the current instance.
+ * @param message The message containing the tab ID and owner.
+ * @param sendResponse The callback to send a response.
+ */
+
+export async function handleTakeoverTab(
+  message: { payload: { backendTabId: string; sessionId: string } },
+  sendResponse: (response?: SuccessResult | ErrorResult) => void,
+): Promise<void> {
+  const { backendTabId, sessionId } = message.payload;
+
+  if (!backendTabId) {
+    console.error("Backend tab ID is missing in TAKEOVER_TAB message.");
+    sendResponse({ error: "Backend tab ID is required" });
+    return;
+  }
+
+  try {
+    await SessionManagement.takeoverTab(backendTabId, sessionId);
+    console.log(`Successfully handled takeover for tab ${backendTabId}.`);
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error("Error handling takeover for tab:", error);
+    sendResponse({ error: "Failed to take over tab" });
+  }
 }
 
 /**

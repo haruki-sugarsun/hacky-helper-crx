@@ -483,6 +483,58 @@ export class BookmarkStorage {
   }
 
   /**
+   * Converts a SyncedTabEntity to a NamedSessionTab.
+   * @param syncedTab The SyncedTabEntity to convert.
+   * @returns A NamedSessionTab with default values for missing properties.
+   */
+  private static convertSyncedTabToNamedSessionTab(
+    syncedTab: SyncedTabEntity,
+  ): NamedSessionTab {
+    return {
+      tabId: null, // Default value as SyncedTabEntity doesn't have tabId
+      title: syncedTab.title,
+      url: syncedTab.url,
+      updatedAt: Date.now(), // Use the current timestamp as a default
+      owner: syncedTab.owner,
+    };
+  }
+
+  /**
+   * Updates the owner of a tab in the backend.
+   * @param backendTabId The ID of the tab to update.
+   * @param updatedTab The updated tab data, including the new owner.
+   */
+  public async updateTabOwner(
+    backendTabId: string,
+    updatedTab: SyncedTabEntity,
+  ): Promise<void> {
+    try {
+      await this.initialize();
+
+      // Convert SyncedTabEntity to NamedSessionTab
+      const fakeNamedSessionTab =
+        BookmarkStorage.convertSyncedTabToNamedSessionTab(updatedTab);
+
+      // Find the bookmark by ID
+      const bookmark = await chrome.bookmarks.get(backendTabId);
+      if (!bookmark || bookmark.length === 0) {
+        throw new Error(`Bookmark with ID ${backendTabId} not found.`);
+      }
+
+      // Update the bookmark title with the new owner metadata
+      const encodedTitle = encodeTabTitle(fakeNamedSessionTab);
+      await chrome.bookmarks.update(backendTabId, { title: encodedTitle });
+
+      console.log(
+        `Updated owner for tab ${backendTabId} to ${updatedTab.owner}`,
+      );
+    } catch (error) {
+      console.error("Error updating tab owner:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Retrieves a session using local bookmark storage data.
    * This reconstructs a NamedSession from stored bookmark folder data.
    *
