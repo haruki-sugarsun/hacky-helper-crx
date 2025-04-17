@@ -7,6 +7,7 @@ import {
 import { CONFIG_RO } from "./features/config-store.ts";
 import { OLLAMA_API_URL_DEFAULT } from "./lib/constants.ts";
 import { component_model } from "./components.ts";
+import { renderEmoji } from "./lib/emoji-helper";
 import "./sidepanel.css";
 import { SP_TRIGGER } from "./messages/messages.ts";
 
@@ -341,7 +342,6 @@ async function inspect_page() {
     currentWindow: true,
   });
   console.log(currentTab);
-
   updateStatus("🚀 Inspection starts.");
   var newVisibleText = "";
   if (isOwnHostedPage(currentTab[0])) {
@@ -611,7 +611,7 @@ function getPromiseState(promise: Promise<any>): Promise<any> {
 }
 
 async function updateStatus(status_line_str: string) {
-  status_line.innerText = status_line_str + " " + (await generateStatusLine());
+  status_line.innerHTML = renderEmoji(status_line_str + " " + (await generateStatusLine()));
   console.log(status_line_str);
 }
 
