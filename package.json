@@ -12,18 +12,22 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.26",
     "@types/jest": "^29.5.14",
+    "@types/twemoji": "^13.1.1",
     "jest": "^29.7.0",
     "ts-jest": "^29.3.2",
     "typescript": "^5.8.3",
     "vite": "^5.4.8",
-    "vite-plugin-node-polyfills": "^0.22.0"
+    "vite-plugin-node-polyfills": "^0.22.0",
+    "vite-plugin-static-copy": "^2.3.1"
   },
   "dependencies": {
+    "@twemoji/api": "^16.0.1",
     "@types/chrome": "^0.0.278",
     "@types/dom-speech-recognition": "^0.0.4",
     "ollama": "^0.5.14",
     "openai": "^4.86.1",
     "prettier": "^3.5.3",
-    "snabbdom": "^3.6.2"
+    "snabbdom": "^3.6.2",
+    "twemoji-emojis": "^14.1.0"
   }
 }
