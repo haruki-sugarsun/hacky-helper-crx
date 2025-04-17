@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { crx } from "@crxjs/vite-plugin";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 import manifest from "./manifest.json";
 
@@ -9,6 +10,15 @@ export default defineConfig({
     crx({ manifest }),
     nodePolyfills({
       overrides: { fs: "./empty-polyfills.js" },
+    }),
+    viteStaticCopy({
+      targets: [
+        {
+          // TODO: We may list only the necessary assets.
+          src: "node_modules/twemoji-emojis/vendor/72x72/*",
+          dest: "emojis/72x72",
+        },
+      ],
     }),
   ],
   server: {

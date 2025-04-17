@@ -19,8 +19,11 @@
     "vite": "^5.4.8",
     "vite-plugin-node-polyfills": "^0.22.0",
     "vitest": "^3.1.2"
+    "@types/twemoji": "^13.1.1",
+    "vite-plugin-static-copy": "^2.3.1"
   },
   "dependencies": {
+    "@twemoji/api": "^16.0.1",
     "@types/chrome": "^0.0.278",
     "@types/dom-speech-recognition": "^0.0.4",
     "ollama": "^0.5.14",
@@ -29,5 +32,6 @@
     "snabbdom": "^3.6.2",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
+    "twemoji-emojis": "^14.1.0"
   }
 }
