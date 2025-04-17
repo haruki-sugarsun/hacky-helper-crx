@@ -67,7 +67,7 @@ var currentTabId: number | undefined; // ID of the current tab
 function handleTabDrop(
   e: DragEvent,
   windowId: number | undefined,
-  sessionId: string | undefined,
+  sessionId: string | undefined
 ) {
   e.preventDefault();
   const draggedTabIdsStr = e.dataTransfer?.getData("application/json");
@@ -118,12 +118,12 @@ async function checkForDuplicates() {
 
   // Find all tabs.html tabs in this window (excluding the current one)
   const tabsHtmlTabs = tabs.filter(
-    (tab) => tab.url?.includes("tabs.html") && tab.id !== currentTabId,
+    (tab) => tab.url?.includes("tabs.html") && tab.id !== currentTabId
   );
 
   if (tabsHtmlTabs.length > 0) {
     console.log(
-      "Found another tabs.html tab in this window. Activating it and closing this one.",
+      "Found another tabs.html tab in this window. Activating it and closing this one."
     );
     // Activate the first found tabs.html tab
     await chrome.tabs.update(tabsHtmlTabs[0].id!, { active: true });
@@ -154,7 +154,7 @@ function getSessionParamsFromUrl(): {
 
   if (sessionId) {
     console.log(
-      `Found session parameters in URL: sessionId=${sessionId}, sessionName=${sessionName}`,
+      `Found session parameters in URL: sessionId=${sessionId}, sessionName=${sessionName}`
     );
   }
 
@@ -163,7 +163,7 @@ function getSessionParamsFromUrl(): {
 
 // Restore session-window association if needed
 async function restoreSessionWindowAssociation(
-  allNamedSessions: NamedSession[],
+  allNamedSessions: NamedSession[]
 ) {
   const { sessionId: sessionIdFromUrl, sessionName: sessionNameFromUrl } =
     getSessionParamsFromUrl();
@@ -178,13 +178,13 @@ async function restoreSessionWindowAssociation(
     // TODO: We actually need only the session by Id.
     // TODO: We also need to check if the window exists or not, and override if not exiting.
     const session = allNamedSessions.find(
-      (s: NamedSession) => s.id === sessionIdFromUrl,
+      (s: NamedSession) => s.id === sessionIdFromUrl
     );
     if (session) {
       // TODO: Define the function in service-worker-interface and service-worker-handler. Missing type complicated the thing.
       if (!session.windowId || session.windowId === null) {
         console.log(
-          `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`,
+          `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`
         );
         // Update the session with the current window ID
         const updateResponse =
@@ -202,7 +202,7 @@ async function restoreSessionWindowAssociation(
       } else if (session.windowId !== currentWindow.id) {
         // TODO: De-dup this logic. as it maybe useful in other methods and actually we have another similar code.
         console.log(
-          `Duplicate Tabs UI instance detected for session ${sessionIdFromUrl}: already associated with window ${session.windowId} (current window: ${currentWindow.id}). Skipping update.`,
+          `Duplicate Tabs UI instance detected for session ${sessionIdFromUrl}: already associated with window ${session.windowId} (current window: ${currentWindow.id}). Skipping update.`
         );
         if (chrome.notifications) {
           // Ensure permission added in manifest
@@ -216,14 +216,14 @@ async function restoreSessionWindowAssociation(
         }
       } else {
         console.log(
-          `Session ${sessionIdFromUrl} is already properly associated with the current window ${currentWindow.id}`,
+          `Session ${sessionIdFromUrl} is already properly associated with the current window ${currentWindow.id}`
         );
       }
     } else if (sessionNameFromUrl) {
       // TODO: This check looks naive. Let's reconsider the condition more.
       // If the session doesn't exist but we have a name, create it
       console.log(
-        `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`,
+        `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`
       );
       // Update the session with the current window ID
       const updateResponse = await chrome.runtime.sendMessage({
@@ -251,18 +251,18 @@ async function restoreSessionWindowAssociation(
  * @param allNamedSessions - Array of all named sessions.
  */
 async function updateTabsUITitleWithSessionName(
-  allNamedSessions: NamedSession[],
+  allNamedSessions: NamedSession[]
 ) {
   const currentWindow = await chrome.windows.getCurrent();
 
   const currentSession = allNamedSessions.find(
-    (session) => session.windowId === currentWindow.id,
+    (session) => session.windowId === currentWindow.id
   );
 
   if (currentSession && currentSession.name) {
     document.title = `H-H: ${currentSession.name}`; // Update the Tabs UI title with the session name
     console.log(
-      `Tabs UI title updated to session name: ${currentSession.name}`,
+      `Tabs UI title updated to session name: ${currentSession.name}`
     );
   } else {
     console.log("No named session associated with the current window.");
@@ -280,7 +280,7 @@ async function init() {
       chrome.windows.getCurrent().then((currentWindow) => {
         // Find the currently selected session/window in the UI
         const selected = document.querySelector(
-          "#named_sessions li.selected, #tabs_sessions li.selected",
+          "#named_sessions li.selected, #tabs_sessions li.selected"
         );
         let selectedWindowId: number | undefined = undefined;
         if (selected && selected.hasAttribute("data-window-id")) {
@@ -355,15 +355,17 @@ function toggleBookmarksPane() {
   const savedBookmarksContainer =
     document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
   const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
-    "#toggleBookmarksButton",
+    "#toggleBookmarksButton"
   );
   if (!savedBookmarksContainer || !toggleBookmarksButton) return;
   savedBookmarksContainer.classList.toggle("collapsed");
+
+  // Update button text based on state
   if (savedBookmarksContainer.classList.contains("collapsed")) {
-    toggleBookmarksButton.textContent = "🔖";
+    toggleBookmarksButton.innerHTML = renderEmoji("🔖");
     toggleBookmarksButton.title = "Show bookmarks panel";
   } else {
-    toggleBookmarksButton.textContent = "❌";
+    toggleBookmarksButton.innerHTML = renderEmoji("❌");
     toggleBookmarksButton.title = "Collapse bookmarks panel";
   }
 }
@@ -375,7 +377,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initSearchFunctionality();
 
   // Replace the "🔖" emoji in the toggleBookmarksButton with Twemoji
-  const toggleBookmarksButton = document.querySelector<HTMLButtonElement>("#toggleBookmarksButton");
+  const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
+    "#toggleBookmarksButton"
+  );
   if (toggleBookmarksButton) {
     toggleBookmarksButton.innerHTML = renderEmoji("🔖");
   }
@@ -383,7 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Add event listener for the toggle bookmarks button
 const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
-  "#toggleBookmarksButton",
+  "#toggleBookmarksButton"
 );
 if (toggleBookmarksButton) {
   toggleBookmarksButton.addEventListener("click", toggleBookmarksPane);
@@ -393,7 +397,7 @@ if (toggleBookmarksButton) {
 
 // Add event listener for the "Open All Bookmarks" button
 const openAllBookmarksButton = document.querySelector<HTMLButtonElement>(
-  "#openAllBookmarksButton",
+  "#openAllBookmarksButton"
 );
 if (openAllBookmarksButton) {
   openAllBookmarksButton.addEventListener("click", async () => {
@@ -404,7 +408,7 @@ if (openAllBookmarksButton) {
 
 // Add event listener for the "Open All Synced Tabs" button
 const openAllSyncedTabsButton = document.querySelector<HTMLButtonElement>(
-  "#openAllSyncedTabsButton",
+  "#openAllSyncedTabsButton"
 );
 if (openAllSyncedTabsButton) {
   openAllSyncedTabsButton.addEventListener("click", async () => {
@@ -415,7 +419,7 @@ if (openAllSyncedTabsButton) {
 
 // Add event listener for the "Takeover Tabs" button
 const takeoverSyncedTabsButton = document.querySelector<HTMLButtonElement>(
-  "#takeoverSyncedTabsButton",
+  "#takeoverSyncedTabsButton"
 );
 if (takeoverSyncedTabsButton) {
   takeoverSyncedTabsButton.addEventListener("click", async () => {
@@ -423,7 +427,7 @@ if (takeoverSyncedTabsButton) {
     try {
       // Get the currently selected session
       const selectedSessionItem = document.querySelector(
-        "#named_sessions li.selected",
+        "#named_sessions li.selected"
       );
       if (!selectedSessionItem) {
         alert("Please select a named session first");
@@ -457,7 +461,7 @@ if (takeoverSyncedTabsButton) {
         try {
           const result = await serviceWorkerInterface.takeoverTab(
             tab.id,
-            sessionId,
+            sessionId
           );
           if (result && "success" in result && result.success) {
             console.log(`Successfully took over tab: ${tab.id}`);
@@ -475,7 +479,7 @@ if (takeoverSyncedTabsButton) {
       console.error("Error taking over synced tabs:", error);
       alert(
         "Error taking over synced tabs: " +
-          (error instanceof Error ? error.message : String(error)),
+          (error instanceof Error ? error.message : String(error))
       );
     }
   });
@@ -509,7 +513,7 @@ function createSessionListItem(
   label: string,
   isCurrent: boolean,
   sessionId?: string,
-  windowId?: number,
+  windowId?: number
 ): HTMLLIElement {
   const li = document.createElement("li");
   // TODO: Call SessionLabel constroctor, so that we can be more TYPED!
@@ -640,12 +644,12 @@ async function migrateTabsToSession(tabIds: number[], sessionId: string) {
         response.payload.success
       ) {
         console.log(
-          `Tab ${tabId} successfully migrated to session ${sessionId}`,
+          `Tab ${tabId} successfully migrated to session ${sessionId}`
         );
       } else {
         console.error(
           `Failed to migrate tab ${tabId} to session ${sessionId}:`,
-          response,
+          response
         );
       }
     }
@@ -682,7 +686,7 @@ async function forceSyncSession(sessionId: string) {
     console.error("Error syncing session to bookmarks:", error);
     alert(
       "Error syncing session to bookmarks: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -727,7 +731,7 @@ async function updateSessionTabs(sessionId: string) {
     console.error("Error updating session tabs:", error);
     alert(
       "Error updating session tabs: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -783,7 +787,7 @@ async function renameSession(sessionId: string) {
     console.error("Error renaming session:", error);
     alert(
       "Error renaming session: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -796,7 +800,7 @@ async function deleteSession(sessionId: string) {
   // Confirm deletion
   if (
     !confirm(
-      "Are you sure you want to delete this session? This will remove the session from the list but not close any windows or tabs.",
+      "Are you sure you want to delete this session? This will remove the session from the list but not close any windows or tabs."
     )
   ) {
     return;
@@ -833,7 +837,7 @@ async function deleteSession(sessionId: string) {
     console.error("Error deleting session:", error);
     alert(
       "Error deleting session: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -903,7 +907,7 @@ function promptCreateNamedSession() {
 
 // Helper function to create a closed session list item
 function createClosedSessionListItem(
-  closedSession: ClosedNamedSession,
+  closedSession: ClosedNamedSession
 ): HTMLLIElement {
   const li = document.createElement("li");
   const sessionLabel = document.createElement("session-label") as any;
@@ -946,7 +950,7 @@ function createClosedSessionListItem(
   // Add double-click handler to restore the session
   li.addEventListener("dblclick", () => {
     console.log(
-      `Double-clicked closed session: ${closedSession.id}. Restoring this session.`,
+      `Double-clicked closed session: ${closedSession.id}. Restoring this session.`
     );
     restoreClosedSession(closedSession.id);
   });
@@ -983,7 +987,7 @@ async function restoreClosedSession(sessionId: string) {
     console.error("Error restoring session:", error);
     alert(
       "Error restoring session: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -998,7 +1002,7 @@ async function pullWindow(targetWindowId: number) {
   try {
     const currentWindow = await chrome.windows.getCurrent();
     console.log(
-      `Current window id: ${currentWindow.id}, position: top=${currentWindow.top}, left=${currentWindow.left}`,
+      `Current window id: ${currentWindow.id}, position: top=${currentWindow.top}, left=${currentWindow.left}`
     );
     if (currentWindow.id === targetWindowId) {
       alert("Target window is already the current window.");
@@ -1016,7 +1020,7 @@ async function pullWindow(targetWindowId: number) {
     console.error("Error pulling window:", error);
     alert(
       "Error pulling window: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -1095,7 +1099,7 @@ async function updateUI(
     windowId?: number;
     sessionId?: string;
     isClosed?: boolean;
-  } /* Optionally specify the session to be selected after the UI refresh */,
+  } /* Optionally specify the session to be selected after the UI refresh */
 ) {
   // Log window and tab information for debugging
   windows.forEach((w) => {
@@ -1130,7 +1134,7 @@ async function updateUI(
 
   // Sort named sessions alphabetically by name
   const sortedNamedSessions = [...state_sessions].sort((a, b) =>
-    a.name.localeCompare(b.name),
+    a.name.localeCompare(b.name)
   );
 
   // Sort windows by ID for unnamed sessions
@@ -1149,7 +1153,7 @@ async function updateUI(
   const addSessionEventListeners = (
     listItem: HTMLLIElement,
     win: chrome.windows.Window,
-    associatedSession: NamedSession | undefined,
+    associatedSession: NamedSession | undefined
   ) => {
     // Make the label clickable to select the session
     listItem.addEventListener("click", () => {
@@ -1208,7 +1212,7 @@ async function updateUI(
     if (win.id) {
       listItem.addEventListener("dblclick", async () => {
         console.log(
-          `Double-clicked window: ${win.id}. Switching to this window.`,
+          `Double-clicked window: ${win.id}. Switching to this window.`
         );
         try {
           // Additionally reload the tabs.html in that window or open it if not yet opened
@@ -1216,14 +1220,14 @@ async function updateUI(
             await ensureTabsHtmlInWindow(win.id!);
           } catch (error) {
             console.error(
-              `Error managing tabs.html in window ${win.id}: ${error instanceof Error ? error.message : String(error)}`,
+              `Error managing tabs.html in window ${win.id}: ${error instanceof Error ? error.message : String(error)}`
             );
           }
           await chrome.windows.update(win.id!, { focused: true });
           console.log(`Successfully switched to window: ${win.id}`);
         } catch (error) {
           console.error(
-            `Error switching to window: ${error instanceof Error ? error.message : error}`,
+            `Error switching to window: ${error instanceof Error ? error.message : error}`
           );
         }
       });
@@ -1251,7 +1255,7 @@ async function updateUI(
       label,
       isCurrent,
       session.id,
-      win.id,
+      win.id
     );
 
     // Add event listeners
@@ -1274,14 +1278,14 @@ async function updateUI(
   for (const win of sortedWindows) {
     // Skip windows that have an associated named session
     const hasNamedSession = sortedNamedSessions.some(
-      (session) => session.windowId === win.id && session.name,
+      (session) => session.windowId === win.id && session.name
     );
     if (hasNamedSession) continue;
 
     // For unnamed sessions, we can ignore windows which has no valid http, https, or extension URL scheme.
     if (win.tabs) {
       const meaningfulTabs = win.tabs.filter(
-        (tab) => tab.url && /^https?:|^chrome-extension:/.test(tab.url),
+        (tab) => tab.url && /^https?:|^chrome-extension:/.test(tab.url)
       );
       if (meaningfulTabs.length === 0) {
         continue;
@@ -1328,7 +1332,7 @@ async function updateUI(
   } else {
     // Sort closed sessions alphabetically by name
     const sortedClosedSessions = [...closedSessions].sort((a, b) =>
-      a.name.localeCompare(b.name),
+      a.name.localeCompare(b.name)
     );
 
     // Add each closed session
@@ -1359,7 +1363,7 @@ async function updateUI(
     // Clear all other selections
     document
       .querySelectorAll(
-        "#named_sessions li, #tabs_sessions li, #closed_sessions li",
+        "#named_sessions li, #tabs_sessions li, #closed_sessions li"
       )
       .forEach((item) => item.classList.remove("selected"));
 
@@ -1378,14 +1382,14 @@ async function updateUI(
     if (selectedWindowId) {
       chrome.tabs.query({ windowId: selectedWindowId }).then((windowTabs) => {
         console.log(
-          `Auto-loading ${windowTabs.length} tabs for selected window ${selectedWindowId}`,
+          `Auto-loading ${windowTabs.length} tabs for selected window ${selectedWindowId}`
         );
         updateTabsTable(selectedWindowId, windowTabs);
       });
 
       // If this is a named session, fetch and display saved bookmarks and synced tabs
       const associatedSession = sortedNamedSessions.find(
-        (session) => session.windowId === selectedWindowId && session.name,
+        (session) => session.windowId === selectedWindowId && session.name
       );
       // TODO: We have similar code snippet in this method. Consider refactoring them into renderSessionTabsPane() or something.
       if (associatedSession) {
@@ -1416,7 +1420,7 @@ async function updateUI(
                 // TODO: Factor out the repeating code.
                 const toggleBookmarksButton =
                   document.querySelector<HTMLButtonElement>(
-                    "#toggleBookmarksButton",
+                    "#toggleBookmarksButton"
                   );
                 if (toggleBookmarksButton) {
                   toggleBookmarksButton.textContent = "❌";
@@ -1450,7 +1454,7 @@ async function updateUI(
 // Helper function to update the tabs table with tabs from a specific window
 async function updateTabsTable(
   selectedWindowId: number, // windowId for the session shown in the UI.
-  tabs: chrome.tabs.Tab[],
+  tabs: chrome.tabs.Tab[]
 ) {
   // Get the current window where tabs.html is running
   const currentWindow = await chrome.windows.getCurrent();
@@ -1470,7 +1474,7 @@ async function updateTabsTable(
 
   // Add event listener to the "Migrate Selected" button
   const migrateSelectedButton = document.querySelector<HTMLButtonElement>(
-    "#migrateSelectedButton",
+    "#migrateSelectedButton"
   );
   if (migrateSelectedButton) {
     // Remove any existing event listeners
@@ -1505,7 +1509,7 @@ async function updateTabsTable(
     // Check if this is a named session
     const currentWindow = tabs[0]?.windowId;
     const currentSession = state_sessions.find(
-      (session) => session.windowId === currentWindow && session.name,
+      (session) => session.windowId === currentWindow && session.name
     );
 
     if (currentSession) {
@@ -1525,7 +1529,7 @@ async function updateTabsTable(
       setTimeout(() => {
         const openSavedBookmarksButton =
           document.querySelector<HTMLButtonElement>(
-            "#openSavedBookmarksButton",
+            "#openSavedBookmarksButton"
           );
         if (openSavedBookmarksButton) {
           openSavedBookmarksButton.addEventListener("click", async () => {
@@ -1546,7 +1550,7 @@ async function updateTabsTable(
 
   // Get the current session if it's a named session
   const currentSession = state_sessions.find(
-    (session) => session.windowId === selectedWindowId && session.name,
+    (session) => session.windowId === selectedWindowId && session.name
   );
 
   // Get synced bookmarks and saved bookmarks for the current session if it exists
@@ -1558,12 +1562,12 @@ async function updateTabsTable(
     try {
       // Get synced bookmarks via session_management abstraction
       syncedBookmarks = await serviceWorkerInterface.getSyncedOpenTabs(
-        currentSession.id,
+        currentSession.id
       );
 
       // Get saved bookmarks
       savedBookmarks = await serviceWorkerInterface.getSavedBookmarks(
-        currentSession.id,
+        currentSession.id
       );
     } catch (error) {
       console.error("Error fetching bookmarks:", error);
@@ -1612,13 +1616,13 @@ async function updateTabsTable(
         const tabId = parseInt(
           row
             .querySelector(".tab-select-checkbox")
-            ?.getAttribute("data-tab-id") || "0",
+            ?.getAttribute("data-tab-id") || "0"
         );
         selectedTabIds = [tabId];
       }
       e.dataTransfer?.setData(
         "application/json",
-        JSON.stringify(selectedTabIds),
+        JSON.stringify(selectedTabIds)
       );
       row.classList.add("dragging"); // Add a visual indicator for dragging
 
@@ -1626,7 +1630,7 @@ async function updateTabsTable(
       const allTabRows = document.querySelectorAll("#tabs_tablist tbody tr");
       allTabRows.forEach((tabRow) => {
         const checkbox = tabRow.querySelector<HTMLInputElement>(
-          ".tab-select-checkbox",
+          ".tab-select-checkbox"
         );
         if (checkbox) {
           const tabId = parseInt(checkbox.getAttribute("data-tab-id") || "0");
@@ -1688,7 +1692,7 @@ async function updateTabsTable(
     let summarySnippet = "No summary available yet.";
     if (tab.url) {
       const tabSummary = allTabSummaries.find(
-        (summary) => summary.url === tab.url,
+        (summary) => summary.url === tab.url
       );
       if (tabSummary && tabSummary.summaries.length > 0) {
         const digest = tabSummary.summaries[0]; // Get the most recent summary
@@ -1767,7 +1771,7 @@ async function updateTabsTable(
           console.log(`Successfully activated tab: ${updatedTab?.id}`);
         } catch (error) {
           console.error(
-            `Error activating tab: ${error instanceof Error ? error.message : error}`,
+            `Error activating tab: ${error instanceof Error ? error.message : error}`
           );
         }
       });
@@ -1830,7 +1834,7 @@ async function updateTabsTable(
           updateUI(state_windows, { windowId: selectedWindowId });
         } catch (error) {
           console.error(
-            `Error closing tab: ${error instanceof Error ? error.message : error}`,
+            `Error closing tab: ${error instanceof Error ? error.message : error}`
           );
         }
       }
@@ -1843,7 +1847,7 @@ async function updateTabsTable(
 
     allTabRows.forEach((row) => {
       const checkbox = row.querySelector<HTMLInputElement>(
-        ".tab-select-checkbox",
+        ".tab-select-checkbox"
       );
       if (checkbox) {
         const tabId = parseInt(checkbox.getAttribute("data-tab-id") || "0");
@@ -1871,7 +1875,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
   const tabInfoDiv =
     document.querySelector<HTMLDivElement>("#migrationTabInfo")!;
   const suggestedDestinationsDiv = document.querySelector<HTMLDivElement>(
-    "#suggestedDestinations",
+    "#suggestedDestinations"
   )!;
   const allDestinationsDiv =
     document.querySelector<HTMLDivElement>("#allDestinations")!;
@@ -1942,7 +1946,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
             });
 
             suggestedDestinationsDiv.appendChild(destinationOption);
-          },
+          }
         );
       }
     } else {
@@ -1986,7 +1990,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
 
   // Add event listener for the cancel button
   const cancelButton = document.querySelector<HTMLButtonElement>(
-    "#cancelMigrationButton",
+    "#cancelMigrationButton"
   )!;
   cancelButton.addEventListener("click", () => {
     dialog.style.display = "none";
@@ -2000,7 +2004,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
 function getSelectedTabIds(): number[] {
   const selectedTabIds: number[] = [];
   const checkboxes = document.querySelectorAll<HTMLInputElement>(
-    ".tab-select-checkbox:checked",
+    ".tab-select-checkbox:checked"
   );
 
   checkboxes.forEach((checkbox) => {
@@ -2022,7 +2026,7 @@ async function showMigrationDialogForMultipleTabs(tabIds: number[]) {
   const tabInfoDiv =
     document.querySelector<HTMLDivElement>("#migrationTabInfo")!;
   const suggestedDestinationsDiv = document.querySelector<HTMLDivElement>(
-    "#suggestedDestinations",
+    "#suggestedDestinations"
   )!;
   const allDestinationsDiv =
     document.querySelector<HTMLDivElement>("#allDestinations")!;
@@ -2076,7 +2080,7 @@ async function showMigrationDialogForMultipleTabs(tabIds: number[]) {
 
   // Add event listener for the cancel button
   const cancelButton = document.querySelector<HTMLButtonElement>(
-    "#cancelMigrationButton",
+    "#cancelMigrationButton"
   )!;
   cancelButton.addEventListener("click", () => {
     dialog.style.display = "none";
@@ -2096,7 +2100,7 @@ async function migrateTabs(tabIds: number[], windowId: number) {
     const response = await serviceWorkerInterface.migrateTabs(
       tabIds,
       undefined,
-      windowId,
+      windowId
     );
     if ("success" in response) {
       console.log("Tabs migrated successfully:", response.success);
@@ -2120,7 +2124,7 @@ async function migrateTabs(tabIds: number[], windowId: number) {
 
 // Add event listener for the "Categorize Tabs" button
 const categorizeTabsButton = document.querySelector<HTMLButtonElement>(
-  "#categorizeTabsButton",
+  "#categorizeTabsButton"
 );
 if (categorizeTabsButton) {
   categorizeTabsButton.addEventListener("click", async () => {
@@ -2265,7 +2269,7 @@ async function showCategoriesDialog() {
 
   // Add event listener for the close button
   const closeButton = document.querySelector<HTMLButtonElement>(
-    "#closeCategoriesButton",
+    "#closeCategoriesButton"
   )!;
   closeButton.addEventListener("click", () => {
     dialog.style.display = "none";
@@ -2279,7 +2283,7 @@ async function saveTabToBookmarks(tabId: number) {
   try {
     // Get the currently selected session
     const selectedSessionItem = document.querySelector(
-      "#named_sessions li.selected",
+      "#named_sessions li.selected"
     );
     if (!selectedSessionItem) {
       alert("Please select a named session first");
@@ -2323,7 +2327,7 @@ async function saveTabToBookmarks(tabId: number) {
     console.error("Error saving tab to bookmarks:", error);
     alert(
       "Error saving tab to bookmarks: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -2332,7 +2336,7 @@ async function saveTabToBookmarks(tabId: number) {
 // add the following code to handle Named Session creation:
 
 const createNamedSessionButton = document.querySelector<HTMLButtonElement>(
-  "#createNamedSessionButton",
+  "#createNamedSessionButton"
 );
 const namedSessionInput =
   document.querySelector<HTMLInputElement>("#namedSessionInput");
@@ -2396,7 +2400,7 @@ async function fetchAndDisplaySyncedTabs(sessionId: string) {
     // Filter synced tabs to only those that aren't already open, and owned by the other instances.
     const tabsNotOpen = syncedTabs.filter(
       (tab) =>
-        !openTabUrls.has(tab.url) && (!tab.owner || tab.owner !== instanceId),
+        !openTabUrls.has(tab.url) && (!tab.owner || tab.owner !== instanceId)
     );
     // TODO: Annotate them and see markers for "The same page is open" and "Owner by others".
 
@@ -2462,7 +2466,7 @@ async function displaySyncedTabs(tabs: SyncedTabEntity[], sessionId: string) {
       try {
         const result = await serviceWorkerInterface.takeoverTab(
           tab.id,
-          sessionId,
+          sessionId
         );
         if (result && "success" in result && result.success) {
           console.log(`Successfully took over tab: ${tab.id}`);
@@ -2650,7 +2654,7 @@ async function removeBookmark(bookmarkId: string) {
 
       // Get the currently selected session
       const selectedSessionItem = document.querySelector(
-        "#named_sessions li.selected",
+        "#named_sessions li.selected"
       );
       if (selectedSessionItem) {
         const sessionId = selectedSessionItem.getAttribute("data-session-id");
@@ -2667,7 +2671,7 @@ async function removeBookmark(bookmarkId: string) {
     console.error("Error removing bookmark:", error);
     alert(
       "Error removing bookmark: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -2698,7 +2702,7 @@ async function openSavedBookmark(bookmarkId: string) {
     console.error("Error opening bookmark:", error);
     alert(
       "Error opening bookmark: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -2711,7 +2715,7 @@ async function openAllBookmarks() {
     // TODO: Consider deciding these common logi about the UI state.
     // Get the currently selected session
     const selectedSessionItem = document.querySelector(
-      "#named_sessions li.selected",
+      "#named_sessions li.selected"
     );
     if (!selectedSessionItem) {
       alert("Please select a named session first");
@@ -2750,7 +2754,7 @@ async function openAllBookmarks() {
 
     // Filter bookmarks to only those that aren't already open
     const bookmarksToOpen = bookmarks.filter(
-      (bookmark) => !openTabUrls.has(bookmark.url),
+      (bookmark) => !openTabUrls.has(bookmark.url)
     );
 
     if (bookmarksToOpen.length === 0) {
@@ -2774,7 +2778,7 @@ async function openAllBookmarks() {
     console.error("Error opening all bookmarks:", error);
     alert(
       "Error opening all bookmarks: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -2786,7 +2790,7 @@ async function openAllSyncedTabs() {
   try {
     // Get the currently selected session
     const selectedSessionItem = document.querySelector(
-      "#named_sessions li.selected",
+      "#named_sessions li.selected"
     );
     if (!selectedSessionItem) {
       alert("Please select a named session first");
@@ -2838,7 +2842,7 @@ async function openAllSyncedTabs() {
         openCount++;
       } catch (error) {
         console.error(
-          `Error opening synced tab: ${error instanceof Error ? error.message : String(error)}`,
+          `Error opening synced tab: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -2848,7 +2852,7 @@ async function openAllSyncedTabs() {
     console.error("Error opening all synced tabs:", error);
     alert(
       "Error opening all synced tabs: " +
-        (error instanceof Error ? error.message : String(error)),
+        (error instanceof Error ? error.message : String(error))
     );
   }
 }
@@ -2861,7 +2865,7 @@ async function openAllSyncedTabs() {
  */
 function renderSessionsMetadata(
   session: NamedSession | null,
-  windowId?: number,
+  windowId?: number
 ) {
   if (session) {
     const createdDate = new Date(session.createdAt).toLocaleString();
@@ -2889,7 +2893,7 @@ function getSelectedSessionInfo(): {
   isClosed?: boolean;
 } {
   const selectedSessionItem = document.querySelector(
-    "#named_sessions li.selected, #tabs_sessions li.selected, #closed_sessions li.selected",
+    "#named_sessions li.selected, #tabs_sessions li.selected, #closed_sessions li.selected"
   );
   if (!selectedSessionItem) return {};
 

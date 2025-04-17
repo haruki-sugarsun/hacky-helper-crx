@@ -111,3 +111,24 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+/* Twemoji styling */
+.twemoji {
+  height: 1em;
+  width: 1em;
+  vertical-align: -0.125em; /* aligns emoji with text baseline */
+  display: inline-block;
+  margin: 0 0.05em;
+  user-select: none;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* If Twemoji SVGs are used directly */
+.twemoji svg {
+  height: 1em;
+  width: 1em;
+  vertical-align: -0.125em;
+  display: inline-block;
+}
