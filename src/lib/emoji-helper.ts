@@ -14,7 +14,7 @@ export function renderEmoji(
   text: string,
   options?: TwemojiOptions | ParseCallback,
 ): string {
-  return twemoji.parse(text, {...options, base: EMOJI_ASSET_BASE});
+  return twemoji.parse(text, {...options, base: EMOJI_ASSET_BASE, className: 'twemoji'});
 }
 
 /**
