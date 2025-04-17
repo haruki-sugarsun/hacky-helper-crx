@@ -279,10 +279,10 @@ if (toggleBookmarksButton) {
 
     // Update button text based on state
     if (savedBookmarksContainer.classList.contains("collapsed")) {
-      toggleBookmarksButton.textContent = "🔖";
+      toggleBookmarksButton.innerHTML = renderEmoji("🔖");
       toggleBookmarksButton.title = "Show bookmarks panel";
     } else {
-      toggleBookmarksButton.textContent = "❌";
+      toggleBookmarksButton.innerHTML = renderEmoji("❌");"❌";
       toggleBookmarksButton.title = "Collapse bookmarks panel";
     }
   });
