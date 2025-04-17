@@ -30,6 +30,7 @@ import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
 import { CONFIG_RO } from "./features/config-store";
 import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
+import { renderEmoji } from "./lib/emoji-helper";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -372,6 +373,12 @@ document.addEventListener("DOMContentLoaded", () => {
   init();
   // Initialize search functionality
   initSearchFunctionality();
+
+  // Replace the "🔖" emoji in the toggleBookmarksButton with Twemoji
+  const toggleBookmarksButton = document.querySelector<HTMLButtonElement>("#toggleBookmarksButton");
+  if (toggleBookmarksButton) {
+    toggleBookmarksButton.innerHTML = renderEmoji("🔖");
+  }
 });
 
 // Add event listener for the toggle bookmarks button
