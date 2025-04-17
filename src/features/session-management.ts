@@ -684,6 +684,41 @@ export async function getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
 ============================ */
 
 /**
+ * Takes over a tab by opening its URL in the current session and updating its ownership.
+ * @param backendTabId The backend tab ID (bookmark ID).
+ * @returns Promise<void>
+ */
+export async function takeoverTab(
+  backendTabId: string,
+  sessionId: string,
+): Promise<void> {
+  try {
+    const bookmarkStorage = BookmarkStorage.getInstance();
+    const syncedTabs = await bookmarkStorage.getSyncedOpenTabs(sessionId);
+    const tabToTakeover = syncedTabs.find((tab) => tab.id === backendTabId);
+
+    if (!tabToTakeover) {
+      throw new Error(`Tab with ID ${backendTabId} not found.`);
+    }
+
+    // Open the URL in the current session
+    await chrome.tabs.create({ url: tabToTakeover.url });
+
+    // Update the tab's owner in the backend
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const updatedTab = { ...tabToTakeover, owner: instanceId };
+    await BookmarkStorage.getInstance().updateTabOwner(
+      backendTabId,
+      updatedTab,
+    );
+    console.log(`Successfully took over tab ${backendTabId}.`);
+  } catch (error) {
+    console.error("Error taking over tab:", error);
+    throw error;
+  }
+}
+
+/**
  * Migrates multiple tabs to a different window/session
  * @param tabIds Array of IDs of the tabs to migrate
  * @param windowId ID of the destination window
