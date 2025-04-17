@@ -1686,12 +1686,12 @@ async function updateTabsTable(
     if (currentSession && tab.url) {
       // Saved bookmark indicator has the higher preference.
       if (savedUrls.has(tab.url)) {
-        statusIndicators += `<span class="sync-status synced" title="Tab is saved in bookmarks">⭐</span>`;
+        statusIndicators += `<span class="sync-status synced" title="Tab is saved in bookmarks">${renderEmoji("⭐")}</span>`;
       } else if (syncedUrls.has(tab.url)) {
         // Sync status indicator
-        statusIndicators += `<span class="sync-status synced" title="Tab is synced to bookmarks">✓</span>`;
+        statusIndicators += `<span class="sync-status synced" title="Tab is synced to bookmarks">${renderEmoji("✔️")}</span>`;
       } else {
-        statusIndicators += `<span class="sync-status not-synced" title="Tab exists in window but is not synced to bookmarks">⚠️</span>`;
+        statusIndicators += `<span class="sync-status not-synced" title="Tab exists in window but is not synced to bookmarks">${renderEmoji("⚠️")}</span>`;
       }
     }
 
