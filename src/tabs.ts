@@ -305,6 +305,74 @@ if (openAllSyncedTabsButton) {
   });
 }
 
+// Add event listener for the "Takeover Tabs" button
+const takeoverSyncedTabsButton = document.querySelector<HTMLButtonElement>(
+  "#takeoverSyncedTabsButton",
+);
+if (takeoverSyncedTabsButton) {
+  takeoverSyncedTabsButton.addEventListener("click", async () => {
+    console.log("Taking over synced tabs from other devices");
+    try {
+      // Get the currently selected session
+      const selectedSessionItem = document.querySelector(
+        "#named_sessions li.selected",
+      );
+      if (!selectedSessionItem) {
+        alert("Please select a named session first");
+        return;
+      }
+
+      // Extract session ID from the session-label web component inside the selected item
+      const sessionLabel = selectedSessionItem.querySelector("session-label");
+      if (!sessionLabel) {
+        alert("No session label found for the selected session");
+        return;
+      }
+
+      const sessionId = sessionLabel.getAttribute("data-session-id");
+      if (!sessionId) {
+        alert("No session ID found for the selected session");
+        return;
+      }
+
+      // Get synced tabs for the session
+      const syncedTabs =
+        await serviceWorkerInterface.getSyncedOpenTabs(sessionId);
+      if (!syncedTabs || syncedTabs.length === 0) {
+        alert("No synced tabs found for this session");
+        return;
+      }
+
+      // Take over each synced tab
+      // TODO: We should also check if the tab is already open in this window. i.e. we only take over inactive synced tabs found in the backend.
+      for (const tab of syncedTabs) {
+        try {
+          const result = await serviceWorkerInterface.takeoverTab(
+            tab.id,
+            sessionId,
+          );
+          if (result && "success" in result && result.success) {
+            console.log(`Successfully took over tab: ${tab.id}`);
+          } else {
+            console.error(`Failed to take over tab: ${tab.id}`);
+          }
+          console.log(`Successfully took over tab: ${tab.id}`);
+        } catch (error) {
+          console.error(`Error taking over tab ${tab.id}:`, error);
+        }
+      }
+
+      alert("Successfully took over all synced tabs");
+    } catch (error) {
+      console.error("Error taking over synced tabs:", error);
+      alert(
+        "Error taking over synced tabs: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
+    }
+  });
+}
+
 // Add event listener for the "button to request the tab summaries."
 const requestTabSummariesButton = document.querySelector<HTMLButtonElement>(
   "#requestTabSummariesButton",
@@ -2092,11 +2160,16 @@ async function fetchAndDisplaySyncedTabs(sessionId: string) {
     // Create a set of open tab URLs for quick lookup
     const openTabUrls = new Set(openTabs.map((tab) => tab.url));
 
-    // Filter synced tabs to only those that aren't already open
-    const tabsNotOpen = syncedTabs.filter((tab) => !openTabUrls.has(tab.url));
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    // Filter synced tabs to only those that aren't already open, and owned by the other instances.
+    const tabsNotOpen = syncedTabs.filter(
+      (tab) =>
+        !openTabUrls.has(tab.url) && (!tab.owner || tab.owner !== instanceId),
+    );
+    // TODO: Annotate them and see markers for "The same page is open" and "Owner by others".
 
     // Display the tabs that aren't open
-    displaySyncedTabs(tabsNotOpen);
+    displaySyncedTabs(tabsNotOpen, sessionId);
   } catch (error) {
     console.error("Error fetching synced tabs:", error);
     clearSyncedTabs();
@@ -2106,7 +2179,7 @@ async function fetchAndDisplaySyncedTabs(sessionId: string) {
 /**
  * Displays synced tabs in the synced tabs section
  */
-function displaySyncedTabs(tabs: SyncedTabEntity[]) {
+async function displaySyncedTabs(tabs: SyncedTabEntity[], sessionId: string) {
   const syncedTabsContainer =
     document.querySelector<HTMLDivElement>("#synced_tabs")!;
   const tabsList = syncedTabsContainer.querySelector("ul")!;
@@ -2123,6 +2196,7 @@ function displaySyncedTabs(tabs: SyncedTabEntity[]) {
   }
 
   // Add each tab to the list
+  const instanceId = await CONFIG_RO.INSTANCE_ID();
   tabs.forEach((tab) => {
     const listItem = document.createElement("li");
 
@@ -2137,7 +2211,7 @@ function displaySyncedTabs(tabs: SyncedTabEntity[]) {
     ownerContainer.className = "synced-tab-owner";
     // TODO: Fix this as this is a tentative stub implementation.
     const owner = tab.owner;
-    if (owner && owner !== "local") {
+    if (owner && owner !== instanceId) {
       ownerContainer.textContent = "Owner: " + owner + " (Different)";
       ownerContainer.classList.add("different-owner");
     } else {
@@ -2149,22 +2223,28 @@ function displaySyncedTabs(tabs: SyncedTabEntity[]) {
     const actionsContainer = document.createElement("div");
     actionsContainer.className = "synced-tab-actions";
 
-    // Add open button
-    const openButton = document.createElement("button");
-    openButton.className = "synced-tab-action-button";
-    openButton.textContent = "Open";
-    openButton.addEventListener("click", async () => {
+    const takeoverButton = document.createElement("button");
+    takeoverButton.className = "synced-tab-action-button";
+    takeoverButton.textContent = "Takeover";
+    takeoverButton.addEventListener("click", async () => {
       try {
-        await chrome.tabs.create({ url: tab.url });
-      } catch (error) {
-        console.error("Error opening tab:", error);
-        alert(
-          "Error opening tab: " +
-            (error instanceof Error ? error.message : String(error)),
+        const result = await serviceWorkerInterface.takeoverTab(
+          tab.id,
+          sessionId,
         );
+        if (result && "success" in result && result.success) {
+          console.log(`Successfully took over tab: ${tab.id}`);
+          alert(`Tab ${tab.id} successfully taken over.`);
+        } else {
+          console.error(`Failed to take over tab: ${tab.id}`);
+          alert(`Failed to take over tab ${tab.id}.`);
+        }
+      } catch (error) {
+        console.error(`Error taking over tab ${tab.id}:`, error);
+        alert(`Error taking over tab ${tab.id}: ${error}`);
       }
     });
-    actionsContainer.appendChild(openButton);
+    actionsContainer.appendChild(takeoverButton);
 
     listItem.appendChild(actionsContainer);
 

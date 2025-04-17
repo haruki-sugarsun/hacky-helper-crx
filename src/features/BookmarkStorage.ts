@@ -177,6 +177,11 @@ export class BookmarkStorage {
     sessionFolder: BookmarkSessionFolder,
     tabs: NamedSessionTab[],
   ): Promise<void> {
+    // Our strategy is the following:
+    // - Keep the given `tabs` stored at the end.
+    // - Remove the bookmarks owned by the current instance, and not in the `tabs`.
+    // - Dedup the `tabs` by URL and remove unnecessary ones.
+
     try {
       // Get existing bookmarks in the "Opened Pages" folder
       const existingBookmarks = await chrome.bookmarks.getChildren(
@@ -190,13 +195,16 @@ export class BookmarkStorage {
       >();
       existingBookmarks.forEach((bookmark) => {
         if (bookmark.url) {
-          existingBookmarksByUrl.set(bookmark.url, bookmark);
+          if (existingBookmarksByUrl.has(bookmark.url)) {
+            // Dedup using URL.
+            chrome.bookmarks.remove(bookmark.id);
+          } else {
+            existingBookmarksByUrl.set(bookmark.url, bookmark);
+          }
         }
       });
 
       // Process each tab
-      // TODO: This won't work as expected if the `tabs` have multiple elements with the same URL.
-      //       Consider ignore duplicates in `tabs`.
       for (const tab of tabs) {
         if (!tab.url) continue;
 
@@ -223,10 +231,14 @@ export class BookmarkStorage {
         }
       }
 
+      const instanceId = await CONFIG_RO.INSTANCE_ID();
       // Remove any bookmarks that no longer exist in the tabs
       for (const [_, bookmark] of existingBookmarksByUrl) {
-        // TODO: Only delete the ones owned by the current Hacky-Helper-CRX instance.
-        await chrome.bookmarks.remove(bookmark.id);
+        // Only delete the ones owned by the current Hacky-Helper-CRX instance.
+        const { metadata } = decodeTabTitle(bookmark.title);
+        if (metadata?.owner === instanceId) {
+          await chrome.bookmarks.remove(bookmark.id);
+        }
       }
     } catch (error) {
       console.error("Error syncing opened pages:", error);
