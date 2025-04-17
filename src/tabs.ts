@@ -2460,7 +2460,7 @@ async function fetchAndDisplaySyncedTabs(sessionId: string) {
       (tab) =>
         !openTabUrls.has(tab.url) && (!tab.owner || tab.owner !== instanceId),
     );
-    // TODO: Annotate them and see markers for "The same page is open" and "Owner by others".
+    // TODO: Annotate them and show markers for "The same page is open" and "Owner by others".
 
     // Display the tabs that aren't open
     displaySyncedTabs(tabsNotOpen, sessionId);
