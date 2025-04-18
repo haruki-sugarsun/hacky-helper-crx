@@ -8,4 +8,9 @@ And always refer `.clinerules` as well.
 
 ## Strategy and Next Steps (UPDATE THIS SECTION TO TRACK THE CURRENT STATUS)
 
-- n/a
+- Search for the "saved bookmarks" as well.
+  - Implement GET_SAVED_BOOKMARKS in service-worker-interface. (branch: WIP/refactor)
+  - Use the new method in search-functionality.ts to fetch saved bookmarks.
+  - Filter bookmarks based on the search query.
+  - Add a "Saved Bookmarks" category in the search results UI.
+  - Test the integration thoroughly.
