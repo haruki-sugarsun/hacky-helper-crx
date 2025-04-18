@@ -12,4 +12,7 @@ Example Instructions:
 
 ## Strategy and Next Steps
 
-- n/a
+1. (src/sidepanel-helper.ts) Define a helper method `openSidePanel()` - **Implemented**.
+2. (src/sidepanel-helper.ts) Implement the logic to open the sidepanel - **Implemented**.
+3. (src/popup.ts) Add a button in the popup UI to open the sidepanel and attach an event listener to call `openSidePanel()` when clicked - **Implemented**.
+4. (src/service-worker.ts) Add a global event listener to detect the hotkey and call `openSidePanel()` directly - **Implemented**.
