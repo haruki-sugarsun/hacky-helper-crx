@@ -12,9 +12,10 @@ Example Instructions:
 
 ## Strategy and Next Steps (UPDATE THIS SECTION TO TRACK THE CURRENT STATUS)
 
-- **Feature:** Add "Pull Window" in the sessions action menu.
+- **Feature:** Add "Pull Window" for unnamed session windows in the sessions action menu.
   - **UI Update:** Modify the action menu in **tabs.ts** to include a "Pull Window" option accessible from the Sessions UI.
-  - **Event Handling:** In **tabs.ts**, implement an event handler for the "Pull Window" option that calls **chrome.windows.getCurrent()** to retrieve the current window's details.
-  - **Window Relocation:** Once the current window's details are obtained, extract its position (e.g., top and left coordinates). Retrieve the target window's details via the session-to-window mapping. Then, use Chrome’s **chrome.windows.update()** API to reposition the target window so that its on-screen placement (top and left values) aligns with the active window—effectively "pulling" the window—without modifying the session’s window association.
+  - **Event Handling:** Reuse the existing `pullWindow` event handler in **tabs.ts**, which calls **chrome.windows.getCurrent()** to retrieve the current window's details and initiates the pull action.
+  - **Window Relocation:** The `pullWindow` function extracts the current window's position and, after retrieving the target session window via the session-to-window mapping, uses **chrome.windows.update()** to align the target window with the current window's position. Further refinement and testing are required.
   - **Testing:** Update unit tests in **src/features/session-management.test.ts** and conduct manual UI testing to ensure the target window relocates as expected.
   - **Documentation:** Update inline comments and documentation to clarify that the relocation logic is mainly implemented in **tabs.ts**, and that the session association remains unchanged.
+  - **Status:** Event Handling, Window Relocation, and UI integration are fully implemented via the `pullWindow` function in **tabs.ts**. Unit tests in **src/features/session-management.test.ts** have been updated and are passing, and documentation has been revised.
