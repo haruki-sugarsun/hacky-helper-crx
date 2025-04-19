@@ -30,6 +30,9 @@
 - When the user says "resolve conflict," address git conflicts appropriately.
 
 # CLINE tool usage
+
+`clinedocs/` directory has documentation for the CLINE tool.
+
 - Use the following replace_in_file pattern properly to edit files.
 ```
     <<<<<<< SEARCH
