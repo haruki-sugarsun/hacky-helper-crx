@@ -11,7 +11,6 @@ import {
   RENAME_NAMED_SESSION,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
-  GET_SAVED_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
 import { ensureTabsHtmlInWindow } from "./features/tabs-helpers";
@@ -1400,20 +1399,9 @@ async function updateTabsTable(
       );
 
       // Get saved bookmarks
-      const savedResponse = await chrome.runtime.sendMessage({
-        type: GET_SAVED_BOOKMARKS,
-        payload: {
-          sessionId: currentSession.id,
-        },
-      });
-
-      if (
-        savedResponse &&
-        savedResponse.type === "GET_SAVED_BOOKMARKS_RESULT" &&
-        savedResponse.payload.bookmarks
-      ) {
-        savedBookmarks = savedResponse.payload.bookmarks;
-      }
+      savedBookmarks = await serviceWorkerInterface.getSavedBookmarks(
+        currentSession.id,
+      );
     } catch (error) {
       console.error("Error fetching bookmarks:", error);
     }
@@ -2275,22 +2263,12 @@ function clearSyncedTabs() {
  */
 async function fetchAndDisplaySavedBookmarks(sessionId: string) {
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: GET_SAVED_BOOKMARKS,
-      payload: {
-        sessionId,
-      },
-    });
+    const bookmarks = await serviceWorkerInterface.getSavedBookmarks(sessionId);
 
-    if (
-      response &&
-      response.type === "GET_SAVED_BOOKMARKS_RESULT" &&
-      response.payload.bookmarks
-    ) {
-      const bookmarks: SyncedTabEntity[] = response.payload.bookmarks;
+    if (bookmarks && bookmarks.length > 0) {
       displaySavedBookmarks(bookmarks);
     } else {
-      console.error("Error fetching saved bookmarks:", response);
+      console.error("No saved bookmarks found.");
       clearSavedBookmarks();
     }
   } catch (error) {
@@ -2492,24 +2470,9 @@ async function openAllBookmarks() {
 
     // TODO: Consider if we can/should use the already filled HTML elements to know the URLs to open.
     // Get all saved bookmarks for this session
-    const bookmarksResponse = await chrome.runtime.sendMessage({
-      type: GET_SAVED_BOOKMARKS,
-      payload: {
-        sessionId,
-      },
-    });
+    const bookmarks = await serviceWorkerInterface.getSavedBookmarks(sessionId);
 
-    if (
-      !bookmarksResponse ||
-      bookmarksResponse.type !== "GET_SAVED_BOOKMARKS_RESULT" ||
-      !bookmarksResponse.payload.bookmarks
-    ) {
-      alert("Error fetching bookmarks");
-      return;
-    }
-
-    const bookmarks: SyncedTabEntity[] = bookmarksResponse.payload.bookmarks;
-    if (bookmarks.length === 0) {
+    if (!bookmarks?.length) {
       alert("No bookmarks found for this session");
       return;
     }

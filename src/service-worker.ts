@@ -41,7 +41,6 @@ import {
   MIGRATE_TAB,
   SIMILARITY_THRESHOLD,
   SAVE_TAB_TO_BOOKMARKS,
-  GET_SAVED_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
   GET_CLOSED_NAMED_SESSIONS,
@@ -743,26 +742,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               payload: {
                 success,
                 tabId,
-                sessionId,
-              },
-            });
-          }
-          break;
-        case GET_SAVED_BOOKMARKS:
-          {
-            const { sessionId } = payload;
-            if (!sessionId) {
-              throw new Error("Session ID is required");
-            }
-
-            // Get saved bookmarks for the session
-            const bookmarks =
-              await SessionManagement.getSavedBookmarks(sessionId);
-
-            sendResponse({
-              type: "GET_SAVED_BOOKMARKS_RESULT",
-              payload: {
-                bookmarks,
                 sessionId,
               },
             });
