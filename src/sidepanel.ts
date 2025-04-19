@@ -8,6 +8,7 @@ import { CONFIG_RO } from "./features/config-store.ts";
 import { OLLAMA_API_URL_DEFAULT } from "./lib/constants.ts";
 import { component_model } from "./components.ts";
 import "./sidepanel.css";
+import { SP_TRIGGER } from "./messages/messages.ts";
 
 // Initialize LLM services
 let ollamaService: OllamaLLMService | null = null;
@@ -215,6 +216,23 @@ function restoreChoices(id: number) {
     custom_prompt.value = "";
   }
 }
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === SP_TRIGGER) {
+    console.log("SP_TRIGGER received");
+    chrome.windows.getCurrent((currentWindow) => {
+      if (currentWindow.focused) {
+        console.log(
+          "Side panel is the currently focused window. Triggering inspect_page.",
+        );
+        inspect_page();
+      } else {
+        console.log("Side panel is not the focused window.");
+      }
+    });
+    sendResponse({ status: "success" });
+  }
+});
 
 // Also exntention event handlers:
 chrome.tabs.onActivated.addListener((activeInfo) => {
