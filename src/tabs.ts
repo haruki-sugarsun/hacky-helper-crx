@@ -504,6 +504,7 @@ function createSessionListItem(
   label: string,
   isCurrent: boolean,
   sessionId?: string,
+  windowId?: number,
 ): HTMLLIElement {
   const li = document.createElement("li");
   // TODO: Call SessionLabel constroctor, so that we can be more TYPED!
@@ -540,7 +541,13 @@ function createSessionListItem(
       },
       {
         text: "Pull Window",
-        onClick: () => pullWindow(sessionId),
+        onClick: () => {
+          if (windowId !== undefined) {
+            pullWindow(windowId);
+          } else {
+            alert("Window ID is undefined.");
+          }
+        },
       },
       {
         text: "Delete Session",
@@ -553,6 +560,16 @@ function createSessionListItem(
       {
         text: "Create Named Session",
         onClick: () => promptCreateNamedSession(),
+      },
+      {
+        text: "Pull Window",
+        onClick: () => {
+          if (windowId !== undefined) {
+            pullWindow(windowId);
+          } else {
+            alert("Window ID is undefined.");
+          }
+        },
       },
     ];
   }
@@ -905,31 +922,16 @@ async function restoreClosedSession(sessionId: string) {
 }
 
 // TODO: document.
-async function pullWindow(sessionId: string) {
+async function pullWindow(targetWindowId: number) {
   try {
     const currentWindow = await chrome.windows.getCurrent();
     console.log(
       `Current window id: ${currentWindow.id}, position: top=${currentWindow.top}, left=${currentWindow.left}`,
     );
-    // TODO: We can Improve the interface and logic. We just need a single session.
-    const sessions = await serviceWorkerInterface.getNamedSessions();
-    const targetSession = sessions.find(
-      (s: NamedSession) => s.id === sessionId,
-    );
-    if (!targetSession) {
-      alert(`Session ${sessionId} not found`);
-      return;
-    }
-    const targetWindowId = targetSession.windowId;
-    if (!targetWindowId) {
-      alert(`Session ${sessionId} does not have an associated window.`);
-      return;
-    }
     if (currentWindow.id === targetWindowId) {
       alert("Target window is already the current window.");
       return;
     }
-    // Updated: modify size and bring window to foreground.
     await chrome.windows.update(targetWindowId, {
       top: currentWindow.top,
       left: currentWindow.left,
@@ -1221,7 +1223,7 @@ async function updateUI(
 
     const isCurrent = win.focused;
     // Create the list item
-    const listItem = createSessionListItem(label, isCurrent);
+    const listItem = createSessionListItem(label, isCurrent, undefined, win.id);
 
     // Add event listeners
     addSessionEventListeners(listItem, win, undefined);
