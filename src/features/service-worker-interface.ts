@@ -13,6 +13,7 @@ import {
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
   GET_SYNCED_OPENTABS,
+  GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
 } from "./service-worker-messages";
 
@@ -37,6 +38,24 @@ class ServiceWorkerInterface {
       });
     } catch (error) {
       console.error("Error in getNamedSessions:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Retrieves saved bookmarks for a session.
+   *
+   * @param sessionId - The unique identifier of the session.
+   * @returns A promise that resolves to an array of SyncedTabEntity objects.
+   */
+  async getSavedBookmarks(sessionId: string): Promise<SyncedTabEntity[]> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: GET_SAVED_BOOKMARKS,
+        payload: { sessionId },
+      });
+    } catch (error) {
+      console.error("Error in getSavedBookmarks:", error);
       return [];
     }
   }

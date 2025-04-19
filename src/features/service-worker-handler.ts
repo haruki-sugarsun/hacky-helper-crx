@@ -13,6 +13,7 @@ import {
   REASSOCIATE_NAMED_SESSION,
   GET_SYNCED_OPENTABS,
   TAKEOVER_TAB,
+  GET_SAVED_BOOKMARKS,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 /**
@@ -54,6 +55,10 @@ export function handleServiceWorkerMessage(
 
     case TAKEOVER_TAB:
       handleTakeoverTab(message, sendResponse);
+      break;
+
+    case GET_SAVED_BOOKMARKS:
+      handleGetSavedBookmarks(message, sendResponse);
       break;
 
     default:
@@ -219,4 +224,30 @@ async function handleGetSyncedOpenTabs(
   // TODO: Rename the method to getSyncedOpenTabs().
   const bookmarks = await SessionManagement.getSyncedOpenTabs(sessionId);
   sendResponse(bookmarks);
+}
+
+/**
+ * Handles the retrieval of saved bookmarks for a session.
+ * @param message The message containing the session ID.
+ * @param sendResponse The callback to send a response.
+ */
+export async function handleGetSavedBookmarks(
+  message: { payload: { sessionId: string } },
+  sendResponse: (response?: SyncedTabEntity[] | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId } = message.payload;
+  if (!sessionId) {
+    console.error("Session ID is missing in GET_SAVED_BOOKMARKS message.");
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+
+  try {
+    // Get saved bookmarks for the session
+    const bookmarks = await SessionManagement.getSavedBookmarks(sessionId);
+    sendResponse(bookmarks);
+  } catch (error) {
+    console.error("Error fetching saved bookmarks:", error);
+    sendResponse({ error: "Failed to fetch saved bookmarks" });
+  }
 }
