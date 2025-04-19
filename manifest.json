@@ -46,6 +46,12 @@
         "default": "Alt+Shift+C"
       },
       "description": "Copy the current page title and URL for sharing."
+    },
+    "open-side-panel": {
+      "suggested_key": {
+        "default": "Alt+Shift+K"
+      },
+      "description": "Open the side panel."
     }
   }
 }

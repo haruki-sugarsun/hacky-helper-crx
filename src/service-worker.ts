@@ -60,6 +60,7 @@ import { BookmarkStorage } from "./features/BookmarkStorage.ts";
 import { openTabsPage } from "./features/tabs-helpers.ts";
 import { handleServiceWorkerMessage } from "./features/service-worker-handler";
 import { triggerCopyPageInfo } from "./popup/popup-messages";
+import { openSidePanel } from "./sidepanel-helper";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -69,6 +70,10 @@ chrome.commands.onCommand.addListener((command) => {
   console.log(`Command received: ${command}`);
 
   switch (command) {
+    case "open-side-panel":
+      openSidePanel();
+      break;
+
     case "open-tabs-page":
       console.log("Opening tabs page");
       openTabsPage();
