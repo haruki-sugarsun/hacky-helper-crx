@@ -61,6 +61,7 @@ import { openTabsPage } from "./features/tabs-helpers.ts";
 import { handleServiceWorkerMessage } from "./features/service-worker-handler";
 import { triggerCopyPageInfo } from "./popup/popup-messages";
 import { openSidePanel } from "./sidepanel-helper";
+import { SP_TRIGGER } from "./messages/messages.ts";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -71,6 +72,7 @@ chrome.commands.onCommand.addListener((command) => {
 
   switch (command) {
     case "open-side-panel":
+      chrome.runtime.sendMessage({ type: SP_TRIGGER });
       openSidePanel();
       break;
 
