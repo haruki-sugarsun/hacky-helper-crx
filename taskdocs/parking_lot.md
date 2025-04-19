@@ -33,3 +33,4 @@ We have unstructured, just-idea notes here:
 - Search for the "saved bookmarks" as well.
 - Close Window in the action menu in Tabs UI.
 - Style in Settings UI.
+- Reactivating the session restores the tabs owned by others, but won't take over the ownership. This can result in many dups. Consider automatically taking over them. 
