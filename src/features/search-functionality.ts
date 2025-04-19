@@ -4,7 +4,11 @@
 
 import { SearchResultComponent } from "../ui/search-result";
 // TODO: Later move these logics to interact with service-worker to tabs.ts. so that features/ files only contains the pure business logic which are easy to test.
-import { NamedSession, ClosedNamedSession } from "../lib/types";
+import {
+  NamedSession,
+  ClosedNamedSession,
+  SyncedTabEntity,
+} from "../lib/types";
 import serviceWorkerInterface from "./service-worker-interface";
 
 /**
@@ -218,10 +222,10 @@ async function showSearchResults(query: string): Promise<void> {
     searchResults.innerHTML = "";
 
     const matchingBookmarks = savedBookmarks
-      .filter((bookmark) =>
+      .filter((bookmark: SyncedTabEntity) =>
         bookmark.title.toLowerCase().includes(normalizedQuery),
       )
-      .map((bookmark) => ({
+      .map((bookmark: SyncedTabEntity) => ({
         element: document.createElement("li"),
         label: bookmark.title,
         subLabel: bookmark.url,
