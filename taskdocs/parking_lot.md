@@ -33,7 +33,7 @@ We have unstructured, just-idea notes here:
 - Search for the "saved bookmarks" as well.
 - Close Window in the action menu in Tabs UI.
 - Style in Settings UI.
-- Reactivating the session restores the tabs owned by others, but won't take over the ownership. This can result in many dups. Consider automatically taking over them.
+- Reactivating the session restores the tabs owned by others, but won't take over thbe ownership. This can result in many dups. Consider automatically taking over them.
 - Common modal behavior e.g. close on ESC.
 - Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user if they want to open or takeover others' tabs.
 - end-to-end tests
@@ -44,3 +44,4 @@ We have unstructured, just-idea notes here:
 - Show the last sync timestamp for sessions and diff timer.
 - When there is no pending LLM task, pick up a random tab that is not yet cached?
 - LLM task queueing should behave in LRU style?
+- Refactor extensions message related constants and types in a shared directory.
