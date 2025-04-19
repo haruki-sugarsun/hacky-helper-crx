@@ -33,3 +33,4 @@ We have unstructured, just-idea notes here:
 - Search for the "saved bookmarks" as well.
 - Close Window in the action menu in Tabs UI.
 - Style in Settings UI.
+- Refactor extensions message related constants and types in a shared directory.
