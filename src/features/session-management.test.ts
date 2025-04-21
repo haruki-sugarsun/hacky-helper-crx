@@ -375,29 +375,9 @@ describe("takeoverTab", () => {
     // Empty array means no tabs found
     mockBookmarkStorage.getSyncedOpenTabs.mockResolvedValue([]);
 
-    await expect(takeoverTab("non-existent-tab-id", "test-session-id")).rejects.toThrow(
-      "Tab with ID non-existent-tab-id not found.",
-    );
-  });
-
-  it("should throw an error if updating the tab owner fails", async () => {
-    const mockSyncedTabs = [
-      {
-        id: "test-tab-id",
-        url: "https://example.com",
-        owner: "other-instance",
-        title: "Test Tab",
-        sessionId: "test-session-id",
-      },
-    ];
-    (mockBookmarkStorage.getSyncedOpenTabs as jest.Mock).mockResolvedValueOnce(
-      mockSyncedTabs,
-    );
-    (mockBookmarkStorage.updateTabOwner as jest.Mock).mockRejectedValueOnce(
-      new Error("Update failed"),
-    );
-
-    await expect(takeoverTab("test-tab-id", "test-session-id")).rejects.toThrow("Update failed");
+    await expect(
+      takeoverTab("non-existent-tab-id", "test-session-id"),
+    ).rejects.toThrow("Tab with ID non-existent-tab-id not found.");
   });
 
   it("should throw an error if updating the tab owner fails", async () => {
