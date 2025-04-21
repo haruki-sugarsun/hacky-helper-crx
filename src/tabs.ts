@@ -1343,7 +1343,6 @@ async function updateUI(
   }
 
   // If a window item is found, select it and load its tabs
-  // TODO: if we can skip this defined check.
   if (selectedWindowItem) {
     selectedWindowItem.classList.add("selected");
     if (selectedWindowId) {
