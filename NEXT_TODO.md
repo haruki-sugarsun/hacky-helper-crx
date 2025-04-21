@@ -12,7 +12,4 @@ Example Instructions:
 
 ## Strategy and Next Steps
 
-- Possible tasks are listed in `parking_lot.md`.
-- Each task has a dedicated file in `taskdocs` directory.
-- The dedicated file in `taskdocs` should have the detailed changes to make as much as possible.
-- The tasks should be keep updated with current status.
+- Keep the current visible session in Tabs UI, after "Bring Here" tab migration.
