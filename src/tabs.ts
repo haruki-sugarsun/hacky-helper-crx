@@ -503,6 +503,7 @@ function createSessionListItem(
   label: string,
   isCurrent: boolean,
   sessionId?: string,
+  windowId?: number,
 ): HTMLLIElement {
   const li = document.createElement("li");
   // TODO: Call SessionLabel constroctor, so that we can be more TYPED!
@@ -516,6 +517,15 @@ function createSessionListItem(
 
   // Set the session ID if provided
   sessionLabel.sessionId = sessionId;
+
+  // Set data attributes for selection purposes
+  if (sessionId) {
+    li.setAttribute("data-session-id", sessionId);
+  }
+
+  if (windowId) {
+    li.setAttribute("data-window-id", String(windowId));
+  }
 
   // Set menu items based on whether this is a named session or not
   if (sessionId) {
@@ -969,7 +979,11 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
 
 async function updateUI(
   windows: chrome.windows.Window[],
-  selectedSessionByWindowId?: number /* Optionally specify the session to be opened after the UI refresh by windowId. Select the current if undefined. */,
+  selectedSessionInfo?: {
+    windowId?: number;
+    sessionId?: string;
+    isClosed?: boolean;
+  } /* Optionally specify the session to be selected after the UI refresh */,
 ) {
   // Log window and tab information for debugging
   windows.forEach((w) => {
@@ -1022,8 +1036,11 @@ async function updateUI(
   // Track the current window to auto-select it
   let currentWindowItem: HTMLLIElement | undefined = undefined;
   // Auto-select the specified window and load its tabs
+  // TODO: Logic around these "selected*" variables are too complicated. Consider refactoring.
   let selectedWindowId: number | undefined;
   let selectedWindowItem: HTMLLIElement | undefined = undefined;
+  let selectedClosedSessionItem: HTMLLIElement | undefined = undefined;
+  let selectedClosedSession: ClosedNamedSession | undefined = undefined;
 
   // Helper function to add click and double-click event listeners to a session list item
   const addSessionEventListeners = (
@@ -1126,7 +1143,12 @@ async function updateUI(
 
     const isCurrent = win.focused;
     // Create the list item
-    const listItem = createSessionListItem(label, isCurrent, session.id);
+    const listItem = createSessionListItem(
+      label,
+      isCurrent,
+      session.id,
+      win.id,
+    );
 
     // Add event listeners
     addSessionEventListeners(listItem, win, session);
@@ -1134,8 +1156,10 @@ async function updateUI(
     if (isCurrent) {
       currentWindowItem = listItem;
     }
-    if (selectedSessionByWindowId && selectedSessionByWindowId === win.id) {
-      selectedWindowId = selectedSessionByWindowId;
+
+    // Check if this is the session to select
+    if (selectedSessionInfo && selectedSessionInfo.windowId === win.id) {
+      selectedWindowId = selectedSessionInfo.windowId;
       selectedWindowItem = listItem;
     }
 
@@ -1173,7 +1197,7 @@ async function updateUI(
 
     const isCurrent = win.focused;
     // Create the list item
-    const listItem = createSessionListItem(label, isCurrent);
+    const listItem = createSessionListItem(label, isCurrent, undefined, win.id);
 
     // Add event listeners
     addSessionEventListeners(listItem, win, undefined);
@@ -1181,8 +1205,10 @@ async function updateUI(
     if (isCurrent) {
       currentWindowItem = listItem;
     }
-    if (selectedSessionByWindowId && selectedSessionByWindowId === win.id) {
-      selectedWindowId = selectedSessionByWindowId;
+
+    // Check if this is the session to select
+    if (selectedSessionInfo && selectedSessionInfo.windowId === win.id) {
+      selectedWindowId = selectedSessionInfo.windowId;
       selectedWindowItem = listItem;
     }
 
@@ -1204,14 +1230,41 @@ async function updateUI(
     // Add each closed session
     sortedClosedSessions.forEach((session) => {
       const listItem = createClosedSessionListItem(session);
+
+      // Check if this is the closed session to select
+      if (
+        selectedSessionInfo?.isClosed &&
+        selectedSessionInfo.sessionId === session.id
+      ) {
+        selectedClosedSessionItem = listItem;
+        selectedClosedSession = session;
+      }
+
       closedList.appendChild(listItem);
     });
   }
 
-  // Override the selected window with the current window is not yet specified.
-  if (!selectedWindowItem) {
+  // Override the selected window with the current window if not yet specified.
+  if (!selectedWindowItem && !selectedClosedSessionItem) {
     selectedWindowId = windows.find((w) => w.focused)?.id;
     selectedWindowItem = currentWindowItem;
+  }
+
+  // Check if we should select a closed session
+  if (selectedClosedSessionItem && selectedClosedSession) {
+    // Clear all other selections
+    document
+      .querySelectorAll(
+        "#named_sessions li, #tabs_sessions li, #closed_sessions li",
+      )
+      .forEach((item) => item.classList.remove("selected"));
+
+    // Select the closed session
+    (selectedClosedSessionItem as HTMLLIElement).classList.add("selected");
+
+    // Display the tabs for this closed session
+    displayClosedSessionTabs(selectedClosedSession);
+    return;
   }
 
   // If a window item is found, select it and load its tabs
@@ -1580,7 +1633,7 @@ async function updateTabsTable(
           await chrome.tabs.remove(tabId);
           state_tabs = state_tabs.filter((t) => t.id !== tabId);
           // TODO: This updateUI should show the UI for the currently selected window panel.
-          updateUI(state_windows, selectedWindowId);
+          updateUI(state_windows, { windowId: selectedWindowId });
         } catch (error) {
           console.error(
             `Error closing tab: ${error instanceof Error ? error.message : error}`,
@@ -1816,6 +1869,10 @@ async function showMigrationDialogForMultipleTabs(tabIds: number[]) {
  */
 async function migrateMultipleTabs(tabIds: number[], windowId: number) {
   try {
+    // Store the current selected session info before migration
+    const selectedSessionInfo = getSelectedSessionInfo();
+
+    // TODO: Define the API in service-worker-interface.ts.
     const response = await chrome.runtime.sendMessage({
       type: MIGRATE_TAB,
       payload: {
@@ -1827,12 +1884,12 @@ async function migrateMultipleTabs(tabIds: number[], windowId: number) {
     if (response && response.type === "MIGRATE_TAB_RESULT") {
       console.log("Tabs migrated successfully:", response.payload);
 
-      // Refresh the UI with tab information
+      // Refresh the UI with tab information, but maintain the selected session
       chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
           state_tabs = tabs;
-          updateUI(state_windows);
+          updateUI(state_windows, selectedSessionInfo);
         });
       });
     } else {
@@ -1846,6 +1903,9 @@ async function migrateMultipleTabs(tabIds: number[], windowId: number) {
 // Function to migrate a tab to another window
 async function migrateTab(tabId: number, windowId: number) {
   try {
+    // Store the current selected session info before migration
+    const selectedSessionInfo = getSelectedSessionInfo();
+
     const response = await chrome.runtime.sendMessage({
       type: MIGRATE_TAB,
       payload: {
@@ -1857,13 +1917,12 @@ async function migrateTab(tabId: number, windowId: number) {
     if (response && response.type === "MIGRATE_TAB_RESULT") {
       console.log("Tab migrated successfully:", response.payload);
 
-      // Refresh the UI with tab information
-      // TODO: After the migration, we want to keep the session view, and just reload the tabs area.
+      // Refresh the UI with tab information, but maintain the selected session
       chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
         chrome.tabs.query({ currentWindow: true }).then((tabs) => {
           state_tabs = tabs;
-          updateUI(state_windows);
+          updateUI(state_windows, selectedSessionInfo);
         });
       });
     } else {
@@ -2456,6 +2515,7 @@ async function openAllBookmarks() {
     }
 
     // Extract session ID from the session-label web component inside the selected item
+    // TODO: Factor out these repeating logic.
     const sessionLabel = selectedSessionItem.querySelector("session-label");
     if (!sessionLabel) {
       alert("No session label found for the selected session");
@@ -2613,4 +2673,58 @@ function renderSessionsMetadata(
     sessionMetadataElement.setAttribute("unnamed", "true");
   }
   // TODO: We need to support Closed Named Session as well.
+}
+
+/**
+ * Helper function to extract window ID and/or session ID from a selected session element
+ * @returns An object containing the window ID and/or session ID if found
+ */
+function getSelectedSessionInfo(): {
+  windowId?: number;
+  sessionId?: string;
+  isClosed?: boolean;
+} {
+  const selectedSessionItem = document.querySelector(
+    "#named_sessions li.selected, #tabs_sessions li.selected, #closed_sessions li.selected",
+  );
+  if (!selectedSessionItem) return {};
+
+  // Check which container the selected item belongs to
+  const isClosed = selectedSessionItem.closest("#closed_sessions") !== null;
+
+  // Get session ID if present (for both named and closed sessions)
+  const sessionIdAttr = selectedSessionItem.getAttribute("data-session-id");
+  const sessionId = sessionIdAttr || undefined; // Convert null to undefined
+
+  // For closed sessions, we only need the session ID
+  if (isClosed) {
+    return { sessionId, isClosed: true };
+  }
+
+  // For open sessions, try to get the window ID
+  // First check for direct data-window-id attribute
+  const windowIdAttr = selectedSessionItem.getAttribute("data-window-id");
+  if (windowIdAttr) {
+    return { windowId: parseInt(windowIdAttr, 10), sessionId };
+  }
+
+  // If we have a session ID but not a window ID, try to get it from state
+  if (sessionId) {
+    const session = state_sessions.find((s) => s.id === sessionId);
+    if (session?.windowId) {
+      return { windowId: session.windowId, sessionId };
+    }
+  }
+
+  // Try getting window ID from session label (fallback)
+  const sessionLabel = selectedSessionItem.querySelector("session-label");
+  if (sessionLabel) {
+    const labelText = sessionLabel.getAttribute("label") || "";
+    const windowIdMatch = labelText.match(/Window (\d+)/);
+    if (windowIdMatch && windowIdMatch[1]) {
+      return { windowId: parseInt(windowIdMatch[1], 10), sessionId };
+    }
+  }
+
+  return { sessionId };
 }
