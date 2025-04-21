@@ -12,4 +12,4 @@ Example Instructions:
 
 ## Strategy and Next Steps
 
-- n/a
+- Keep the current visible session in Tabs UI, after "Bring Here" tab migration.
