@@ -701,8 +701,17 @@ export async function takeoverTab(
       throw new Error(`Tab with ID ${backendTabId} not found.`);
     }
 
-    // Open the URL in the current session
-    await chrome.tabs.create({ url: tabToTakeover.url });
+    // Check if the URL is already open in the current window
+    const existingTabs = await chrome.tabs.query({ url: tabToTakeover.url });
+    if (existingTabs.length > 0) {
+      // Focus on the first matching tab
+      await chrome.tabs.update(existingTabs[0].id!, { active: true });
+      console.log(`Focused on existing tab with URL ${tabToTakeover.url}`);
+      return;
+    } else {
+      // Open the URL in the current session if no matching tab is found
+      await chrome.tabs.create({ url: tabToTakeover.url });
+    }
 
     // Update the tab's owner in the backend
     const instanceId = await CONFIG_RO.INSTANCE_ID();
