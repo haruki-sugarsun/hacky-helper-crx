@@ -375,29 +375,9 @@ describe("takeoverTab", () => {
     // Empty array means no tabs found
     mockBookmarkStorage.getSyncedOpenTabs.mockResolvedValue([]);
 
-    await expect(takeoverTab("non-existent-tab-id", "test-session-id")).rejects.toThrow(
-      "Tab with ID non-existent-tab-id not found.",
-    );
-  });
-
-  it("should throw an error if updating the tab owner fails", async () => {
-    const mockSyncedTabs = [
-      {
-        id: "test-tab-id",
-        url: "https://example.com",
-        owner: "other-instance",
-        title: "Test Tab",
-        sessionId: "test-session-id",
-      },
-    ];
-    (mockBookmarkStorage.getSyncedOpenTabs as jest.Mock).mockResolvedValueOnce(
-      mockSyncedTabs,
-    );
-    (mockBookmarkStorage.updateTabOwner as jest.Mock).mockRejectedValueOnce(
-      new Error("Update failed"),
-    );
-
-    await expect(takeoverTab("test-tab-id", "test-session-id")).rejects.toThrow("Update failed");
+    await expect(
+      takeoverTab("non-existent-tab-id", "test-session-id"),
+    ).rejects.toThrow("Tab with ID non-existent-tab-id not found.");
   });
 
   it("should throw an error if updating the tab owner fails", async () => {
@@ -556,6 +536,33 @@ describe("takeoverTab", () => {
 
     vi.mocked(chrome.tabs.query).mockResolvedValue([mockExistingTab]);
 
+
+    // TODO: Consider replacing these with more general solution.
+    // Create a complete mock tab that satisfies the chrome.tabs.Tab interface
+    const mockExistingTabs = [
+      {
+        id: 123,
+        url: "https://example.com",
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: false,
+        incognito: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: true,
+        groupId: -1,
+      },
+    ] as chrome.tabs.Tab[];
+
+    // Mock chrome global
+    global.chrome = {
+      tabs: {
+        query: jest.fn().mockResolvedValueOnce(mockExistingTabs),
+        update: jest.fn().mockResolvedValueOnce({} as chrome.tabs.Tab),
+      },
+    } as unknown as typeof chrome;
 
     await takeoverTab("test-tab-id", "test-session-id");
 
