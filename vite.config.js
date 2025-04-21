@@ -28,6 +28,7 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: true, // Helps retain readable source code
     rollupOptions: {
       input: {
         popup: "popup.html",
