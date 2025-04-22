@@ -4,6 +4,7 @@ import { CONFIG_RO, ConfigStore } from "./features/config-store";
 import { MIGRATE_TAB } from "./lib/constants";
 import serviceWorkerInterface from "./features/service-worker-interface";
 import { handleMessages } from "./popup/popup-messages";
+import { openSidePanel } from "./sidepanel-helper";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return handleMessages(message, sender, sendResponse);
@@ -234,6 +235,10 @@ async function migrateTab(tabId: number, windowId: number) {
 
 // Initialize the UI when the document is loaded
 document.addEventListener("DOMContentLoaded", async () => {
+  const sidePanelButton = document.getElementById("openSidePanelButton");
+  if (sidePanelButton) {
+    sidePanelButton.addEventListener("click", openSidePanel);
+  }
   await initializeToggles();
 
   // Add event listener for the migrate button
