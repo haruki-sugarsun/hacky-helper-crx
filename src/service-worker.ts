@@ -45,6 +45,8 @@ import {
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
+import { GET_CLOSED_NAMED_SESSIONS } from "./features/service-worker-messages";
+
 import { CONFIG_RO } from "./features/config-store.ts";
 import { DigestEntry, TabSummary } from "./lib/types";
 import { getPromiseState } from "./lib/helpers.ts"; // Import the function
