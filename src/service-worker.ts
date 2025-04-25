@@ -416,7 +416,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 async function processNextTask() {
-  // TODO: Check if we enable the LLM service via LLM_ENABLED config. and clear the queue if disabled.
+  // Check if LLM services are enabled and clear the queue if disabled
+  const llmEnabled = await CONFIG_RO.LLM_ENABLED();
+  if (!llmEnabled) {
+    console.log("LLM services are disabled. Clearing the task queue.");
+    llmTasks.length = 0; // Clear the task queue
+    return; // Exit early as no tasks should be processed
+  }
 
   // Check the llmTasks if we have anything to execute:
   console.log(`Number of tasks in the queue: ${llmTasks.length}`);
