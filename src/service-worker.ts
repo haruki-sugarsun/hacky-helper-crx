@@ -43,7 +43,6 @@ import {
   SAVE_TAB_TO_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
-  RESTORE_CLOSED_SESSION,
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
@@ -830,34 +829,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               payload: {
                 success,
                 sessionId,
-              },
-            });
-          }
-          break;
-        case RESTORE_CLOSED_SESSION:
-          const { sessionId } = payload;
-          if (!sessionId) {
-            throw new Error("Session ID is required");
-          }
-
-          // Restore the closed session
-          const restoredSession =
-            await SessionManagement.restoreClosedSession(sessionId);
-
-          if (restoredSession) {
-            sendResponse({
-              type: "RESTORE_CLOSED_SESSION_RESULT",
-              payload: {
-                success: true,
-                session: restoredSession,
-              },
-            });
-          } else {
-            sendResponse({
-              type: "RESTORE_CLOSED_SESSION_RESULT",
-              payload: {
-                success: false,
-                error: "Failed to restore session",
               },
             });
           }

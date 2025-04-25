@@ -9,7 +9,6 @@ import {
   UPDATE_NAMED_SESSION_TABS,
   DELETE_NAMED_SESSION,
   RENAME_NAMED_SESSION,
-  RESTORE_CLOSED_SESSION,
   OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
 import { ensureTabsHtmlInWindow } from "./features/tabs-helpers";
@@ -871,18 +870,10 @@ function createClosedSessionListItem(
  */
 async function restoreClosedSession(sessionId: string) {
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: RESTORE_CLOSED_SESSION,
-      payload: {
-        sessionId,
-      },
-    });
+    const response =
+      await serviceWorkerInterface.restoreClosedSession(sessionId);
 
-    if (
-      response &&
-      response.type === "RESTORE_CLOSED_SESSION_RESULT" &&
-      response.payload.success
-    ) {
+    if (response) {
       console.log(`Session ${sessionId} restored successfully`);
       alert("Session restored successfully");
 
