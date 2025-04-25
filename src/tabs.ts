@@ -29,7 +29,6 @@ import "./ui/session-metadata";
 import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
 import { CONFIG_RO } from "./features/config-store";
-import { RESTORE_CLOSED_SESSION } from "./features/service-worker-messages";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
