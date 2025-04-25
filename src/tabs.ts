@@ -9,7 +9,6 @@ import {
   UPDATE_NAMED_SESSION_TABS,
   DELETE_NAMED_SESSION,
   RENAME_NAMED_SESSION,
-  GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
@@ -996,17 +995,8 @@ async function updateUI(
   state_sessions = await serviceWorkerInterface.getNamedSessions();
 
   // ---- Fetch and update Closed Named Sessions ----
-  let closedSessions: ClosedNamedSession[] = [];
-  try {
-    let response = await chrome.runtime.sendMessage({
-      type: GET_CLOSED_NAMED_SESSIONS,
-    });
-    if (response && response.type === "GET_CLOSED_NAMED_SESSIONS_RESULT") {
-      closedSessions = response.payload.closedSessions || [];
-    }
-  } catch (err) {
-    console.error("Error fetching closed named sessions:", err);
-  }
+  let closedSessions: ClosedNamedSession[] =
+    await serviceWorkerInterface.getClosedNamedSessions();
 
   // ---- Update the UI for Named, Unnamed, and Closed Sessions ----
   // Get all containers:

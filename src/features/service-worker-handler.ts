@@ -3,8 +3,7 @@
  * This file contains the logic for handling messages sent to the service worker.
  */
 
-import { GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
-import { SyncedTabEntity } from "../lib/types";
+import { ClosedNamedSession, SyncedTabEntity } from "../lib/types";
 import {
   SuccessResult,
   ErrorResult,
@@ -15,6 +14,7 @@ import {
   GET_SYNCED_OPENTABS,
   TAKEOVER_TAB,
   GET_SAVED_BOOKMARKS,
+  GET_CLOSED_NAMED_SESSIONS,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 
@@ -140,11 +140,18 @@ async function handleGetNamedSessions(
  * Handles the retrieval of closed named sessions.
  * @param sendResponse The callback to send a response.
  */
-function handleGetClosedNamedSessions(
-  sendResponse: (response?: any) => void,
-): void {
-  // Placeholder for actual implementation
-  sendResponse({ type: "GET_CLOSED_NAMED_SESSIONS_RESULT", payload: [] });
+async function handleGetClosedNamedSessions(
+  sendResponse: (response: ClosedNamedSession[] | ErrorResult) => void,
+): Promise<void> {
+  try {
+    const closedSessions = await SessionManagement.getClosedNamedSessions();
+    sendResponse(closedSessions);
+  } catch (error) {
+    console.error("Error retrieving closed named sessions:", error);
+    sendResponse({
+      error: "Failed to retrieve closed named sessions",
+    });
+  }
 }
 
 /**

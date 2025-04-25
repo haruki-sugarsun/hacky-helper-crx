@@ -1,7 +1,6 @@
 /**
  * Typed abstraction layer for interacting with service-worker via messages.
  */
-import { GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
 import {
   NamedSession,
   ClosedNamedSession,
@@ -13,6 +12,7 @@ import {
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
   ACTIVATE_SESSION,
+  GET_CLOSED_NAMED_SESSIONS,
   GET_SYNCED_OPENTABS,
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
@@ -89,17 +89,15 @@ class ServiceWorkerInterface {
    * Returns an empty array if the operation fails or no closed sessions are found.
    */
   async getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
-    try {
-      const response = await chrome.runtime.sendMessage({
-        type: GET_CLOSED_NAMED_SESSIONS,
-      });
-      if (response && response.type === "GET_CLOSED_NAMED_SESSIONS_RESULT") {
-        return response.payload.closedSessions || [];
-      }
-    } catch (error) {
-      console.error("Error in getClosedNamedSessions:", error);
+    let response = (await chrome.runtime.sendMessage({
+      type: GET_CLOSED_NAMED_SESSIONS,
+    })) as ClosedNamedSession[] | ErrorResult;
+
+    if ("error" in response) {
+      throw new Error(`Error in getClosedNamedSessions: ${response.error}`);
     }
-    return [];
+
+    return response;
   }
 
   /**

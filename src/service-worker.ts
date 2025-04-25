@@ -43,7 +43,6 @@ import {
   SAVE_TAB_TO_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
-  GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
@@ -834,14 +833,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               },
             });
           }
-          break;
-        case GET_CLOSED_NAMED_SESSIONS:
-          sendResponse({
-            type: "GET_CLOSED_NAMED_SESSIONS_RESULT",
-            payload: {
-              closedSessions: await SessionManagement.getClosedNamedSessions(),
-            },
-          });
           break;
         case RESTORE_CLOSED_SESSION:
           const { sessionId } = payload;
