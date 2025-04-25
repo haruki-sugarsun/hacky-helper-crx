@@ -3,11 +3,12 @@
  * This file contains the logic for handling messages sent to the service worker.
  */
 
-import { ACTIVATE_SESSION, GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
+import { GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
 import { SyncedTabEntity } from "../lib/types";
 import {
   SuccessResult,
   ErrorResult,
+  ACTIVATE_SESSION,
   CLONE_NAMED_SESSION,
   GET_NAMED_SESSIONS,
   REASSOCIATE_NAMED_SESSION,
@@ -16,6 +17,7 @@ import {
   GET_SAVED_BOOKMARKS,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
+
 /**
  * Handles incoming messages to the service worker.
  * Returns true if handled implmented message.

@@ -1,7 +1,7 @@
 /**
  * Typed abstraction layer for interacting with service-worker via messages.
  */
-import { GET_CLOSED_NAMED_SESSIONS, ACTIVATE_SESSION } from "../lib/constants";
+import { GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
 import {
   NamedSession,
   ClosedNamedSession,
@@ -12,6 +12,7 @@ import {
   ErrorResult,
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
+  ACTIVATE_SESSION,
   GET_SYNCED_OPENTABS,
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
