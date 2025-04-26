@@ -35,7 +35,7 @@ We have unstructured, just-idea notes here:
 - Style in Settings UI.
 - Reactivating the session restores the tabs owned by others, but won't take over the ownership. This can result in many dups. Consider automatically taking over them.
 - Common modal behavior e.g. close on ESC.
-- Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user idf they want to takeover others' tabs.
+- Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user if they want to open or takeover others' tabs.
 - end-to-end tests
 - Toast message+log collection instead of alert, and timeout measurement stops while the focus is not on the window.
 - Clear the query in the input on focus-search-bar key action.

@@ -79,6 +79,15 @@ Tabs UI is an extention component
 
 ### Synced Tabs (`[Synced Tabs]`)
 
+#### Actions (Buttons and menu)
+
+(TODO: Add description about takeover.)
+The "open" button has been added to the synced tabs section. This button allows users to open the URL of a synced tab in a new browser tab.
+
+- **Position**: The button is displayed alongside the "Takeover" button for each synced tab.
+- **Behavior**: When clicked, the button opens the tab's URL in a new browser tab. If the URL is missing, an error message is displayed.
+- **Styling**: The button uses the same styling conventions as other action buttons in the UI.
+
 # Interaction with Other Components
 
 - Message-based interactions with the Service-Worker.
