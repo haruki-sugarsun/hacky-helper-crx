@@ -39,3 +39,8 @@ We have unstructured, just-idea notes here:
 - end-to-end tests
 - Toast message+log collection instead of alert, and timeout measurement stops while the focus is not on the window.
 - Clear the query in the input on focus-search-bar key action.
+- Search for entries matching the URL.
+- Show Favicon in Tabs UI Tab list table.
+- Show the last sync timestamp for sessions and diff timer.
+- When there is no pending LLM task, pick up a random tab that is not yet cached?
+- LLM task queueing should behave in LRU style?
