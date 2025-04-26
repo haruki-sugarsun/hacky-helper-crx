@@ -768,6 +768,12 @@ export async function restoreClosedSession(
       return null;
     }
 
+    // Filter tabs owned by the current instance
+    const instanceId = await CONFIG_RO.INSTANCE_ID();
+    const ownedTabs = closedSession.tabs.filter(
+      (tab) => tab.owner === instanceId,
+    );
+
     // Create a new window with a blank page first to avoid multiple processing of the tabs UI triggered in parallel
     const newWindow = await chrome.windows.create({
       url: "about:blank",
@@ -787,9 +793,9 @@ export async function restoreClosedSession(
       true, // Indicate that this session is being restored from bookmarks
     );
 
-    // Add all the saved tabs to the window
-    for (let i = 0; i < closedSession.tabs.length; i++) {
-      const tab = closedSession.tabs[i];
+    // Add all the owned tabs to the window
+    for (let i = 0; i < ownedTabs.length; i++) {
+      const tab = ownedTabs[i];
       if (tab.url) {
         await chrome.tabs.create({
           windowId: newWindow.id,
