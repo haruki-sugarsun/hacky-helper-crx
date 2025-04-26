@@ -2513,7 +2513,7 @@ async function displaySyncedTabs(tabs: SyncedTabEntity[], sessionId: string) {
     }
     listItem.appendChild(ownerContainer);
 
-    // Create tab actions container
+    // Add actions container
     const actionsContainer = document.createElement("div");
     actionsContainer.className = "synced-tab-actions";
 
