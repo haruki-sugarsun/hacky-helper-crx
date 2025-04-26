@@ -2293,8 +2293,27 @@ async function displaySyncedTabs(tabs: SyncedTabEntity[], sessionId: string) {
     });
     actionsContainer.appendChild(takeoverButton);
 
-    listItem.appendChild(actionsContainer);
+    // Add "open" button for each visible item
+    const openButton = document.createElement("button");
+    openButton.className = "synced-tab-action-button";
+    openButton.textContent = "Open";
+    openButton.addEventListener("click", async () => {
+      try {
+        if (tab.url) {
+          await chrome.tabs.create({ url: tab.url });
+          console.log(`Tab with URL ${tab.url} opened successfully.`);
+        } else {
+          console.error("Tab URL is missing.");
+          alert("Cannot open tab: URL is missing.");
+        }
+      } catch (error) {
+        console.error(`Error opening tab with URL ${tab.url}:`, error);
+        alert(`Error opening tab: ${error}`);
+      }
+    });
+    actionsContainer.appendChild(openButton);
 
+    listItem.appendChild(actionsContainer);
     tabsList.appendChild(listItem);
   });
 }
