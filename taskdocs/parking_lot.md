@@ -18,7 +18,6 @@ We have unstructured, just-idea notes here:
 - Action label for "force sync" session should say "to Backend".
 - Replace the new-tab-page with the minimal UI like Tabs UI. ref: https://developer.chrome.com/docs/extensions/develop/ui/override-chrome-pages?hl=ja
 - Allow migration to the closed named session. Migrated tab is just added to the Open Tab in the chosen (closed named) session.
-- Function and hotkey to copy the current page title+URL for easier sharing.
 - Add a flag for saved bookmarks and open them automatically when the session gets activated.
 - In the search result, show the name of the session the open tab belongs to.
 - Session Name should be reflected if updated by other instance. We can compare the timestamp metadata.
