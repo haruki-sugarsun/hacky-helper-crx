@@ -248,3 +248,41 @@ describe("takeoverTab", () => {
     expect(mockBookmarkStorage.updateTabOwner).not.toHaveBeenCalled();
   });
 });
+
+describe("restoreClosedSession", () => {
+  it("should restore only tabs owned by the current instance", async () => {
+    const mockClosedSessions = [
+      {
+        id: "test-session-id",
+        name: "Test Session",
+        tabs: [
+          { url: "https://example.com/1", owner: "test-instance-id" },
+          { url: "https://example.com/2", owner: "other-instance" },
+        ],
+      },
+    ];
+
+    mockBookmarkStorage.getClosedNamedSessions.mockResolvedValue(
+      mockClosedSessions,
+    );
+
+    const mockWindow = { id: 1 };
+    (chrome.windows.create as jest.Mock).mockResolvedValue(mockWindow);
+
+    const mockCreatedTab = { id: 123, url: "https://example.com/1" };
+    (chrome.tabs.create as jest.Mock).mockResolvedValue(mockCreatedTab);
+
+    const result = await session.restoreClosedSession("test-session-id");
+
+    expect(result).toBeDefined();
+    expect(result?.id).toBe("test-session-id");
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      windowId: mockWindow.id,
+      url: "https://example.com/1",
+    });
+    expect(chrome.tabs.create).not.toHaveBeenCalledWith({
+      windowId: mockWindow.id,
+      url: "https://example.com/2",
+    });
+  });
+});
