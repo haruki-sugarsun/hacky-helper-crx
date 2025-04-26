@@ -13,28 +13,28 @@ Example Instructions:
 ## Strategy and Next Steps
 
 - Investigate Tabs UI structure:
-  - Review `tabs.html` for DOM structure.
-  - Locate the "takeover button" and its related elements.
-  - Analyze `src/tabs.ts` for existing event handling logic.
-  - Check `src/tabs.css` for button styling conventions.
-  - Refer to `designdocs/tabs_ui.md` for design guidelines.
+  - Review `tabs.html` for DOM structure. **[DONE]**
+  - Locate the "takeover button" and its related elements. **[DONE]**
+  - Analyze `src/tabs.ts` for existing event handling logic. **[DONE]**
+  - Check `src/tabs.css` for button styling conventions. **[DONE]**
+  - Refer to `designdocs/tabs_ui.md` for design guidelines. **[DONE]**
 - Design the "open" button:
-  - Define its position beside the "takeover button."
-  - Specify its behavior (e.g., open a new tab or specific URL).
-  - Ensure its style aligns with the existing UI.
+  - Define its position beside the "takeover button." **[DONE]**
+  - Specify its behavior (e.g., open a new tab or specific URL). **[DONE]**
+  - Ensure its style aligns with the existing UI. **[DONE]**
 - Implement the "open" button:
-  - Add the button to the HTML structure in `tabs.html`.
-  - Apply appropriate CSS for styling in `src/tabs.css`.
-  - Write JavaScript/TypeScript logic for its behavior in `src/tabs.ts`.
+  - Add the button to the HTML structure in `tabs.html`. **[DONE]**
+  - Apply appropriate CSS for styling in `src/tabs.css`. **[DONE]**
+  - Write JavaScript/TypeScript logic for its behavior in `src/tabs.ts`. **[DONE]**
 - Test the new button:
   - Write unit tests to validate its functionality.
   - Perform UI tests to ensure proper display and interaction.
   - Conduct regression tests to verify no impact on existing features.
 - Update documentation:
-  - Add details about the "open" button to `designdocs/tabs_ui.md`.
+  - Add details about the "open" button to `designdocs/tabs_ui.md`. **[DONE]**
 - Review and refactor:
-  - Conduct code reviews and improve the implementation.
+  - Conduct code reviews and improve the implementation. **[PENDING]**
 - Prepare for deployment:
-  - Format code using `npx prettier . --write`.
-  - Commit changes with a clear message.
-  - Create a pull request for review.
+  - Format code using `npx prettier . --write`. **[PENDING]**
+  - Commit changes with a clear message. **[PENDING]**
+  - Create a pull request for review. **[PENDING]**
