@@ -43,8 +43,6 @@ import {
   SAVE_TAB_TO_BOOKMARKS,
   OPEN_SAVED_BOOKMARK,
   SYNC_SESSION_TO_BOOKMARKS,
-  GET_CLOSED_NAMED_SESSIONS,
-  RESTORE_CLOSED_SESSION,
   REMOVE_SAVED_BOOKMARK,
 } from "./lib/constants";
 
@@ -416,7 +414,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 async function processNextTask() {
-  // TODO: Check if we enable the LLM service via LLM_ENABLED config. and clear the queue if disabled.
+  // Check if LLM services are enabled and clear the queue if disabled
+  const llmEnabled = await CONFIG_RO.LLM_ENABLED();
+  if (!llmEnabled) {
+    console.log("LLM services are disabled. Clearing the task queue.");
+    llmTasks.length = 0; // Clear the task queue
+    return; // Exit early as no tasks should be processed
+  }
 
   // Check the llmTasks if we have anything to execute:
   console.log(`Number of tasks in the queue: ${llmTasks.length}`);
@@ -825,42 +829,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               payload: {
                 success,
                 sessionId,
-              },
-            });
-          }
-          break;
-        case GET_CLOSED_NAMED_SESSIONS:
-          sendResponse({
-            type: "GET_CLOSED_NAMED_SESSIONS_RESULT",
-            payload: {
-              closedSessions: await SessionManagement.getClosedNamedSessions(),
-            },
-          });
-          break;
-        case RESTORE_CLOSED_SESSION:
-          const { sessionId } = payload;
-          if (!sessionId) {
-            throw new Error("Session ID is required");
-          }
-
-          // Restore the closed session
-          const restoredSession =
-            await SessionManagement.restoreClosedSession(sessionId);
-
-          if (restoredSession) {
-            sendResponse({
-              type: "RESTORE_CLOSED_SESSION_RESULT",
-              payload: {
-                success: true,
-                session: restoredSession,
-              },
-            });
-          } else {
-            sendResponse({
-              type: "RESTORE_CLOSED_SESSION_RESULT",
-              payload: {
-                success: false,
-                error: "Failed to restore session",
               },
             });
           }

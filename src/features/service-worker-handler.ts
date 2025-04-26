@@ -3,19 +3,26 @@
  * This file contains the logic for handling messages sent to the service worker.
  */
 
-import { ACTIVATE_SESSION, GET_CLOSED_NAMED_SESSIONS } from "../lib/constants";
-import { SyncedTabEntity } from "../lib/types";
+import {
+  ClosedNamedSession,
+  NamedSession,
+  SyncedTabEntity,
+} from "../lib/types";
 import {
   SuccessResult,
   ErrorResult,
+  ACTIVATE_SESSION,
   CLONE_NAMED_SESSION,
   GET_NAMED_SESSIONS,
   REASSOCIATE_NAMED_SESSION,
   GET_SYNCED_OPENTABS,
   TAKEOVER_TAB,
   GET_SAVED_BOOKMARKS,
+  GET_CLOSED_NAMED_SESSIONS,
+  RESTORE_CLOSED_SESSION,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
+
 /**
  * Handles incoming messages to the service worker.
  * Returns true if handled implmented message.
@@ -59,6 +66,10 @@ export function handleServiceWorkerMessage(
 
     case GET_SAVED_BOOKMARKS:
       handleGetSavedBookmarks(message, sendResponse);
+      break;
+
+    case RESTORE_CLOSED_SESSION:
+      handleRestoreClosedSession(message, sendResponse);
       break;
 
     default:
@@ -138,11 +149,18 @@ async function handleGetNamedSessions(
  * Handles the retrieval of closed named sessions.
  * @param sendResponse The callback to send a response.
  */
-function handleGetClosedNamedSessions(
-  sendResponse: (response?: any) => void,
-): void {
-  // Placeholder for actual implementation
-  sendResponse({ type: "GET_CLOSED_NAMED_SESSIONS_RESULT", payload: [] });
+async function handleGetClosedNamedSessions(
+  sendResponse: (response: ClosedNamedSession[] | ErrorResult) => void,
+): Promise<void> {
+  try {
+    const closedSessions = await SessionManagement.getClosedNamedSessions();
+    sendResponse(closedSessions);
+  } catch (error) {
+    console.error("Error retrieving closed named sessions:", error);
+    sendResponse({
+      error: "Failed to retrieve closed named sessions",
+    });
+  }
 }
 
 /**
@@ -249,5 +267,36 @@ export async function handleGetSavedBookmarks(
   } catch (error) {
     console.error("Error fetching saved bookmarks:", error);
     sendResponse({ error: "Failed to fetch saved bookmarks" });
+  }
+}
+
+/**
+ * Handles the restoration of a closed session.
+ * @param message The message containing the session ID to restore.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleRestoreClosedSession(
+  message: { payload: { sessionId: string } },
+  sendResponse: (response: NamedSession | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId } = message.payload;
+
+  if (!sessionId) {
+    console.error("Session ID is missing in RESTORE_CLOSED_SESSION message.");
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+
+  try {
+    const restoredSession =
+      await SessionManagement.restoreClosedSession(sessionId);
+    if (restoredSession) {
+      sendResponse(restoredSession);
+    } else {
+      sendResponse({ error: "Failed to restore session" });
+    }
+  } catch (error) {
+    console.error("Error restoring session:", error);
+    sendResponse({ error: "Failed to restore session" });
   }
 }

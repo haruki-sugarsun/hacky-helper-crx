@@ -1,7 +1,10 @@
 /**
  * Typed abstraction layer for interacting with service-worker via messages.
+ * TODO: Make the method signatures more consistent.
+ *       Generally message passing between service-worker-interface and the
+ *       service-worker-handler uses ErrorResult.
+ *       And the methods in ServiceWorkerInterface throws Errors.
  */
-import { GET_CLOSED_NAMED_SESSIONS, ACTIVATE_SESSION } from "../lib/constants";
 import {
   NamedSession,
   ClosedNamedSession,
@@ -12,6 +15,9 @@ import {
   ErrorResult,
   GET_NAMED_SESSIONS,
   CLONE_NAMED_SESSION,
+  ACTIVATE_SESSION,
+  GET_CLOSED_NAMED_SESSIONS,
+  RESTORE_CLOSED_SESSION,
   GET_SYNCED_OPENTABS,
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
@@ -88,17 +94,15 @@ class ServiceWorkerInterface {
    * Returns an empty array if the operation fails or no closed sessions are found.
    */
   async getClosedNamedSessions(): Promise<ClosedNamedSession[]> {
-    try {
-      const response = await chrome.runtime.sendMessage({
-        type: GET_CLOSED_NAMED_SESSIONS,
-      });
-      if (response && response.type === "GET_CLOSED_NAMED_SESSIONS_RESULT") {
-        return response.payload.closedSessions || [];
-      }
-    } catch (error) {
-      console.error("Error in getClosedNamedSessions:", error);
+    let response = (await chrome.runtime.sendMessage({
+      type: GET_CLOSED_NAMED_SESSIONS,
+    })) as ClosedNamedSession[] | ErrorResult;
+
+    if ("error" in response) {
+      throw new Error(`Error in getClosedNamedSessions: ${response.error}`);
     }
-    return [];
+
+    return response;
   }
 
   /**
@@ -176,6 +180,25 @@ class ServiceWorkerInterface {
       console.error("Error in getSyncedOpenTabs:", error);
       return [];
     }
+  }
+
+  /**
+   * Restores a closed session by its session ID.
+   *
+   * @param sessionId - The unique identifier of the session to restore.
+   * @returns A promise that resolves to a NamedSession object if successful, or null otherwise.
+   */
+  async restoreClosedSession(sessionId: string): Promise<NamedSession> {
+    let response = (await chrome.runtime.sendMessage({
+      type: RESTORE_CLOSED_SESSION,
+      payload: { sessionId },
+    })) as NamedSession | ErrorResult;
+
+    if ("error" in response) {
+      throw new Error(`Error in restoreClosedSession: ${response.error}`);
+    }
+
+    return response;
   }
 }
 
