@@ -12,6 +12,14 @@ Example Instructions:
 
 ## Strategy and Next Steps
 
+- Session restoration should open the tabs owned by the current instance:
+  - Investigate how session data is stored and retrieved in `src/session-management.ts`. **[DONE]**
+  - Review `src/session-management-helpers.ts` for utility functions related to session handling. **[DONE]**
+  - Check `src/service-worker-handler.ts` for any session-related communication logic. **[DONE]**
+  - Ensure that tabs are restored only for the current instance by identifying ownership criteria. **[DONE]**
+  - Implement logic to filter and restore tabs based on ownership in `src/session-management.ts`. **[DONE]**
+  - Write unit tests in `src/session-management.test.ts` to validate the restoration logic.
+  - Conduct integration tests to ensure proper session restoration behavior.
 - Investigate Tabs UI structure:
   - Review `tabs.html` for DOM structure. **[DONE]**
   - Locate the "takeover button" and its related elements. **[DONE]**
