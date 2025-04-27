@@ -20,6 +20,7 @@ import {
   GET_SAVED_BOOKMARKS,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
+  MIGRATE_TABS,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 
@@ -62,6 +63,10 @@ export function handleServiceWorkerMessage(
 
     case TAKEOVER_TAB:
       handleTakeoverTab(message, sendResponse);
+      break;
+
+    case MIGRATE_TABS:
+      handleMigrateTabs(message, sendResponse);
       break;
 
     case GET_SAVED_BOOKMARKS:
@@ -220,6 +225,58 @@ async function handleReassociateNamedSession(
   } catch (error) {
     console.error("Error in reassociating session:", error);
     sendResponse({ error: "Failed to reassociate session" });
+  }
+}
+
+/**
+ * Handles the migration of tabs to a new session.
+ * @param message The message containing the session ID and tab IDs.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleMigrateTabs(
+  message: any,
+  sendResponse: (response?: SuccessResult | ErrorResult) => void,
+) {
+  try {
+    const { tabIds, toSessionId, toWindowId } = message.payload;
+    if (!tabIds || (!toSessionId && !toWindowId)) {
+      console.error(
+        "Tab IDs or destination (session ID or window ID) is missing in MIGRATE_TABS message.",
+      );
+      sendResponse({
+        error: "Tab IDs and either session ID or window ID are required",
+      });
+      return;
+    }
+
+    if (toWindowId) {
+      // If a window ID is provided, we need to migrate the tabs to that window
+      const windowId = parseInt(toWindowId, 10);
+      if (isNaN(windowId)) {
+        console.error("Invalid window ID provided in MIGRATE_TABS message.");
+        sendResponse({ error: "Invalid window ID" });
+        return;
+      }
+      // Migrate the tabs to the destination window
+      await SessionManagement.migrateTabsToWindow(tabIds, windowId);
+      sendResponse({
+        success: true,
+      });
+    }
+
+    // TODO: Implement for a closed session.
+    // If a session ID is provided, we need to migrate the tabs to that session
+    // const migratedTabs = await SessionManagement.migrateTabsToSession(
+    //   tabIds,
+    //   toSessionId,
+    // );
+    // sendResponse({
+    //   success: true
+    // });
+    sendResponse({ error: "Not Yet Implemented" });
+  } catch (error) {
+    console.error("Error in migrating tabs:", error);
+    sendResponse({ error: "Failed to migrate tabs" });
   }
 }
 

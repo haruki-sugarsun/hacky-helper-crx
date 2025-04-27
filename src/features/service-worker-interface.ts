@@ -21,6 +21,7 @@ import {
   GET_SYNCED_OPENTABS,
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
+  MIGRATE_TABS,
 } from "./service-worker-messages";
 
 /**
@@ -163,6 +164,32 @@ class ServiceWorkerInterface {
       console.error("Error in reassociateNamedSession:", error);
     }
     return { success: false };
+  }
+
+  /**
+   * Migrates tabs from one session to another.
+   *
+   * @param params - An object containing the source and destination session IDs.
+   * @returns A promise that resolves to a SuccessResult indicating the outcome.
+   */
+  async migrateTabs(
+    tabIds: number[],
+    toSessionId: string | undefined,
+    toWindowId: number | undefined,
+  ): Promise<SuccessResult> {
+    // We need either of toSessionId or toWindowId
+    if (!toSessionId && !toWindowId) {
+      throw new Error("Either toSessionId or toWindowId must be provided");
+    }
+
+    let response = (await chrome.runtime.sendMessage({
+      type: MIGRATE_TABS,
+      payload: { tabIds, toSessionId, toWindowId },
+    })) as SuccessResult | ErrorResult;
+    if ("error" in response) {
+      throw new Error(`Error in migrateTabs: ${response.error}`);
+    }
+    return response;
   }
 
   /**

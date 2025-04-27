@@ -1,7 +1,6 @@
 import "./style.css";
 import "./popup.css";
 import { CONFIG_RO, ConfigStore } from "./features/config-store";
-import { MIGRATE_TAB } from "./lib/constants";
 import serviceWorkerInterface from "./features/service-worker-interface";
 import { handleMessages } from "./popup/popup-messages";
 import { openSidePanel } from "./sidepanel-helper";
@@ -212,21 +211,17 @@ async function showMigrationDialog() {
 // Function to migrate a tab to another window
 async function migrateTab(tabId: number, windowId: number) {
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: MIGRATE_TAB,
-      payload: {
-        tabId,
-        windowId,
-      },
-    });
-
-    if (response && response.type === "MIGRATE_TAB_RESULT") {
-      console.log("Tab migrated successfully:", response.payload);
+    const response = await serviceWorkerInterface.migrateTabs(
+      [tabId],
+      undefined,
+      windowId,
+    );
+    if (response && response.success) {
+      console.log("Tab migrated successfully:", response);
       return true;
-    } else {
-      console.error("Error migrating tab:", response);
-      return false;
     }
+    console.error("Error migrating tab:", response);
+    return false;
   } catch (error) {
     console.error("Error sending migrate tab message:", error);
     return false;

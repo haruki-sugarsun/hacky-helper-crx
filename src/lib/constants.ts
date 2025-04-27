@@ -27,7 +27,6 @@ export const RENAME_NAMED_SESSION = "RENAME_NAMED_SESSION";
 // Tab Categorization Constants
 export const CATEGORIZE_TABS = "CATEGORIZE_TABS";
 export const SUGGEST_TAB_DESTINATIONS = "SUGGEST_TAB_DESTINATIONS";
-export const MIGRATE_TAB = "MIGRATE_TAB";
 export const SIMILARITY_THRESHOLD = 0.7; // Default similarity threshold for tab categorization
 
 // Bookmark Storage Constants
