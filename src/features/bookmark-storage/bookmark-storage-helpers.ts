@@ -1,6 +1,38 @@
 import { NamedSession, NamedSessionTab } from "../../lib/types";
 
 /**
+ * Extracts the last valid JSON object from a string.
+ * @param text The string to extract JSON from
+ * @returns An object with the extracted JSON and the text before it, or null if no valid JSON found
+ */
+export function extractLastJsonFromString(
+  text: string,
+): { beforeText: string; json: any } | null {
+  const lastOpenBraceIndex = text.lastIndexOf("{");
+  const lastCloseBraceIndex = text.lastIndexOf("}");
+
+  if (lastOpenBraceIndex !== -1 && lastCloseBraceIndex > lastOpenBraceIndex) {
+    // Extract what appears to be the last JSON object
+    const potentialJson = text.substring(
+      lastOpenBraceIndex,
+      lastCloseBraceIndex + 1,
+    );
+    const beforeText = text.substring(0, lastOpenBraceIndex).trim();
+
+    try {
+      // Verify it's valid JSON
+      const parsedJson = JSON.parse(potentialJson);
+      return { beforeText, json: parsedJson };
+    } catch (e) {
+      // Not valid JSON
+      console.debug("Failed to parse potential JSON in text", e);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Encodes session title using session data.
  */
 export function encodeSessionTitle(session: NamedSession): string {
@@ -14,23 +46,18 @@ export function encodeSessionTitle(session: NamedSession): string {
 export function decodeSessionTitle(
   title: string,
 ): { sessionName: string; sessionId: string; updatedAt?: number } | null {
-  let match = title.match(/^(.+?) (\{.*\})$/);
-  if (match) {
-    try {
-      const metadata = JSON.parse(match[2]);
-      if (metadata && metadata.id) {
-        return {
-          sessionName: match[1],
-          sessionId: metadata.id,
-          updatedAt: metadata.updatedAt,
-        };
-      }
-    } catch (e) {
-      console.error("Failed to parse session metadata:", e);
-    }
+  const extracted = extractLastJsonFromString(title);
+
+  if (extracted && extracted.json.id) {
+    return {
+      sessionName: extracted.beforeText,
+      sessionId: extracted.json.id,
+      updatedAt: extracted.json.updatedAt,
+    };
   }
+
   // Fallback to old logic for backward compatibility
-  match = title.match(/^(.+) \(([a-f0-9-]+)\)$/i);
+  const match = title.match(/^(.+) \(([a-f0-9-]+)\)$/i);
   if (match) {
     return {
       sessionName: match[1],
@@ -54,14 +81,13 @@ export function decodeTabTitle(title: string): {
   title: string;
   metadata?: any; // TODO: Define a proper type for metadata.
 } {
-  let match = title.match(/^(.+?) (\{.*\})$/);
-  if (match) {
-    try {
-      const metadata = JSON.parse(match[2]);
-      return { title: match[1].trim(), metadata };
-    } catch (e) {
-      console.error("Failed to parse tab metadata:", e);
-    }
+  const extracted = extractLastJsonFromString(title);
+
+  if (extracted) {
+    return {
+      title: extracted.beforeText,
+      metadata: extracted.json,
+    };
   }
   return { title: title };
 }

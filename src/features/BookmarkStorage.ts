@@ -22,6 +22,7 @@ export class BookmarkStorage {
   // parentFolderId is set in service-worker.ts via initializeBookmarkParentFolder()
   private parentFolderId: string | null = null;
   private sessionFolders: Map<string, BookmarkSessionFolder> = new Map();
+  // TODO: FIX. sessionFloders may contain cluttered like p-🧮Hacky-Helper-CRX {"id":"da737155-07ee-46bb-82a0-d18ec5f7e3fd","updatedAt":1745713274388}
   private initialized = false;
 
   private constructor() {}
@@ -71,6 +72,7 @@ export class BookmarkStorage {
 
       for (const folder of children) {
         // Check if this is a session folder by looking for metadata in the title
+        console.log(`Loading ${folder.title} folder...`);
         const sessionData = decodeSessionTitle(folder.title);
         if (sessionData) {
           const { sessionId, sessionName } = sessionData;
@@ -113,6 +115,15 @@ export class BookmarkStorage {
   ): Promise<BookmarkSessionFolder | null> {
     if (!this.parentFolderId || !session.name) return null;
 
+    // TODO: Debugging code.
+    // Validate the session name doesn't contain characters that could break encoding
+    if (session.name.includes("{") || session.name.includes("}")) {
+      console.error("Invalid session name: Cannot contain curly braces");
+      throw new Error(
+        "Session name cannot contain '{' or '}' characters as they interfere with metadata encoding",
+      );
+    }
+
     try {
       await this.initialize();
 
@@ -131,6 +142,7 @@ export class BookmarkStorage {
         }
       } else {
         // Create a new session folder
+        // TODO: This is an old Logic. we should use the same encoding.
         const folderTitle = `${session.name} (${session.id})`;
         const newFolder = await chrome.bookmarks.create({
           parentId: this.parentFolderId,
@@ -428,6 +440,7 @@ export class BookmarkStorage {
             };
           });
 
+        // TODO: This might produce wrong `name` with metadata included.
         // Create a closed session object
         const closedSession: ClosedNamedSession = {
           id: sessionId,

@@ -611,6 +611,7 @@ function createSessionListItem(
         onClick: () => forceSyncSession(sessionId),
       },
       {
+        // TODO: Remove this as this is nearly a debugging feature.
         text: "Update Tabs",
         onClick: () => updateSessionTabs(sessionId),
       },
