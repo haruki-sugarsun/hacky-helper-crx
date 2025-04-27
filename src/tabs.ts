@@ -3,7 +3,6 @@ import {
   CREATE_NAMED_SESSION,
   CATEGORIZE_TABS,
   SUGGEST_TAB_DESTINATIONS,
-  MIGRATE_TAB,
   SAVE_TAB_TO_BOOKMARKS,
   SYNC_SESSION_TO_BOOKMARKS,
   UPDATE_NAMED_SESSION_TABS,
@@ -1581,7 +1580,7 @@ async function updateTabsTable(
 
         if (currentWindow.id && currentWindow.id !== tab.windowId) {
           // If viewing another window's tabs, move directly to current window
-          await migrateTab(tabId, currentWindow.id);
+          await migrateTabs([tabId], currentWindow.id);
         } else {
           // If in current window, show migration dialog
           showMigrationDialog(tabId, tabUrl);
@@ -1696,7 +1695,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
             // Add click event to migrate the tab
             destinationOption.addEventListener("click", async () => {
               if (session.windowId) {
-                await migrateTab(tabId, session.windowId);
+                await migrateTabs([tabId], session.windowId);
                 dialog.style.display = "none";
               }
             });
@@ -1735,7 +1734,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
       // Add click event to migrate the tab
       destinationOption.addEventListener("click", async () => {
         if (window.id) {
-          await migrateTab(tabId, window.id);
+          await migrateTabs([tabId], window.id);
           dialog.style.display = "none";
         }
       });
@@ -1825,7 +1824,7 @@ async function showMigrationDialogForMultipleTabs(tabIds: number[]) {
       // Add click event to migrate the tabs
       destinationOption.addEventListener("click", async () => {
         if (window.id) {
-          await migrateMultipleTabs(tabIds, window.id);
+          await migrateTabs(tabIds, window.id);
           dialog.style.display = "none";
         }
       });
@@ -1848,23 +1847,20 @@ async function showMigrationDialogForMultipleTabs(tabIds: number[]) {
  * @param tabIds Array of tab IDs to migrate
  * @param windowId Destination window ID
  */
-async function migrateMultipleTabs(tabIds: number[], windowId: number) {
+async function migrateTabs(tabIds: number[], windowId: number) {
   try {
     // Store the current selected session info before migration
     const selectedSessionInfo = getSelectedSessionInfo();
 
-    // TODO: Define the API in service-worker-interface.ts.
-    const response = await chrome.runtime.sendMessage({
-      type: MIGRATE_TAB,
-      payload: {
-        tabIds,
-        windowId,
-      },
-    });
+    const response = await serviceWorkerInterface.migrateTabs(
+      tabIds,
+      undefined,
+      windowId,
+    );
+    if ("success" in response) {
+      console.log("Tabs migrated successfully:", response.success);
 
-    if (response && response.type === "MIGRATE_TAB_RESULT") {
-      console.log("Tabs migrated successfully:", response.payload);
-
+      // TODO: UI update should be handled separately.
       // Refresh the UI with tab information, but maintain the selected session
       chrome.windows.getAll({ populate: true }).then((windows) => {
         state_windows = windows;
@@ -1878,39 +1874,6 @@ async function migrateMultipleTabs(tabIds: number[], windowId: number) {
     }
   } catch (error) {
     console.error("Error sending migrate tabs message:", error);
-  }
-}
-
-// Function to migrate a tab to another window
-async function migrateTab(tabId: number, windowId: number) {
-  try {
-    // Store the current selected session info before migration
-    const selectedSessionInfo = getSelectedSessionInfo();
-
-    const response = await chrome.runtime.sendMessage({
-      type: MIGRATE_TAB,
-      payload: {
-        tabId,
-        windowId,
-      },
-    });
-
-    if (response && response.type === "MIGRATE_TAB_RESULT") {
-      console.log("Tab migrated successfully:", response.payload);
-
-      // Refresh the UI with tab information, but maintain the selected session
-      chrome.windows.getAll({ populate: true }).then((windows) => {
-        state_windows = windows;
-        chrome.tabs.query({ currentWindow: true }).then((tabs) => {
-          state_tabs = tabs;
-          updateUI(state_windows, selectedSessionInfo);
-        });
-      });
-    } else {
-      console.error("Error migrating tab:", response);
-    }
-  } catch (error) {
-    console.error("Error sending migrate tab message:", error);
   }
 }
 
