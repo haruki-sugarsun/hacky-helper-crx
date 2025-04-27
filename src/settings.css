@@ -75,6 +75,7 @@ input[type="text"] {
   flex: 2;
   padding: 0.5rem 1rem;
   border: 1px solid var(--border-color);
+  color: var(--primary-color);
   border-radius: 4px;
   background: var(--input-bg);
   font-size: 1rem;
