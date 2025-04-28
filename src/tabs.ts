@@ -921,7 +921,12 @@ async function restoreClosedSession(sessionId: string) {
   }
 }
 
-// TODO: document.
+/**
+ * Moves the target window to the position and dimensions of the current window and focuses it.
+ * This effectively "pulls" the target window to the current display setup.
+ *
+ * @param targetWindowId - The ID of the window to pull.
+ */
 async function pullWindow(targetWindowId: number) {
   try {
     const currentWindow = await chrome.windows.getCurrent();
