@@ -10,6 +10,8 @@ import {
 } from "../lib/constants";
 import { Ollama } from "ollama";
 import OpenAI from "openai";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 // Base class for LLM services
 // This base class is useful for:
@@ -285,33 +287,58 @@ export class OllamaLLMService extends BaseLLMService {
   }
 
   protected async doCreateSummary(content: string): Promise<string> {
+    const SummarySchema = z.object({ summary: z.string() });
     const response = await this.client.generate({
       model: this.model,
       prompt: this.getSummaryPrompt(content),
       stream: false,
+      format: zodToJsonSchema(SummarySchema),
     });
 
-    const summary = response.response.trim();
-    console.log("Ollama Summary Generated:", summary);
-
-    return summary;
+    try {
+      const result = SummarySchema.parse(JSON.parse(response.response));
+      console.log(
+        "Ollama Summary Generated with structured output:",
+        result.summary.trim(),
+      );
+      return result.summary.trim();
+    } catch (error) {
+      console.error(
+        "Failed to parse JSON output, returning raw output:",
+        error,
+      );
+      return response.response.trim();
+    }
   }
 
   protected async doListKeywords(content: string): Promise<string[]> {
+    const KeywordsSchema = z.object({ keywords: z.array(z.string()) });
     const response = await this.client.generate({
       model: this.model,
       prompt: this.getKeywordsPrompt(content),
       stream: false,
+      format: zodToJsonSchema(KeywordsSchema),
     });
 
-    // Split the response by commas and trim whitespace
-    const keywords = response.response
-      .split(",")
-      .map((keyword: string) => keyword.trim())
-      .filter(Boolean);
-    console.log("Ollama Keywords Extracted:", keywords.join(", "));
-
-    return keywords;
+    try {
+      const result = KeywordsSchema.parse(JSON.parse(response.response));
+      console.log(
+        "Ollama Keywords Extracted with structured output:",
+        result.keywords.join(", "),
+      );
+      return result.keywords;
+    } catch (error) {
+      console.error(
+        "Failed to parse JSON output, falling back to raw output:",
+        error,
+      );
+      const keywords = response.response
+        .split(",")
+        .map((keyword: string) => keyword.trim())
+        .filter(Boolean);
+      console.log("Ollama Keywords Extracted (fallback):", keywords.join(", "));
+      return keywords;
+    }
   }
 
   protected async doGenerateEmbeddings(content: string): Promise<number[]> {
