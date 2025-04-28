@@ -498,6 +498,7 @@ requestTabSummariesButton.addEventListener("click", async () => {
 });
 
 // Helper function to create a session list item with common styling and behavior.
+// TODO: Consider adding more session info so that we can pass more hints to the action handlers.
 function createSessionListItem(
   label: string,
   isCurrent: boolean,
@@ -547,6 +548,16 @@ function createSessionListItem(
         onClick: () => cloneSession(sessionId),
       },
       {
+        text: "Pull Window",
+        onClick: () => {
+          if (windowId !== undefined) {
+            pullWindow(windowId);
+          } else {
+            alert("Window ID is undefined.");
+          }
+        },
+      },
+      {
         text: "Delete Session",
         onClick: () => deleteSession(sessionId),
       },
@@ -557,6 +568,16 @@ function createSessionListItem(
       {
         text: "Create Named Session",
         onClick: () => promptCreateNamedSession(),
+      },
+      {
+        text: "Pull Window",
+        onClick: () => {
+          if (windowId !== undefined) {
+            pullWindow(windowId);
+          } else {
+            alert("Window ID is undefined.");
+          }
+        },
       },
     ];
   }
@@ -895,6 +916,39 @@ async function restoreClosedSession(sessionId: string) {
     console.error("Error restoring session:", error);
     alert(
       "Error restoring session: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
+/**
+ * Moves the target window to the position and dimensions of the current window and focuses it.
+ * This effectively "pulls" the target window to the current display setup.
+ *
+ * @param targetWindowId - The ID of the window to pull.
+ */
+async function pullWindow(targetWindowId: number) {
+  try {
+    const currentWindow = await chrome.windows.getCurrent();
+    console.log(
+      `Current window id: ${currentWindow.id}, position: top=${currentWindow.top}, left=${currentWindow.left}`,
+    );
+    if (currentWindow.id === targetWindowId) {
+      alert("Target window is already the current window.");
+      return;
+    }
+    await chrome.windows.update(targetWindowId, {
+      top: currentWindow.top,
+      left: currentWindow.left,
+      width: currentWindow.width,
+      height: currentWindow.height,
+      focused: true,
+    });
+    alert(`Pulled window ${targetWindowId} to current window's position.`);
+  } catch (error) {
+    console.error("Error pulling window:", error);
+    alert(
+      "Error pulling window: " +
         (error instanceof Error ? error.message : String(error)),
     );
   }
