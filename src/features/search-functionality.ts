@@ -4,7 +4,11 @@
 
 import { SearchResultComponent } from "../ui/search-result";
 // TODO: Later move these logics to interact with service-worker to tabs.ts. so that features/ files only contains the pure business logic which are easy to test.
-import { NamedSession, ClosedNamedSession } from "../lib/types";
+import {
+  NamedSession,
+  ClosedNamedSession,
+  SyncedTabEntity,
+} from "../lib/types";
 import serviceWorkerInterface from "./service-worker-interface";
 
 /**
@@ -154,6 +158,7 @@ async function showSearchResults(query: string): Promise<void> {
       await serviceWorkerInterface.getNamedSessions();
     const closedSessions: ClosedNamedSession[] =
       await serviceWorkerInterface.getClosedNamedSessions();
+    const savedBookmarks = await serviceWorkerInterface.getAllSavedBookmarks();
     // TODO: we can actually fetch active named sessions direclty.
     // Calculate activeNamedSessions by excluding closed sessions from named sessions
     const activeNamedSessions: NamedSession[] = namedSessions.filter(
@@ -216,11 +221,24 @@ async function showSearchResults(query: string): Promise<void> {
     // Clear previous results
     searchResults.innerHTML = "";
 
-    // Combine all matching sessions and tabs
+    const matchingBookmarks = savedBookmarks
+      .filter((bookmark: SyncedTabEntity) =>
+        bookmark.title.toLowerCase().includes(normalizedQuery),
+      )
+      .map((bookmark: SyncedTabEntity) => ({
+        element: document.createElement("li"),
+        label: bookmark.title,
+        subLabel: bookmark.url,
+        isCurrent: false,
+        savedBookmark: { sessionId: bookmark.sessionId, url: bookmark.url },
+      }));
+
+    // Combine all matching sessions, tabs, and bookmarks
     const allMatches = [
       ...matchingNamedSessions,
       ...matchingClosedSessions,
       ...matchingTabs,
+      ...matchingBookmarks,
     ];
 
     if (allMatches.length === 0) {
@@ -249,6 +267,16 @@ async function showSearchResults(query: string): Promise<void> {
             searchResults,
             "Closed Sessions",
             matchingClosedSessions,
+          ),
+        );
+      }
+
+      if (matchingBookmarks.length > 0) {
+        resultComponents = resultComponents.concat(
+          addResultsCategory(
+            searchResults,
+            "Saved Bookmarks",
+            matchingBookmarks,
           ),
         );
       }
@@ -317,6 +345,7 @@ function addResultsCategory(
     session?: { sessionId?: string }; // `session` exists for sessions. Handler will activate or restore it.
     tab?: { tabId: number; windowId: number }; // `tab` exists for open tabs. Handler will activate it.
     isCurrent: boolean;
+    savedBookmark?: { sessionId: string; url: string }; // Added field for saved bookmarks
   }>,
 ): SearchResultComponent[] {
   // Create category header
@@ -348,6 +377,26 @@ function addResultsCategory(
           // Handle tabs using tabId and activate window
           chrome.tabs.update(result.tab.tabId, { active: true });
           chrome.windows.update(result.tab.windowId!, { focused: true });
+        } else if (result.savedBookmark) {
+          // Handle saved bookmarks
+          const { sessionId, url } = result.savedBookmark;
+          serviceWorkerInterface.activateSession(sessionId).then(() =>
+            serviceWorkerInterface
+              .getNamedSessions()
+              .then((sessions) => sessions.find((s) => s.id === sessionId))
+              .then((session) => {
+                const windowId = session?.windowId;
+                if (!windowId) return;
+                chrome.tabs.query({ windowId }, (tabs) => {
+                  const matchingTab = tabs.find((tab) => tab.url === url);
+                  if (matchingTab) {
+                    chrome.tabs.update(matchingTab.id!, { active: true });
+                  } else {
+                    chrome.tabs.create({ url, windowId });
+                  }
+                });
+              }),
+          );
         }
       },
     });

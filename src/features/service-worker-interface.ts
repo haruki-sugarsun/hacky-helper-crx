@@ -68,6 +68,28 @@ class ServiceWorkerInterface {
   }
 
   /**
+   * Retrieves saved bookmarks from all sessions.
+   * TODO: Consider if we go with this, define new message type, or inline this in search-functionality.ts.
+   * @returns A promise that resolves to an array of SyncedTabEntity objects from all sessions.
+   */
+  async getAllSavedBookmarks(): Promise<SyncedTabEntity[]> {
+    try {
+      const sessions = await this.getNamedSessions();
+      const allBookmarks: SyncedTabEntity[] = [];
+
+      for (const session of sessions) {
+        const bookmarks = await this.getSavedBookmarks(session.id);
+        allBookmarks.push(...bookmarks);
+      }
+
+      return allBookmarks;
+    } catch (error) {
+      console.error("Error in getAllSavedBookmarks:", error);
+      return [];
+    }
+  }
+
+  /**
    * Takes over a tab by its backendTabId.
    *
    * @param backendTabId - The ID of the tab to take over.
