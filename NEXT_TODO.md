@@ -27,9 +27,6 @@ Identify the section in updateUI() responsible for rendering tab items and their
     - In updateUI(), identify the parent container holding the tab elements.
     - Add a `dragover` event listener on the container to enable dropping (using preventDefault).
     - Attach a `drop` event listener to handle drop events, validate dragged data, and determine the correct insertion index.
-  - **Step 3: State Update for Tab Sessions**
-    - In updateUI() or its helper functions, implement logic to compute the new tab order after a drop event.
-    - Update the underlying tab session state with the new order and persist these changes.
   - **Step 4: UI Integration and Visual Feedback**
     - Enhance updateUI() to include visual cues (e.g., highlighting drop targets) during drag-n-drop operations.
     - Optionally add conditional rendering of migration controls based on the current state.

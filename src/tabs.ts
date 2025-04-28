@@ -60,6 +60,7 @@ var currentTabId: number | undefined; // ID of the current tab
 /**
  * Helper function to handle a drop event for a tab item.
  * Handles tab migration to another window or session.
+ * TODO: Check if this is effective or not.
  */
 function handleTabDrop(
   e: DragEvent,
@@ -664,11 +665,14 @@ function createSessionListItem(
     li.classList.add("drag-over"); // Add visual indicator for drag-over
   });
 
+  // Add dragleave event listener to clean up visual indicator
   li.addEventListener("dragleave", () => {
     li.classList.remove("drag-over"); // Remove visual indicator
   });
 
+  // Add drop event listener to handle tab migration
   li.addEventListener("drop", (event) => {
+    // TODO: Support multiple tabs.
     event.preventDefault();
     handleTabDrop(event, windowId, sessionId);
     li.classList.remove("drag-over"); // Clean up visual indicator
@@ -1108,6 +1112,7 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
   const tableBody = tabsTable.querySelector("tbody")!;
   tableBody.innerHTML = "";
   if (!tableBody.hasAttribute("drag-drop-listeners")) {
+    // TODO: Check if this can be called multiple times.
     tableBody.setAttribute("drag-drop-listeners", "true");
     tableBody.addEventListener("dragover", (e) => {
       e.preventDefault();
