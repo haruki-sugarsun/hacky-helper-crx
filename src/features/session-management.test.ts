@@ -806,6 +806,22 @@ describe("Session Management Tests", () => {
     const session = await mockBookmarkStorage.getSession("session1");
     expect(session).toEqual(mockSession);
   });
+
+  // Test for getSession
+  it("getSession should retrieve a specific session by ID", async () => {
+    const mockSession = {
+      id: "session1",
+      name: "Test Session",
+      windowId: 1,
+      tabs: [],
+    };
+
+    // Mock implementation
+    mockBookmarkStorage.getSession.mockResolvedValue(mockSession);
+
+    const session = await mockBookmarkStorage.getSession("session1");
+    expect(session).toEqual(mockSession);
+  });
   it("restoreClosedSession should restore a closed session", async () => {
     vi.mocked(chrome.storage.local.get).mockResolvedValue({
       hacky_helper_named_sessions: JSON.stringify({}),
