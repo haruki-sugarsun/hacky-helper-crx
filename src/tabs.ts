@@ -1485,6 +1485,7 @@ async function updateTabsTable(
         const digest = tabSummary.summaries[0]; // Get the most recent summary
         const date = new Date(digest.timestamp);
         const formattedDate = date.toLocaleString();
+        // TODO: We have similar summarySnippet generation code? Dedup.
         summarySnippet = `
           <div class="summary-timestamp">Generated: ${formattedDate}</div>
           <div class="summary-text">${digest.summary}</div>
