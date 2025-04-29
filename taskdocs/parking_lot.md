@@ -14,7 +14,6 @@ We have unstructured, just-idea notes here:
 - Open the sidepanel from popup.
 - Hot key to trigger the sidepanel feature?
 - Keeping pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.
-- Support migrate to a closed Named Session. We may update the existing UI in Tabs UI or Popup with a search for named sessions.
 - Improve session restoration on browser start. We can refer the sessionId in URL, but it is not working well yet.
 - Action label for "force sync" session should say "to Backend".
 - Replace the new-tab-page with the minimal UI like Tabs UI. ref: https://developer.chrome.com/docs/extensions/develop/ui/override-chrome-pages?hl=ja
@@ -37,6 +36,7 @@ We have unstructured, just-idea notes here:
 - Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user if they want to open or takeover others' tabs.
 - end-to-end tests
 - Toast message+log collection instead of alert, and timeout measurement stops while the focus is not on the window.
+- Update Tabs UI title with the session title.
 - Clear the query in the input on focus-search-bar key action.
 - Search for entries matching the URL.
 - Show Favicon in Tabs UI Tab list table.
@@ -47,4 +47,9 @@ We have unstructured, just-idea notes here:
 - Implement tab migration (including drag-and-drop) _to_ closed named sessions. This involves:
   - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
   - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
+- Show favicon in the Tabs table.
+- "Edit" feature for Saved Bookmarks.
 - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
+- Update ARCHITECTURE.md and designdocs based on the recent changes.
+- Want to have double click as pull window. or with a modifier?
+- Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
