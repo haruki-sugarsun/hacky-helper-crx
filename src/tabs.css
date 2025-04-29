@@ -738,3 +738,73 @@ content {
   font-weight: bold;
   margin-top: 5px;
 }
+
+.drag-over {
+  border: 2px dashed #0078d7; /* Highlight with a dashed border */
+  background-color: rgba(0, 120, 215, 0.1); /* Subtle background color */
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease; /* Smooth transition */
+}
+
+.drag-success {
+  animation: success-pulse 0.5s ease-out;
+}
+
+@keyframes success-pulse {
+  0% {
+    background-color: rgba(0, 255, 0, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.multi-selected {
+  background-color: rgba(0, 120, 215, 0.2); /* Light blue background */
+  border: 2px solid #0078d7; /* Solid blue border */
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease; /* Smooth transition */
+}
+
+.dragging-multi {
+  opacity: 0.6; /* Slightly transparent to indicate dragging */
+  background-color: rgba(0, 120, 215, 0.3); /* Highlight with a light blue */
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease; /* Smooth transition */
+}
+
+/* Styles for the drag image block */
+#dragImageBlock {
+  position: absolute;
+  top: -9999px; /* Far outside the page view */
+  left: -9999px; /* Far outside the page view */
+  width: auto;
+  height: auto;
+  pointer-events: none; /* Prevent interaction */
+  user-select: none; /* Prevent text selection */
+  opacity: 0.8;
+  z-index: 9999;
+}
+
+#dragImageBlock ul li {
+  margin: 0;
+  padding: 10px;
+  background-color: rgba(100, 100, 100, 0.8);
+  border: 1px solid black;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  color: black;
+  font-family: Arial, sans-serif;
+  text-align: left;
+  line-height: 1.5;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  list-style-type: none;
+  font-size: 12px;
+}

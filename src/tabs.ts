@@ -58,6 +58,54 @@ var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window. This is mostly
 var state_sessions: NamedSession[] = []; // Named Sessions from the service worker
 var currentTabId: number | undefined; // ID of the current tab
 
+/**
+ * Helper function to handle a drop event for a tab item.
+ * Handles tab migration to another window or session.
+ */
+function handleTabDrop(
+  e: DragEvent,
+  windowId: number | undefined,
+  sessionId: string | undefined,
+) {
+  e.preventDefault();
+  const draggedTabIdsStr = e.dataTransfer?.getData("application/json");
+  let draggedTabIds: number[] = [];
+
+  try {
+    draggedTabIds = JSON.parse(draggedTabIdsStr || "[]");
+  } catch (error) {
+    console.error("Failed to parse dragged tab IDs:", error);
+    return;
+  }
+
+  if (!Array.isArray(draggedTabIds) || draggedTabIds.length === 0) {
+    console.error("No valid tab IDs received during drop event.");
+    return;
+  }
+
+  console.log("Dropped tabs with IDs:", draggedTabIds, "in window:", windowId);
+
+  // TODO: Refactor the strucutre for error check and condional branch.
+  if (windowId === undefined) {
+    console.log("Handling closed session case for session ID:", sessionId);
+    if (sessionId) {
+      migrateTabsToSession(draggedTabIds, sessionId);
+    } else {
+      console.error("Cannot migrate tabs: sessionId is undefined");
+    }
+    return;
+  }
+
+  // Perform tab migration for active (named/unnamed) sessions
+  migrateTabs(draggedTabIds, windowId || -1)
+    .then(() => {
+      console.log(`Tabs ${draggedTabIds.join(", ")} successfully migrated.`);
+    })
+    .catch((error) => {
+      console.error("Error during tab migration:", error);
+    });
+}
+
 // Check if this is a duplicate tabs.html page in the same window
 async function checkForDuplicates() {
   const currentTab = await chrome.tabs.getCurrent();
@@ -584,7 +632,68 @@ function createSessionListItem(
 
   li.appendChild(sessionLabel);
 
+  // Add visual feedback for drag-and-drop
+  li.addEventListener("dragover", (event) => {
+    event.preventDefault(); // Necessary to allow dropping
+    li.classList.add("drag-over"); // Add visual indicator for drag-over
+  });
+
+  li.addEventListener("dragleave", () => {
+    li.classList.remove("drag-over"); // Remove visual indicator
+  });
+
+  li.addEventListener("drop", (event) => {
+    event.preventDefault();
+    handleTabDrop(event, windowId, sessionId);
+    li.classList.remove("drag-over"); // Clean up visual indicator
+    li.classList.add("drag-success"); // Add success feedback
+
+    // Remove success feedback after animation
+    setTimeout(() => {
+      li.classList.remove("drag-success");
+    }, 500);
+  });
+
   return li;
+}
+
+/**
+ * Migrates multiple tabs to a specific session.
+ * @param tabIds - An array of tab IDs to migrate.
+ * @param sessionId - The ID of the session to migrate the tabs to.
+ * @returns A Promise that resolves when the migration operation is complete.
+ */
+async function migrateTabsToSession(tabIds: number[], sessionId: string) {
+  try {
+    // TODO: This feature is not implemented yet. We need to implement the migration logic in the service worker.
+
+    for (const tabId of tabIds) {
+      const response = await chrome.runtime.sendMessage({
+        type: "MIGRATE_TAB_TO_SESSION", // TODO: Define this constant in your backend.
+        payload: {
+          tabId,
+          sessionId,
+        },
+      });
+
+      if (
+        response &&
+        response.type === "MIGRATE_TAB_TO_SESSION_RESULT" &&
+        response.payload.success
+      ) {
+        console.log(
+          `Tab ${tabId} successfully migrated to session ${sessionId}`,
+        );
+      } else {
+        console.error(
+          `Failed to migrate tab ${tabId} to session ${sessionId}:`,
+          response,
+        );
+      }
+    }
+  } catch (error) {
+    console.error(`Error migrating tabs to session ${sessionId}:`, error);
+  }
 }
 
 /**
@@ -1528,6 +1637,87 @@ async function updateTabsTable(
   // Add rows for each tab (using the filtered list that excludes pinned tabs)
   filteredTabs.forEach((tab) => {
     const row = document.createElement("tr");
+    row.setAttribute("draggable", "true"); // Make the row draggable
+
+    // Enhance dragstart to apply dragging-multi class to all selected rows
+    row.addEventListener("dragstart", (e) => {
+      let selectedTabIds = getSelectedTabIds();
+      if (selectedTabIds.length === 0) {
+        // Default to the tab being dragged if no tabs are selected
+        const tabId = parseInt(
+          row
+            .querySelector(".tab-select-checkbox")
+            ?.getAttribute("data-tab-id") || "0",
+        );
+        selectedTabIds = [tabId];
+      }
+      e.dataTransfer?.setData(
+        "application/json",
+        JSON.stringify(selectedTabIds),
+      );
+      row.classList.add("dragging"); // Add a visual indicator for dragging
+
+      // Apply dragging-multi class to all selected rows
+      const allTabRows = document.querySelectorAll("#tabs_tablist tbody tr");
+      allTabRows.forEach((tabRow) => {
+        const checkbox = tabRow.querySelector<HTMLInputElement>(
+          ".tab-select-checkbox",
+        );
+        if (checkbox) {
+          const tabId = parseInt(checkbox.getAttribute("data-tab-id") || "0");
+          if (selectedTabIds.includes(tabId)) {
+            tabRow.classList.add("dragging-multi");
+          }
+        }
+      });
+
+      const dragBlock =
+        document.querySelector<HTMLDivElement>("#dragImageBlock");
+      if (dragBlock) {
+        dragBlock.style.display = "block";
+        dragBlock.innerHTML = ""; // Clear previous content
+
+        const ulElm = document.createElement("ul");
+        selectedTabIds.forEach((tabId) => {
+          const liElm = document.createElement("li");
+          const tab = filteredTabs.find((t) => t.id === tabId);
+          if (tab) {
+            liElm.textContent = tab.title || "Untitled";
+            liElm.style.listStyleType = "none";
+          }
+          ulElm.appendChild(liElm);
+        });
+        dragBlock.appendChild(ulElm);
+        e.dataTransfer?.setDragImage(dragBlock, 30, 30);
+      }
+    });
+
+    // Enhance dragend to remove dragging-multi class from all rows
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging"); // Remove the visual indicator
+      const allTabRows = document.querySelectorAll("#tabs_tablist tbody tr");
+      allTabRows.forEach((tabRow) => {
+        tabRow.classList.remove("dragging-multi");
+      });
+    });
+
+    // Add dragend event listener
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging"); // Remove the visual indicator
+    });
+    // TODO: This registers the callbacks multiple times. If we addListener for drop and dragover on the document, we add it just once at the initialization.
+    document.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      // TODO: Style effect?
+    });
+
+    document.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const draggedTabId = event.dataTransfer?.getData("text/plain");
+      console.log("Tab dropped with ID:", draggedTabId, "on ", event.target);
+
+      // TODO: Implement logic for Tab migration.
+    });
 
     // Find the summary for this tab
     let summarySnippet = "No summary available yet.";
@@ -1679,6 +1869,33 @@ async function updateTabsTable(
           );
         }
       }
+    });
+  });
+
+  // Add logic to handle multiple selection visual feedback
+  function updateMultiSelectionVisuals(selectedTabIds: number[]) {
+    const allTabRows = document.querySelectorAll("#tabs_tablist tbody tr");
+
+    allTabRows.forEach((row) => {
+      const checkbox = row.querySelector<HTMLInputElement>(
+        ".tab-select-checkbox",
+      );
+      if (checkbox) {
+        const tabId = parseInt(checkbox.getAttribute("data-tab-id") || "0");
+        if (selectedTabIds.includes(tabId)) {
+          row.classList.add("multi-selected");
+        } else {
+          row.classList.remove("multi-selected");
+        }
+      }
+    });
+  }
+
+  // Update event listener for checkboxes to trigger visual updates
+  document.querySelectorAll(".tab-select-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      const selectedTabIds = getSelectedTabIds();
+      updateMultiSelectionVisuals(selectedTabIds);
     });
   });
 }
