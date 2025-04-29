@@ -38,6 +38,7 @@ We have unstructured, just-idea notes here:
 
 - Properly handle shortcut keys in the service-worker even if the service-worker is inactive: ensure commands registered in the manifest wake or route through the service-worker so shortcuts trigger the intended action—consider message-passthrough to the active client or a lightweight wake/forward handler that guarantees shortcut handling when the worker is idle.
 - Hot key to trigger the sidepanel feature?
+- Open the sidepanel from popup.
 - Want to have double click as pull window, or with a modifier?
 - Common modal behavior e.g. close on ESC.
 
