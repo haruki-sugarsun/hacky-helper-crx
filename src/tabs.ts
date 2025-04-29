@@ -670,9 +670,8 @@ function createSessionListItem(
     li.classList.remove("drag-over"); // Remove visual indicator
   });
 
-  // Add drop event listener to handle tab migration
+  // Update drop listener to use handleTabDrop
   li.addEventListener("drop", (event) => {
-    // TODO: Support multiple tabs.
     event.preventDefault();
     handleTabDrop(event, windowId, sessionId);
     li.classList.remove("drag-over"); // Clean up visual indicator
@@ -1124,7 +1123,7 @@ function displayClosedSessionTabs(closedSession: ClosedNamedSession) {
       );
       console.log("Dropped tab with id in updateTabsTable:", draggedTabId);
       const selectedWindowId = state_windows.find((w) => w.focused)?.id;
-      handleTabDrop(e, selectedWindowId);
+      handleTabDrop(e, selectedWindowId, undefined);
     });
   }
   tableBody.addEventListener("dragover", (e) => {

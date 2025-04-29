@@ -12,9 +12,9 @@ Example Instructions:
 
 ## Strategy and Next Steps
 
-- Support dragging of multiple rows using selection by checkbox.
-- Give visible interaction for the drop-target (li for sessions).
-- Make the visible feedback of dragged rows with opacity e.g. 0.8.
+- Support dragging of multiple rows using selection by checkbox. **(In Progress)**
+- Give visible interaction for the drop-target (li for sessions). **(Next)**
+- Make the visible feedback of dragged rows with opacity e.g. 0.8. **(Next)**
 
 ### Affected Files
 
@@ -25,16 +25,15 @@ Example Instructions:
 
 ### Implementation Plan
 
-#### Step 1: Drag Event Setup in Tab Rendering
+#### Step 1: Drag Event Setup in Tab Rendering **(Completed)**
 
 - **File**: `src/tabs.ts`
 - **Details**:
-  - Locate the rendering logic for individual tab items (e.g., a function like `renderTabItem`).
-  - Add the `draggable` attribute to each tab element.
-  - Attach a `dragstart` event listener to capture initial drag data (starting position and tab identifier).
-  - Attach a `dragend` event listener to perform necessary cleanup.
+  - Located the rendering logic for individual tab items.
+  - Added the `draggable` attribute to each tab element.
+  - Attached `dragstart` and `dragend` event listeners to handle drag initiation and cleanup.
 
-#### Step 2: Drop Event Handling in Container
+#### Step 2: Drop Event Handling in Container **(In Progress)**
 
 - **File**: `src/tabs.ts`
 - **Details**:
@@ -42,7 +41,7 @@ Example Instructions:
   - Add a `dragover` event listener on the container to enable dropping (using `preventDefault`).
   - Attach a `drop` event listener to handle drop events, validate dragged data, and determine the correct insertion index.
 
-#### Step 3: Multi-Row Dragging Support
+#### Step 3: Multi-Row Dragging Support **(Next)**
 
 - **File**: `src/tabs.ts`
 - **Details**:
@@ -50,7 +49,7 @@ Example Instructions:
   - Modify `dragstart` to include all selected rows in the drag data.
   - Update `drop` logic to handle multiple rows being dropped at once.
 
-#### Step 4: UI Integration and Visual Feedback
+#### Step 4: UI Integration and Visual Feedback **(Next)**
 
 - **Files**: `src/tabs.ts`, `src/tabs.css`
 - **Details**:
@@ -58,7 +57,7 @@ Example Instructions:
   - Add a CSS class (e.g., `.drag-over`) to highlight drop targets.
   - Use `opacity: 0.8` for dragged elements.
 
-#### Step 5: Unit Testing
+#### Step 5: Unit Testing **(Pending)**
 
 - **File**: `src/tabs.ts`
 - **Details**:
