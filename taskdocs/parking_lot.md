@@ -46,3 +46,5 @@ We have unstructured, just-idea notes here:
 - Show the last sync timestamp for sessions and diff timer.
 - When there is no pending LLM task, pick up a random tab that is not yet cached?
 - LLM task queueing should behave in LRU style?
+- Update ARCHITECTURE.md and designdocs ba#d on the recent changes.
+
