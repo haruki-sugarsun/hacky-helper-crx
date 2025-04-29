@@ -28,6 +28,7 @@ We have unstructured, just-idea notes here:
 - Refactoring Tasks:
   - Replace config accesses to read values with CONFIG_RO.
   - Replace sendMessage usage with service-worker-interface.ts, service-worker-handler.ts, and service-worker-messages.ts.
+  - Migrate message handlers from `service-worker.ts` to `service-worker-handler.ts` for better organization (as indicated by TODO comments).
 - Search for the "saved bookmarks" as well.
 - Close Window in the action menu in Tabs UI.
 - Style in Settings UI.
@@ -44,9 +45,7 @@ We have unstructured, just-idea notes here:
 - Show the last sync timestamp for sessions and diff timer.
 - When there is no pending LLM task, pick up a random tab that is not yet cached?
 - LLM task queueing should behave in LRU style?
-- Update ARCHITECTURE.md and designdocs ba#d on the recent changes.
-- Drag-n-Drop for Tab Migrations, and migration to a closed session. This shows a dialog to confirm, add the tab as "Open Tabs" of the session, and close the migrated tab.
-- Support migrate to a closed Named Session. We may update the existing UI in Tabs UI or Popup with a search for named sessions.
-
-
-
+- Implement tab migration (including drag-and-drop) *to* closed named sessions. This involves:
+    - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
+    - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
+- Fix: Implement missing message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to enable "Force Sync to Backend" functionality.

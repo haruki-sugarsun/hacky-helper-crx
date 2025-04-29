@@ -10,10 +10,14 @@ Hacky Helper is a Chrome extension designed to enhance browsing experience with 
 
 The service worker is the central component that runs in the background and manages the extension's core functionality:
 
-- **Tab Management**: Tracks tab creation, updates, and removal events
-- **LLM Task Queue**: Manages a queue of content processing tasks (summarization, keyword extraction, embedding generation)
-- **Caching**: Stores processed content results using a persistent LRU (Least Recently Used) cache
-- **Message Handling**: Processes messages from content scripts and other extension components
+- **Tab Management**: Tracks tab creation, updates, and removal events. Also handles tab activation events to trigger content processing.
+- **LLM Task Queue**: Manages a queue (`llmTasks`) of content processing tasks (summarization, keyword extraction, embedding generation) triggered by tab updates or activation. Tasks are processed sequentially (`processNextTask`) and periodically via a Chrome Alarm (`processTasksAlarm`).
+- **Caching**: Stores processed content results using a persistent LRU (Least Recently Used) cache (`DigestManagement`).
+- **Message Handling**: Processes messages from content scripts and other extension components. Currently, message handling is split:
+    - `service-worker.ts`: Handles messages defined in `src/lib/constants.ts` (e.g., LLM tasks, session creation/updates).
+    - `service-worker-handler.ts`: Handles messages defined in `src/features/service-worker-messages.ts` (e.g., session activation, cloning, migration).
+    - *Note: A refactoring task exists (see `taskdocs/parking_lot.md`) to consolidate handlers into `service-worker-handler.ts`.*
+- **Automatic Session Sync**: Periodically triggers session synchronization to the backend (bookmarks) via a Chrome Alarm (`autoSessionSyncAlarm`) and `SessionManagement.triggerAutoSessionSync`.
 
 ### 2. LLM Services (`llmService.ts`)
 
@@ -105,6 +109,7 @@ The extension uses multiple storage mechanisms:
    - Pinned tabs are excluded from the tab list UI
    - Tab counts in the window list exclude pinned tabs
    - Global hotkey (Alt+X) to quickly open the tabs.html page from anywhere
+   - Drag-and-drop functionality for intuitive tab migration between sessions displayed in the Tabs UI.
 
 2. **Bookmark Integration**:
 
@@ -153,3 +158,8 @@ The extension uses multiple storage mechanisms:
 - **LLM APIs**: OpenAI and Ollama for content processing
 - **Web Speech API**: For text-to-speech functionality
 - **Modern DOM APIs**: For efficient content extraction
+- **Vitest**: For unit and integration testing.
+
+## Testing
+
+The project utilizes Vitest for its testing framework, chosen for its speed and compatibility with the Vite build tool. Tests cover core functionalities such as service worker message handling (`service-worker-handler.test.ts`) and session management (`session-management.test.ts`, `bookmark-storage.test.ts`). The testing strategy focuses on ensuring the reliability of key components and interactions.

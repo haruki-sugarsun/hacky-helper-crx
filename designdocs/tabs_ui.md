@@ -65,6 +65,13 @@ Tabs UI is an extention component
 
 - This is a Scroallable Area
 
+### Drag-and-Drop Tab Migration
+
+- Users can drag a tab from the **"Open Tabs"** list of one session and drop it onto another session listed in the "Sessions Area".
+- This action triggers the migration of the tab to the target session.
+- Visual cues (e.g., highlighting the drop target) should guide the user during the drag operation.
+- The backend logic (`tab-organizer.ts` via the service worker) handles the actual tab data transfer between sessions upon a successful drop.
+
 ### Session Name (`[Session Name]`)
 
 ### Open Tabs (`[Open Tabs]`)
