@@ -37,6 +37,8 @@ We have unstructured, just-idea notes here:
 - Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user if they want to open or takeover others' tabs.
 - end-to-end tests
 - Toast message+log collection instead of alert, and timeout measurement stops while the focus is not on the window.
+- Update Tabs UI title with the session title.
+
 - Clear the query in the input on focus-search-bar key action.
 - Search for entries matching the URL.
 - Show Favicon in Tabs UI Tab list table.
