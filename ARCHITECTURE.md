@@ -182,4 +182,4 @@ The extension uses multiple storage mechanisms:
 
 ## Testing
 
-The project utilizes Vitest for its testing framework, chosen for its speed and compatibility with the Vite build tool. Tests cover core functionalities such as service worker message handling (`service-worker-handler.test.ts`) and session management (`session-management.test.ts`, `bookmark-storage.test.ts`). The testing strategy focuses on ensuring the reliability of key components and interactions.
+The project utilizes **Vitest** for its testing framework, chosen for its speed and compatibility with the Vite build tool. Tests cover core functionalities such as service worker message handling (`service-worker-handler.test.ts`) and session management (`session-management.test.ts`, `bookmark-storage.test.ts`). The testing strategy focuses on ensuring the reliability of key components and interactions.
