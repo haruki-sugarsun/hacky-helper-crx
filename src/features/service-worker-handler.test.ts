@@ -1,13 +1,14 @@
+import { describe, it, expect, vi, beforeEach } from "vitest"; // Use vitest imports
 import { handleTakeoverTab } from "./service-worker-handler";
 import * as SessionManagement from "./session-management";
 
-jest.mock("./session-management");
+vi.mock("./session-management"); // Use vi.mock
 
 describe("handleTakeoverTab", () => {
-  const mockSendResponse = jest.fn();
+  const mockSendResponse = vi.fn(); // Use vi.fn
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Use vi.clearAllMocks
   });
 
   it("should return an error if backendTabId is missing", async () => {
@@ -26,9 +27,8 @@ describe("handleTakeoverTab", () => {
     const message = {
       payload: { backendTabId: "test-tab-id", sessionId: "test-session-id" },
     };
-    (SessionManagement.takeoverTab as jest.Mock).mockResolvedValueOnce(
-      undefined,
-    );
+    // Use vi.mocked for type safety
+    vi.mocked(SessionManagement.takeoverTab).mockResolvedValueOnce(undefined);
 
     await handleTakeoverTab(message, mockSendResponse);
 
@@ -43,7 +43,8 @@ describe("handleTakeoverTab", () => {
     const message = {
       payload: { backendTabId: "test-tab-id", sessionId: "test-session-id" },
     };
-    (SessionManagement.takeoverTab as jest.Mock).mockRejectedValueOnce(
+    // Use vi.mocked for type safety
+    vi.mocked(SessionManagement.takeoverTab).mockRejectedValueOnce(
       new Error("Test error"),
     );
 
