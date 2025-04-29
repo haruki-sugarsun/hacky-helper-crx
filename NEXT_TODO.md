@@ -14,6 +14,7 @@ Example Instructions:
 
 - Support dragging of multiple rows using selection by checkbox. **(In Progress)**
 - Give visible interaction for the drop-target (li for sessions). **(Next)**
+  - We would like to make sure "multiple selection" case also have a good visible feedback.
 - Make the visible feedback of dragged rows with opacity e.g. 0.8. **(Next)**
 
 ### Affected Files
