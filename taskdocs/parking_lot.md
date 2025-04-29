@@ -51,4 +51,4 @@ We have unstructured, just-idea notes here:
 - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
 - In search results, Have "Open tabs" above the "saved bookkarks".
 - Update ARCHITECTURE.md and designdocs based on the recent changes.
-
+- Fix: Implement missing message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to enable "Force Sync to Backend" functionality.
