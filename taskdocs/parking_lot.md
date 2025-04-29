@@ -22,8 +22,7 @@ We have unstructured, just-idea notes here:
 
 - Tabs UI updates based on the window/tabs/sessions (open tabs / saved bookmarks) updates.
 - Update Tabs UI title with the session title.
-- Show Favicon in Tabs UI Tab list table.
-- Show favicon in the Tabs table.
+- Show favicon in the Tabs UI tab list table.
 - Adjust the tabs table width to match, not to exceed, the window width.
 - Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
 - Clear the query in the input on focus-search-bar key action.
@@ -48,7 +47,6 @@ We have unstructured, just-idea notes here:
 - Session restoration should open the tabs owned by the current instance. Other synced open tabs can be opened via "takeover"; consider a dialog with timeout to ask the user if they want to open or takeover others' tabs.
 - Reactivating the session restores the tabs owned by others, but won't take over the ownership. This can result in many dups. Consider automatically taking over them.
 - Allow migration to the closed named session. Migrated tab is just added to the Open Tab in the chosen (closed named) session.
-- Add a flag for saved bookmarks and open them automatically when the session gets activated.
 - Show the last sync timestamp for sessions and diff timer.
 - In the search result, show the name of the session the open tab belongs to.
 - Session Name should be reflected if updated by other instance. We can compare the timestamp metadata.
