@@ -665,12 +665,10 @@ function createSessionListItem(
     li.classList.add("drag-over"); // Add visual indicator for drag-over
   });
 
-  // Add dragleave event listener to clean up visual indicator
   li.addEventListener("dragleave", () => {
     li.classList.remove("drag-over"); // Remove visual indicator
   });
 
-  // Update drop listener to use handleTabDrop
   li.addEventListener("drop", (event) => {
     event.preventDefault();
     handleTabDrop(event, windowId, sessionId);
