@@ -160,7 +160,9 @@ function getSessionParamsFromUrl(): {
 }
 
 // Restore session-window association if needed
-async function restoreSessionWindowAssociation() {
+async function restoreSessionWindowAssociation(
+  allNamedSessions: NamedSession[],
+) {
   const { sessionId: sessionIdFromUrl, sessionName: sessionNameFromUrl } =
     getSessionParamsFromUrl();
 
@@ -170,13 +172,10 @@ async function restoreSessionWindowAssociation() {
     // Get current window
     const currentWindow = await chrome.windows.getCurrent();
 
-    // Get all named sessions
-    // TODO: We actually need only the session by Id.
-    const sessions = await serviceWorkerInterface.getNamedSessions();
-
     // Check if this session exists but has a null windowId (lost association)
+    // TODO: We actually need only the session by Id.
     // TODO: We also need to check if the window exists or not, and override if not exiting.
-    const session = sessions.find(
+    const session = allNamedSessions.find(
       (s: NamedSession) => s.id === sessionIdFromUrl,
     );
     if (session) {
@@ -245,6 +244,29 @@ async function restoreSessionWindowAssociation() {
   }
 }
 
+/**
+ * Updates the Tabs UI title with the session name associated with the current window.
+ * @param allNamedSessions - Array of all named sessions.
+ */
+async function updateTabsUITitleWithSessionName(
+  allNamedSessions: NamedSession[],
+) {
+  const currentWindow = await chrome.windows.getCurrent();
+
+  const currentSession = allNamedSessions.find(
+    (session) => session.windowId === currentWindow.id,
+  );
+
+  if (currentSession && currentSession.name) {
+    document.title = `H-H: ${currentSession.name}`; // Update the Tabs UI title with the session name
+    console.log(
+      `Tabs UI title updated to session name: ${currentSession.name}`,
+    );
+  } else {
+    console.log("No named session associated with the current window.");
+  }
+}
+
 // Page Initializer
 async function init() {
   console.log("init");
@@ -256,8 +278,13 @@ async function init() {
     return;
   }
 
+  const allNamedSessions = await serviceWorkerInterface.getNamedSessions();
+
   // Check for session parameters in URL and restore session-window association if needed
-  await restoreSessionWindowAssociation();
+  await restoreSessionWindowAssociation(allNamedSessions);
+
+  // Update the Tabs UI title with the session name
+  await updateTabsUITitleWithSessionName(allNamedSessions);
 
   const windowsGetAll = chrome.windows
     .getAll({ populate: true })
