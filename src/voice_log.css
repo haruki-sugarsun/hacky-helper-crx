@@ -15,6 +15,33 @@ body {
   margin: 1em;
   padding: 0.2em;
   border: solid darkgreen 1px;
+  transition: opacity 0.3s ease;
+}
+
+/* Loading state */
+#condenced_log.loading {
+  opacity: 0.5;
+  position: relative;
+}
+#condenced_log.loading::after {
+  content: "Loading...";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-style: italic;
+  color: #555;
+}
+/* Error state */
+#condenced_log.error {
+  border-color: darkorange;
+  background-color: #fee;
+}
+#condenced_log.error::after {
+  content: "Error updating content";
+  display: block;
+  margin-top: 0.5em;
+  color: darkred;
 }
 
 #monologue_log {

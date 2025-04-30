@@ -1,21 +1,31 @@
 import "./style.css";
 import "./voice_log.css";
+import { OllamaLLMService } from "./features/llm-service";
 
 // Page Elements
 const workareaContent =
   document.querySelector<HTMLDivElement>("#workarea_content")!;
 const monologueLog = document.querySelector<HTMLDivElement>("#monologue_log")!;
+const condensedLog = document.querySelector<HTMLDivElement>("#condenced_log")!;
 const statusText = document.querySelector<HTMLDivElement>("#status")!;
 const recognitionToggle = document.querySelector<HTMLInputElement>(
   "#recognition-toggle",
 )!;
 const interimResults =
   document.querySelector<HTMLSpanElement>("#interim-result")!;
+const llmToggle = document.querySelector<HTMLInputElement>("#llm-toggle")!;
+const llmStatus = document.querySelector<HTMLSpanElement>("#llm-status")!;
+const modelSelect = document.querySelector<HTMLSelectElement>("#model")!;
 
 let recognition: SpeechRecognition;
+// Initialize LLM service
+// Using OllamaLLMService as PoC for Voice Log LLM merge
+const llmService = new OllamaLLMService();
 
+// Prevent overlapping LLM merge requests
+let isCondensing = false;
 // Maximum auto-restart attempts to prevent infinite loops
-const MAX_RESTARTS = 3;
+const MAX_RESTARTS = 30;
 // Current restart attempt count
 let restartCount = 0;
 
@@ -35,6 +45,59 @@ async function init() {
   }
 }
 document.body.onload = init;
+// After initial load, update condensed log
+document.body.onload = () => {
+  init();
+  updateCondensedLog();
+};
+
+// Update LLM service model on user selection
+modelSelect.addEventListener("change", () => {
+  llmService.setModel(modelSelect.value);
+  llmStatus.textContent = `Model: ${modelSelect.value}`;
+});
+
+/**
+ * Merge and rephrase work area and monologue log via LLM
+ * TODO: Introduce a toggle to automatically condence or not.
+ * TODO: call the LLM service only if there's no request ongoing.
+ */
+async function updateCondensedLog(): Promise<void> {
+  // ensure LLM service uses the selected model
+  llmService.setModel(modelSelect.value);
+  if (!llmToggle.checked) {
+    llmStatus.textContent = "LLM is off.";
+    condensedLog.classList.remove("loading", "error");
+    return;
+  }
+  // skip if already processing
+  if (isCondensing) {
+    console.log("Condensed log update in progress, skipping.");
+    return;
+  }
+  isCondensing = true;
+  // show loading state
+  condensedLog.classList.add("loading");
+  condensedLog.classList.remove("error");
+  llmStatus.textContent = "Loading...";
+  const workText = workareaContent.innerText.trim();
+  const voiceText = monologueLog.innerText.trim();
+  const prompt = `Merge and improve the following texts. Work area: "${workText}". Voice monologue: "${voiceText}".`;
+  try {
+    const merged = await llmService.chat(prompt);
+    condensedLog.innerText = merged;
+    // clear loading and update status
+    condensedLog.classList.remove("loading");
+    llmStatus.textContent = "LLM is on.";
+  } catch (err: any) {
+    console.error("Error updating condensed log:", err);
+    condensedLog.classList.remove("loading");
+    condensedLog.classList.add("error");
+    llmStatus.textContent = "Error";
+  } finally {
+    isCondensing = false;
+  }
+}
 
 workareaContent.addEventListener("input", (_ev) => {
   console.log(workareaContent.innerText);
@@ -42,13 +105,20 @@ workareaContent.addEventListener("input", (_ev) => {
   chrome.storage.local.set({
     workarea_content_save: workareaContent.innerText,
   });
+  updateCondensedLog();
 });
 monologueLog.addEventListener("input", saveMonologueLog);
 function saveMonologueLog(_ev: any) {
   console.log(monologueLog.innerText);
 
   chrome.storage.local.set({ monologue_log_save: monologueLog.innerText });
+  updateCondensedLog();
 }
+
+// LLM toggle control
+llmToggle.addEventListener("change", () => {
+  updateCondensedLog();
+});
 
 function startRecognition() {
   if (!("webkitSpeechRecognition" in window)) {
@@ -108,6 +178,7 @@ function startRecognition() {
         // monologueLog.textContent = (monologueLog.textContent + "<br>\n" + transcript).slice(-300);;
         // interimResults.textContent = ''
         saveMonologueLog(undefined);
+        updateCondensedLog();
       } else {
         console.log("Ignored empty or whitespace-only transcript");
       }

@@ -7,6 +7,9 @@
   </head>
 
   <body>
+    <!-- TODO: Introduce the common header part and have the interaction UI here. -->
+    <!-- TODO: We also want custom instruction input. -->
+
     <script type="module" src="/src/components.ts"></script>
 
     <div id="control_pane">
@@ -22,6 +25,12 @@
 
     <div>Condenced:</div>
     <div id="condenced_log" contenteditable="true">ここは編集できる</div>
+    <!-- LLM Merge Auto-Update Control -->
+    <label class="switch">
+      <input type="checkbox" id="llm-toggle" />
+      <span class="slider"></span>
+    </label>
+    <span id="llm-status">LLM is off.</span>
 
     <div>
       monologue: (Interim Results: <span id="interim-result">...</span>)
