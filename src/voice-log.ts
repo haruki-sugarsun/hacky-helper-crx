@@ -14,6 +14,11 @@ const interimResults =
 
 let recognition: SpeechRecognition;
 
+// Maximum auto-restart attempts to prevent infinite loops
+const MAX_RESTARTS = 3;
+// Current restart attempt count
+let restartCount = 0;
+
 // Content Save
 // Initial load:
 async function init() {
@@ -122,13 +127,22 @@ function startRecognition() {
     console.log("Speech recognition ended");
 
     statusText.textContent = "Recognition is off";
-    // Optionally restart if the toggle is still on
-    // TODO: Implement count / length limitation maybe.
+    // auto-restart if under restart limit
     if (recognitionToggle.checked) {
-      recognition!.start();
+      if (restartCount < MAX_RESTARTS) {
+        restartCount++;
+        recognition!.start();
+      } else {
+        console.warn(
+          `Stopping recognition: max restarts reached (restarts=${restartCount}).`,
+        );
+        recognitionToggle.checked = false;
+      }
     }
   };
 
+  // reset restart counter on manual start
+  restartCount = 0;
   recognition.start();
 }
 
