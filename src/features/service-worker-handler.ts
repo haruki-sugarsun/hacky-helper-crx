@@ -22,6 +22,9 @@ import {
   RESTORE_CLOSED_SESSION,
   MIGRATE_TABS,
   DELETE_NAMED_SESSION,
+  CREATE_NAMED_SESSION,
+  UPDATE_NAMED_SESSION_TABS,
+  RENAME_NAMED_SESSION,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 
@@ -80,6 +83,18 @@ export function handleServiceWorkerMessage(
 
     case DELETE_NAMED_SESSION:
       handleDeleteNamedSession(message, sendResponse);
+      break;
+
+    case CREATE_NAMED_SESSION:
+      handleCreateNamedSession(message, sendResponse);
+      break;
+
+    case UPDATE_NAMED_SESSION_TABS:
+      handleUpdateNamedSessionTabs(message, sendResponse);
+      break;
+
+    case RENAME_NAMED_SESSION:
+      handleRenameNamedSession(message, sendResponse);
       break;
 
     default:
@@ -390,5 +405,116 @@ async function handleDeleteNamedSession(
   } catch (error) {
     console.error("Error deleting session:", error);
     sendResponse({ error: "Failed to delete session" });
+  }
+}
+
+/**
+ * Handles the creation of a named session.
+ * @param message The message containing the window ID and session name.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleCreateNamedSession(
+  message: { payload: { windowId: number; sessionName: string } },
+  sendResponse: (response?: NamedSession | ErrorResult) => void,
+): Promise<void> {
+  const { windowId, sessionName } = message.payload;
+
+  if (windowId === undefined) {
+    console.error("Window ID is missing in CREATE_NAMED_SESSION message.");
+    sendResponse({ error: "Window ID is required" });
+    return;
+  }
+
+  if (!sessionName) {
+    console.error("Session name is missing in CREATE_NAMED_SESSION message.");
+    sendResponse({ error: "Session name is required" });
+    return;
+  }
+
+  try {
+    const session = await SessionManagement.createNamedSession(
+      windowId,
+      sessionName,
+    );
+    sendResponse(session);
+  } catch (error) {
+    console.error("Error creating named session:", error);
+    sendResponse({ error: "Failed to create named session" });
+  }
+}
+
+/**
+ * Handles updating tabs in a named session.
+ * @param message The message containing the session ID and window ID.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleUpdateNamedSessionTabs(
+  message: { payload: { sessionId: string; windowId: number } },
+  sendResponse: (response?: SuccessResult | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId, windowId } = message.payload;
+
+  if (!sessionId) {
+    console.error(
+      "Session ID is missing in UPDATE_NAMED_SESSION_TABS message.",
+    );
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+
+  if (windowId === undefined) {
+    console.error("Window ID is missing in UPDATE_NAMED_SESSION_TABS message.");
+    sendResponse({ error: "Window ID is required" });
+    return;
+  }
+
+  try {
+    const success = await SessionManagement.updateNamedSessionTabs(
+      sessionId,
+      windowId,
+    );
+    sendResponse({
+      success,
+    });
+  } catch (error) {
+    console.error("Error updating named session tabs:", error);
+    sendResponse({ error: "Failed to update named session tabs" });
+  }
+}
+
+/**
+ * Handles renaming a named session.
+ * @param message The message containing the session ID and new name.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleRenameNamedSession(
+  message: { payload: { sessionId: string; newName: string } },
+  sendResponse: (response?: SuccessResult | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId, newName } = message.payload;
+
+  if (!sessionId) {
+    console.error("Session ID is missing in RENAME_NAMED_SESSION message.");
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+
+  if (!newName) {
+    console.error("New name is missing in RENAME_NAMED_SESSION message.");
+    sendResponse({ error: "New name is required" });
+    return;
+  }
+
+  try {
+    const success = await SessionManagement.renameNamedSession(
+      sessionId,
+      newName,
+    );
+    sendResponse({
+      success,
+    });
+  } catch (error) {
+    console.error("Error renaming named session:", error);
+    sendResponse({ error: "Failed to rename named session" });
   }
 }
