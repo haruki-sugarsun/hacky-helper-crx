@@ -22,6 +22,7 @@ import {
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
   MIGRATE_TABS,
+  DELETE_NAMED_SESSION,
 } from "./service-worker-messages";
 
 /**
@@ -248,6 +249,26 @@ class ServiceWorkerInterface {
     }
 
     return response;
+  }
+
+  /**
+   * Deletes a named session by its session ID.
+   *
+   * @param sessionId - The unique identifier of the session to delete.
+   * @returns A promise that resolves to a SuccessResult or ErrorResult indicating the outcome.
+   */
+  async deleteNamedSession(
+    sessionId: string,
+  ): Promise<SuccessResult | ErrorResult> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: DELETE_NAMED_SESSION,
+        payload: { sessionId },
+      });
+    } catch (error) {
+      console.error("Error in deleteNamedSession:", error);
+      return { error: error instanceof Error ? error.message : String(error) };
+    }
   }
 }
 
