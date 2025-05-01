@@ -29,9 +29,6 @@ import {
   LIST_KEYWORDS,
   CREATE_EMBEDDINGS,
   GET_CACHED_SUMMARIES,
-  CREATE_NAMED_SESSION,
-  UPDATE_NAMED_SESSION_TABS,
-  RENAME_NAMED_SESSION,
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,
   OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
@@ -539,56 +536,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         case CREATE_EMBEDDINGS:
           const embeddings = await generateEmbeddings(payload.content);
           sendResponse({ type: "EMBEDDINGS_RESULT", payload: embeddings });
-          break;
-        case CREATE_NAMED_SESSION:
-          {
-            const { windowId, sessionName } = payload;
-            const session = await SessionManagement.createNamedSession(
-              windowId,
-              sessionName,
-            );
-            sendResponse({
-              type: "CREATE_NAMED_SESSION_RESULT",
-              payload: session,
-            });
-          }
-          break;
-        case UPDATE_NAMED_SESSION_TABS:
-          {
-            const { sessionId, windowId } = payload;
-            const success = await SessionManagement.updateNamedSessionTabs(
-              sessionId,
-              windowId,
-            );
-            sendResponse({
-              type: "UPDATE_NAMED_SESSION_TABS_RESULT",
-              payload: {
-                success,
-                sessionId,
-                windowId,
-              },
-            });
-          }
-          break;
-        case RENAME_NAMED_SESSION:
-          {
-            const { sessionId, newName } = payload;
-            if (!sessionId || !newName) {
-              throw new Error("Session ID and new name are required");
-            }
-
-            const success = await SessionManagement.renameNamedSession(
-              sessionId,
-              newName,
-            );
-
-            sendResponse({
-              type: "RENAME_NAMED_SESSION_RESULT",
-              payload: {
-                success,
-              },
-            });
-          }
           break;
         case CATEGORIZE_TABS:
           // TODO: Factor out to a method.
