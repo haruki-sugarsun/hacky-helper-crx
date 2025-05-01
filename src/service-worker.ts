@@ -75,7 +75,7 @@ chrome.commands.onCommand.addListener((command) => {
 
     case "open-tabs-page":
       console.log("Opening tabs page");
-      openTabsPage();
+      TabsHelpers.openTabsPage();
       break;
 
     case "focus-search-bar":
@@ -574,76 +574,94 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         case DELETE_NAMED_SESSION:
           {
             const { sessionId } = payload;
-            
+
             // First check if session exists and is open before deletion
             // TODO: This combination of `getNamedSessions()` + `find(...)` appears in several places. Consider adding a new interface.
             const sessions = await SessionManagement.getNamedSessions();
-            const session = sessions.find(s => s.id === sessionId);
+            const session = sessions.find((s) => s.id === sessionId);
             const isOpenSession = session && session.windowId !== undefined;
             const windowId = session?.windowId;
-            
+
             // Delete the session
             await SessionManagement.deleteNamedSession(sessionId);
-            
+
             // If this was an open session with a window, update any Tabs UI URLs directly
             if (isOpenSession && windowId) {
               try {
                 // Find any tabs.html pages in this window using the helper function
-                const tabsUiTabs = await TabsHelpers.findTabsUiInWindow(windowId);
-                
+                const tabsUiTabs =
+                  await TabsHelpers.findTabsUiInWindow(windowId);
+
                 if (tabsUiTabs.length === 0) {
-                  console.log(`No Tabs UI found in window ${windowId} for session ${sessionId}`);
+                  console.log(
+                    `No Tabs UI found in window ${windowId} for session ${sessionId}`,
+                  );
                   sendResponse({
                     type: "DELETE_NAMED_SESSION_RESULT",
                     payload: "success",
                   });
                   return;
                 }
-                
+
                 let urlsUpdated = 0;
-                
+
                 // Update each tab's URL to remove the sessionId parameter if it matches
                 for (const tab of tabsUiTabs) {
                   if (tab.url) {
                     const url = new URL(tab.url);
-                    const urlSessionId = url.searchParams.get('sessionId');
-                    
+                    const urlSessionId = url.searchParams.get("sessionId");
+
                     // Only update if the URL contains the matching sessionId
                     if (urlSessionId === sessionId) {
-                      url.searchParams.delete('sessionId');
-                      
+                      url.searchParams.delete("sessionId");
+
                       // Update the tab URL
-                      await chrome.tabs.update(tab.id, {
-                        url: url.toString()
+                      await chrome.tabs.update(tab.id!, {
+                        url: url.toString(),
                       });
-                      
+
                       urlsUpdated++;
-                      console.log(`Removed session ID ${sessionId} from tab ${tab.id} URL`);
+                      console.log(
+                        `Removed session ID ${sessionId} from tab ${tab.id} URL`,
+                      );
                     } else if (urlSessionId) {
-                      console.log(`Tab ${tab.id} has sessionId=${urlSessionId}, which doesn't match deleted session ${sessionId}`);
+                      console.log(
+                        `Tab ${tab.id} has sessionId=${urlSessionId}, which doesn't match deleted session ${sessionId}`,
+                      );
                     }
                   }
                 }
-                
+
                 if (urlsUpdated === 0) {
-                  console.log(`No URLs were updated after deleting session ${sessionId}`);
+                  console.log(
+                    `No URLs were updated after deleting session ${sessionId}`,
+                  );
                 } else {
-                  console.log(`Updated ${urlsUpdated} tab URLs after deleting session ${sessionId}`);
+                  console.log(
+                    `Updated ${urlsUpdated} tab URLs after deleting session ${sessionId}`,
+                  );
                 }
               } catch (error) {
                 // Log the error but continue - we don't want to prevent session deletion
                 // if URL cleanup fails
-                console.error(`Error updating URLs after session ${sessionId} deletion:`, error);
+                console.error(
+                  `Error updating URLs after session ${sessionId} deletion:`,
+                  error,
+                );
               }
             } else {
               // Log why we're not updating URLs
               if (!isOpenSession) {
-                console.log(`Not updating URLs: Session ${sessionId} is not an open session`);
+                console.log(
+                  `Not updating URLs: Session ${sessionId} is not an open session`,
+                );
               } else {
-                console.log(`Not updating URLs: Session ${sessionId} has no associated window`);
+                console.log(
+                  `Not updating URLs: Session ${sessionId} has no associated window`,
+                );
               }
             }
-            
+
             sendResponse({
               type: "DELETE_NAMED_SESSION_RESULT",
               payload: "success",

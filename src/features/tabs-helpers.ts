@@ -121,13 +121,15 @@ export async function openTabsPage() {
  * @param windowId The ID of the window to search for Tabs UI tabs
  * @returns An array of tabs matching the Tabs UI URL pattern
  */
-export async function findTabsUiInWindow(windowId: number): Promise<chrome.tabs.Tab[]> {
+export async function findTabsUiInWindow(
+  windowId: number,
+): Promise<chrome.tabs.Tab[]> {
   try {
     const tabsUiTabs = await chrome.tabs.query({
       windowId: windowId,
       url: chrome.runtime.getURL("tabs.html*"), // Wildcard to match any query parameters
     });
-    
+
     return tabsUiTabs;
   } catch (error) {
     console.error(`Error finding Tabs UI in window ${windowId}:`, error);
