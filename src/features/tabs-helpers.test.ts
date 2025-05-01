@@ -1,22 +1,19 @@
-// filepath: /home/sugarsun/public_git/hacky-helper-crx/src/features/tabs-helpers.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as TabsHelpers from "./tabs-helpers";
 
+// Mock the chrome API before imports
+vi.mock('chrome', () => ({
+  tabs: {
+    query: vi.fn(),
+  },
+  runtime: {
+    getURL: vi.fn(),
+  },
+}), { virtual: true });
+
 describe('findTabsUiInWindow', () => {
   beforeEach(() => {
-    // Mock chrome.tabs.query
-    global.chrome = {
-      ...global.chrome,
-      tabs: {
-        query: vi.fn(),
-      },
-      runtime: {
-        getURL: vi.fn(),
-      },
-    };
-  });
-
-  afterEach(() => {
+    // Reset mocks before each test
     vi.resetAllMocks();
   });
 
@@ -26,10 +23,13 @@ describe('findTabsUiInWindow', () => {
       { id: 1, url: 'chrome-extension://abcdef/tabs.html', windowId: 100 },
       { id: 2, url: 'chrome-extension://abcdef/tabs.html?sessionId=test123', windowId: 100 }
     ];
-    chrome.tabs.query.mockResolvedValue(mockTabs);
     
-    // Mock chrome.runtime.getURL
-    chrome.runtime.getURL.mockReturnValue('chrome-extension://abcdef/tabs.html');
+    // Mock getURL to return a specific URL
+    const baseUrl = 'chrome-extension://abcdef/tabs.html*';
+    vi.mocked(chrome.runtime.getURL).mockReturnValue(baseUrl);
+    
+    // Set up the mock implementation for query
+    vi.mocked(chrome.tabs.query).mockResolvedValue(mockTabs);
     
     // Call the function
     const result = await TabsHelpers.findTabsUiInWindow(100);
@@ -43,8 +43,12 @@ describe('findTabsUiInWindow', () => {
   });
 
   it('returns empty array on error', async () => {
+    // Mock getURL to return a specific URL
+    const baseUrl = 'chrome-extension://abcdef/tabs.html';
+    vi.mocked(chrome.runtime.getURL).mockReturnValue(baseUrl);
+    
     // Simulate an error
-    chrome.tabs.query.mockRejectedValue(new Error('Test error'));
+    vi.mocked(chrome.tabs.query).mockRejectedValue(new Error('Test error'));
     
     // Call the function
     const result = await TabsHelpers.findTabsUiInWindow(100);
