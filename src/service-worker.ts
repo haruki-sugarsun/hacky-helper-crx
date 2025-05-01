@@ -31,7 +31,6 @@ import {
   GET_CACHED_SUMMARIES,
   CREATE_NAMED_SESSION,
   UPDATE_NAMED_SESSION_TABS,
-  DELETE_NAMED_SESSION,
   RENAME_NAMED_SESSION,
   OLLAMA_API_URL_DEFAULT,
   OLLAMA_MODEL_DEFAULT,
@@ -568,16 +567,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 sessionId,
                 windowId,
               },
-            });
-          }
-          break;
-        case DELETE_NAMED_SESSION:
-          {
-            const { sessionId } = payload;
-            await SessionManagement.deleteNamedSession(sessionId);
-            sendResponse({
-              type: "DELETE_NAMED_SESSION_RESULT",
-              payload: "success",
             });
           }
           break;
