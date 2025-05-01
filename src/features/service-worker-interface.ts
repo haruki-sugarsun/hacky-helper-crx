@@ -23,6 +23,9 @@ import {
   TAKEOVER_TAB,
   MIGRATE_TABS,
   DELETE_NAMED_SESSION,
+  CREATE_NAMED_SESSION,
+  UPDATE_NAMED_SESSION_TABS,
+  RENAME_NAMED_SESSION,
 } from "./service-worker-messages";
 
 /**
@@ -252,24 +255,93 @@ class ServiceWorkerInterface {
   }
 
   /**
+   * Creates a new named session.
+   *
+   * @param windowId - The ID of the window to associate with the new session.
+   * @param sessionName - The name to give to the new session.
+   * @returns A promise that resolves to the newly created NamedSession.
+   */
+  async createNamedSession(
+    windowId: number,
+    sessionName: string,
+  ): Promise<NamedSession> {
+    const response = (await chrome.runtime.sendMessage({
+      type: CREATE_NAMED_SESSION,
+      payload: { windowId, sessionName },
+    })) as NamedSession | ErrorResult;
+    if ("error" in response) {
+      console.error("Error in createNamedSession:", response.error);
+      throw new Error(`Failed to create named session: ${response.error}`);
+    }
+    return response;
+  }
+
+  /**
+   * Updates the tabs in a named session.
+   *
+   * @param sessionId - The ID of the session to update.
+   * @param windowId - The ID of the window containing the tabs to use for the update.
+   * @returns A promise that resolves to a success result.
+   */
+  async updateNamedSessionTabs(
+    sessionId: string,
+    windowId: number,
+  ): Promise<SuccessResult> {
+    const response = (await chrome.runtime.sendMessage({
+      type: UPDATE_NAMED_SESSION_TABS,
+      payload: { sessionId, windowId },
+    })) as SuccessResult | ErrorResult;
+
+    if ("error" in response) {
+      console.error("Error in updateNamedSessionTabs:", response.error);
+      throw new Error(`Failed to update named session tabs: ${response.error}`);
+    }
+
+    return response;
+  }
+
+  /**
+   * Renames a named session.
+   *
+   * @param sessionId - The ID of the session to rename.
+   * @param newName - The new name for the session.
+   * @returns A promise that resolves to a success result.
+   */
+  async renameNamedSession(
+    sessionId: string,
+    newName: string,
+  ): Promise<SuccessResult> {
+    const response = (await chrome.runtime.sendMessage({
+      type: RENAME_NAMED_SESSION,
+      payload: { sessionId, newName },
+    })) as SuccessResult | ErrorResult;
+
+    if ("error" in response) {
+      console.error("Error in renameNamedSession:", response.error);
+      throw new Error(`Failed to rename named session: ${response.error}`);
+    }
+
+    return response;
+  }
+
+  /**
    * Deletes a named session by its session ID.
    *
    * @param sessionId - The unique identifier of the session to delete.
    * @returns A promise that resolves to a SuccessResult or ErrorResult indicating the outcome.
    */
-  async deleteNamedSession(
-    sessionId: string,
-  ): Promise<SuccessResult | ErrorResult> {
-    try {
-      return await chrome.runtime.sendMessage({
-        type: DELETE_NAMED_SESSION,
-        payload: { sessionId },
-      });
-    } catch (error) {
-      console.error("Error in deleteNamedSession:", error);
-      return { error: error instanceof Error ? error.message : String(error) };
+  async deleteNamedSession(sessionId: string): Promise<SuccessResult> {
+    const response = (await chrome.runtime.sendMessage({
+      type: DELETE_NAMED_SESSION,
+      payload: { sessionId },
+    })) as SuccessResult | ErrorResult;
+    if ("error" in response) {
+      console.error("Error in deleteNamedSession:", response.error);
+      throw new Error(`Failed to delete named session: ${response.error}`);
     }
+    return response;
   }
 }
 
+// Export a singleton instance of ServiceWorkerInterface
 export default new ServiceWorkerInterface();
