@@ -6,7 +6,6 @@ import {
   SAVE_TAB_TO_BOOKMARKS,
   SYNC_SESSION_TO_BOOKMARKS,
   UPDATE_NAMED_SESSION_TABS,
-  DELETE_NAMED_SESSION,
   RENAME_NAMED_SESSION,
   OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
@@ -774,18 +773,9 @@ async function deleteSession(sessionId: string) {
   }
 
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: DELETE_NAMED_SESSION,
-      payload: {
-        sessionId,
-      },
-    });
+    const response = await serviceWorkerInterface.deleteNamedSession(sessionId);
 
-    if (
-      response &&
-      response.type === "DELETE_NAMED_SESSION_RESULT" &&
-      response.payload === "success"
-    ) {
+    if ("success" in response && response.success) {
       console.log(`Session ${sessionId} deleted successfully`);
 
       // Refresh the UI with tab information

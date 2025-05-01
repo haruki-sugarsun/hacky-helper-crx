@@ -21,6 +21,7 @@ import {
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   MIGRATE_TABS,
+  DELETE_NAMED_SESSION,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
 
@@ -75,6 +76,10 @@ export function handleServiceWorkerMessage(
 
     case RESTORE_CLOSED_SESSION:
       handleRestoreClosedSession(message, sendResponse);
+      break;
+
+    case DELETE_NAMED_SESSION:
+      handleDeleteNamedSession(message, sendResponse);
       break;
 
     default:
@@ -355,5 +360,35 @@ async function handleRestoreClosedSession(
   } catch (error) {
     console.error("Error restoring session:", error);
     sendResponse({ error: "Failed to restore session" });
+  }
+}
+
+/**
+ * Handles the deletion of a named session.
+ * @param message The message containing the session ID to delete.
+ * @param sendResponse The callback to send a response.
+ */
+async function handleDeleteNamedSession(
+  message: { payload: { sessionId: string } },
+  sendResponse: (response: SuccessResult | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId } = message.payload;
+
+  if (!sessionId) {
+    console.error("Session ID is missing in DELETE_NAMED_SESSION message.");
+    sendResponse({ error: "Session ID is required" });
+    return;
+  }
+
+  try {
+    const success = await SessionManagement.deleteNamedSession(sessionId);
+    if (success) {
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ error: "Failed to delete session" });
+    }
+  } catch (error) {
+    console.error("Error deleting session:", error);
+    sendResponse({ error: "Failed to delete session" });
   }
 }
