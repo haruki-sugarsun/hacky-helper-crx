@@ -1,7 +1,17 @@
-// filepath: /home/sugarsun/public_git/hacky-helper-crx/src/features/service-worker-delete-session.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as SessionManagement from "./session-management";
 import * as TabsHelpers from "./tabs-helpers";
+
+// Mock dependencies
+vi.mock("./session-management");
+vi.mock("./tabs-helpers");
+
+// Mock chrome API
+vi.mock('chrome', () => ({
+  tabs: {
+    update: vi.fn(),
+  }
+}), { virtual: true });
 
 /**
  * Mock implementation of the DELETE_NAMED_SESSION handler for testing purposes.
@@ -47,27 +57,7 @@ async function handleDeleteNamedSession(
 
 describe('DELETE_NAMED_SESSION handler', () => {
   beforeEach(() => {
-    // Mock SessionManagement methods
-    vi.mock("./session-management", () => ({
-      getNamedSessions: vi.fn(),
-      deleteNamedSession: vi.fn(),
-    }));
-    
-    // Mock TabsHelpers.findTabsUiInWindow
-    vi.mock("./tabs-helpers", () => ({
-      findTabsUiInWindow: vi.fn(),
-    }));
-    
-    // Mock chrome.tabs.update
-    global.chrome = {
-      ...global.chrome,
-      tabs: {
-        update: vi.fn(),
-      },
-    };
-  });
-
-  afterEach(() => {
+    // Reset all mocks before each test
     vi.resetAllMocks();
   });
 
@@ -77,7 +67,7 @@ describe('DELETE_NAMED_SESSION handler', () => {
     const windowId = 100;
     
     // Mock session data
-    SessionManagement.getNamedSessions.mockResolvedValue([{ 
+    vi.mocked(SessionManagement.getNamedSessions).mockResolvedValue([{ 
       id: sessionId, 
       windowId: windowId,
       name: 'Test Session',
@@ -92,10 +82,10 @@ describe('DELETE_NAMED_SESSION handler', () => {
         windowId: windowId 
       }
     ];
-    TabsHelpers.findTabsUiInWindow.mockResolvedValue(mockTabs);
+    vi.mocked(TabsHelpers.findTabsUiInWindow).mockResolvedValue(mockTabs);
     
     // Mock chrome.tabs.update
-    chrome.tabs.update.mockResolvedValue({});
+    vi.mocked(chrome.tabs.update).mockResolvedValue({} as chrome.tabs.Tab);
     
     // Mock sendResponse
     const sendResponse = vi.fn();
@@ -123,7 +113,7 @@ describe('DELETE_NAMED_SESSION handler', () => {
 
   it('does not update URL when session is not open', async () => {
     // Mock a closed session (no windowId)
-    SessionManagement.getNamedSessions.mockResolvedValue([{ 
+    vi.mocked(SessionManagement.getNamedSessions).mockResolvedValue([{ 
       id: 'test123', 
       windowId: undefined,
       name: 'Closed Session',
@@ -157,7 +147,7 @@ describe('DELETE_NAMED_SESSION handler', () => {
     const windowId = 100;
     
     // Mock session data with window
-    SessionManagement.getNamedSessions.mockResolvedValue([{ 
+    vi.mocked(SessionManagement.getNamedSessions).mockResolvedValue([{ 
       id: sessionId, 
       windowId: windowId,
       name: 'Test Session',
@@ -172,7 +162,7 @@ describe('DELETE_NAMED_SESSION handler', () => {
         windowId: windowId 
       }
     ];
-    TabsHelpers.findTabsUiInWindow.mockResolvedValue(mockTabs);
+    vi.mocked(TabsHelpers.findTabsUiInWindow).mockResolvedValue(mockTabs);
     
     const sendResponse = vi.fn();
     
