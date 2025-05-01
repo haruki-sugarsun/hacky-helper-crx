@@ -1,12 +1,9 @@
 import {
   GET_CACHED_SUMMARIES,
-  CREATE_NAMED_SESSION,
   CATEGORIZE_TABS,
   SUGGEST_TAB_DESTINATIONS,
   SAVE_TAB_TO_BOOKMARKS,
   SYNC_SESSION_TO_BOOKMARKS,
-  UPDATE_NAMED_SESSION_TABS,
-  RENAME_NAMED_SESSION,
   OPEN_SAVED_BOOKMARK,
 } from "./lib/constants";
 import { ensureTabsHtmlInWindow } from "./features/tabs-helpers";
@@ -217,26 +214,28 @@ async function restoreSessionWindowAssociation(
           `Session ${sessionIdFromUrl} is already properly associated with the current window ${currentWindow.id}`,
         );
       }
-    } else if (sessionNameFromUrl) {
+    } else if (sessionNameFromUrl && currentWindow.id) {
       // TODO: This check looks naive. Let's reconsider the condition more.
       // If the session doesn't exist but we have a name, create it
       console.log(
         `Restoring session-window association for session ${sessionIdFromUrl} with window ${currentWindow.id}`,
       );
       // Update the session with the current window ID
-      const updateResponse = await chrome.runtime.sendMessage({
-        type: UPDATE_NAMED_SESSION_TABS,
-        payload: {
-          sessionId: sessionIdFromUrl,
-          windowId: currentWindow.id,
-        },
-      });
-
+      const updateResponse =
+        await serviceWorkerInterface.updateNamedSessionTabs(
+          sessionIdFromUrl,
+          currentWindow.id,
+        );
       if (
         updateResponse &&
-        updateResponse.type === "UPDATE_NAMED_SESSION_TABS_RESULT"
+        "success" in updateResponse &&
+        updateResponse.success
       ) {
         console.log("Successfully restored session-window association");
+      } else {
+        console.error(
+          `Error restoring session-window association: ${updateResponse}`,
+        );
       }
     }
   } catch (error) {
@@ -512,6 +511,7 @@ function createSessionListItem(
         onClick: () => forceSyncSession(sessionId),
       },
       {
+        // TODO: Consider if we can remove this action menu. Seems like it has been broken for a while.
         text: "Update Tabs",
         onClick: () => updateSessionTabs(sessionId),
       },
@@ -665,19 +665,16 @@ async function updateSessionTabs(sessionId: string) {
     // Get the current window ID
     const currentWindow = await chrome.windows.getCurrent();
 
-    const response = await chrome.runtime.sendMessage({
-      type: UPDATE_NAMED_SESSION_TABS,
-      payload: {
-        sessionId,
-        windowId: currentWindow.id,
-      },
-    });
+    if (!currentWindow || !currentWindow.id) {
+      throw new Error("Current window not found");
+    }
 
-    if (
-      response &&
-      response.type === "UPDATE_NAMED_SESSION_TABS_RESULT" &&
-      response.payload.success
-    ) {
+    const response = await serviceWorkerInterface.updateNamedSessionTabs(
+      sessionId,
+      currentWindow.id,
+    );
+
+    if (response.success) {
       console.log(`Session ${sessionId} tabs updated successfully`);
       alert("Session tabs updated successfully");
 
@@ -722,19 +719,12 @@ async function renameSession(sessionId: string) {
   }
 
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: RENAME_NAMED_SESSION,
-      payload: {
-        sessionId,
-        newName,
-      },
-    });
+    const response = await serviceWorkerInterface.renameNamedSession(
+      sessionId,
+      newName,
+    );
 
-    if (
-      response &&
-      response.type === "RENAME_NAMED_SESSION_RESULT" &&
-      response.payload.success
-    ) {
+    if (response.success) {
       console.log(`Session ${sessionId} renamed to "${newName}" successfully`);
 
       // Refresh the UI with tab information
@@ -834,16 +824,16 @@ function promptCreateNamedSession() {
 
   chrome.windows.getCurrent().then(async (window) => {
     try {
-      const response = await chrome.runtime.sendMessage({
-        type: CREATE_NAMED_SESSION,
-        payload: {
-          windowId: window.id,
-          sessionName: sessionName,
-        },
-      });
+      if (!window || !window.id) {
+        throw new Error("Current window not found");
+      }
+      const response = await serviceWorkerInterface.createNamedSession(
+        window.id,
+        sessionName,
+      );
 
-      if (response && response.type === "CREATE_NAMED_SESSION_RESULT") {
-        console.log("Named Session created:", response.payload);
+      if (response) {
+        console.log("Named Session created:", response);
 
         // Refresh the UI with tab information
         chrome.windows.getAll({ populate: true }).then((windows) => {
@@ -857,7 +847,11 @@ function promptCreateNamedSession() {
         console.error("Error creating Named Session:", response);
       }
     } catch (error) {
-      console.error("Error sending create named session message:", error);
+      console.error("Error creating named session:", error);
+      alert(
+        "Error creating named session: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     }
   });
 }
@@ -2303,15 +2297,17 @@ if (createNamedSessionButton && namedSessionInput) {
     const sessionName = namedSessionInput.value || null;
     try {
       const currentWindow = await chrome.windows.getCurrent();
-      const response = await chrome.runtime.sendMessage({
-        type: CREATE_NAMED_SESSION,
-        payload: {
-          windowId: currentWindow.id,
-          sessionName: sessionName,
-        },
-      });
-      if (response && response.type === "CREATE_NAMED_SESSION_RESULT") {
-        console.log("Named Session created:", response.payload);
+      if (!currentWindow || !currentWindow.id || sessionName === null) {
+        throw new Error("Invalid window or session name");
+      }
+
+      const response = await serviceWorkerInterface.createNamedSession(
+        currentWindow.id,
+        sessionName,
+      );
+
+      if (response) {
+        console.log("Named Session created:", response);
         // Refresh the sessions list by fetching the latest windows and tabs, then update the UI.
         chrome.windows.getAll({ populate: true }).then((windows) => {
           state_windows = windows;
@@ -2324,7 +2320,11 @@ if (createNamedSessionButton && namedSessionInput) {
         console.error("Error creating Named Session:", response);
       }
     } catch (error) {
-      console.error("Error sending create named session message:", error);
+      console.error("Error creating named session:", error);
+      alert(
+        "Error creating named session: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     }
   });
 }
