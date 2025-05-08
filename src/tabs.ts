@@ -607,7 +607,7 @@ function createSessionListItem(
     // Actions for named sessions
     sessionLabel.menuItems = [
       {
-        text: "Force Sync to Bookmarks",
+        text: "Force Sync to Backend",
         onClick: () => forceSyncSession(sessionId),
       },
       {
