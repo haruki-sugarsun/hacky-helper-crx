@@ -417,13 +417,16 @@ export class BookmarkStorage {
         // TODO: Store the metadata (updated and owner) encoded in the bookmark title.
         const tabs: NamedSessionTab[] = bookmarks
           .filter((bookmark) => bookmark.url)
-          .map((bookmark) => ({
-            tabId: null, // Closed sessions don't have active tab IDs
-            title: bookmark.title,
-            url: bookmark.url!,
-            updatedAt: Date.now(), // Provide a default timestamp
-            owner: "unknown", // Provide a default owner
-          }));
+          .map((bookmark) => {
+            const metadataAndTitle = decodeTabTitle(bookmark.title);
+            return {
+              tabId: null, // Closed sessions don't have active tab IDs
+              title: metadataAndTitle.title,
+              url: bookmark.url!,
+              updatedAt: Date.now(), // Provide a default timestamp
+              owner: metadataAndTitle.metadata?.owner, // Provide a default owner
+            };
+          });
 
         // Create a closed session object
         const closedSession: ClosedNamedSession = {
