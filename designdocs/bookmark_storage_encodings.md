@@ -13,25 +13,27 @@ Each session is stored as a bookmark folder. The folder title combines the sessi
 ### Encoding Details
 
 - **Session Name**: The chosen name of the session.
-- Metadata:
-  - sessionId: A unique identifier representing the session. This value is typically a UUID extracted from the folder title.
-  - lastModified: A Unix timestamp (milliseconds since epoch) indicating when the session was last modified.
-- **Folder Title Format**: The session folder title is composed of the session name followed by the session identifier in parentheses. For example:
+- **Metadata (JSON encoded in title):**
+  - `id`: A unique identifier (UUID) representing the session.
+  - `updatedAt`: A Unix timestamp (milliseconds since epoch) indicating when the session was last modified locally.
+- **Folder Title Format (Current):** The session folder title is composed of the session name followed by the JSON metadata. Implemented in `encodeSessionTitle`.
 
   ```
-  My Session (abc12345-6789-def0)
+  My Session {"id":"abc12345-6789-def0","updatedAt":1680864000000}
   ```
 
-- **Backward Compatibility**: The extraction logic supports a legacy format in which the session folder title may include JSON metadata, for example:
+- **Decoding (`decodeSessionTitle`):**
+  - The primary decoding logic parses the current JSON format.
+  - **Backward Compatibility:** The decoding logic also supports a legacy format where the session ID was enclosed in parentheses:
+    ```
+    My Session (abc12345-6789-def0)
+    ```
+  - *Note: A previously documented format `My Session {"lastModified": ...}` is not explicitly handled by the current decoding logic.*
 
-  ```
-  My Session {"lastModified": 1680864000000}
-  ```
-
-**Example Folder Title:**
+**Example Current Folder Title:**
 
 ```
-My Session {"lastModified": 1680864000000}
+My Session {"id":"abc12345-6789-def0","updatedAt":1680864000000}
 ```
 
 ## Open Tabs in Bookmarks
