@@ -350,11 +350,12 @@ async function maybeQueueTaskForProcessing(
     }
 
     // If the cache already has digests newer than the specified time, e.g. 1 hour.
-    const oneHourAgo = new Date().getTime() - 60 * 60 * 1000;
+    const expireDurationMsec = 7 * 24 * 60 * 60 * 1000;  // 1 week. TODO: make this confugurable.
+    const threashold = new Date().getTime() - expireDurationMsec;
     const cachedDigests = await DigestManagement.getCachedSummaries(url); // Assume this function retrieves cached digests
     if (
       cachedDigests &&
-      cachedDigests.some((digest) => digest.timestamp > oneHourAgo)
+      cachedDigests.some((digest) => digest.timestamp > threashold)
     ) {
       console.log("Skipping task as recent cache exists.");
       // TODO: We may also consider re-generationg digests if we have some spare resource e.g. no pending tasks
