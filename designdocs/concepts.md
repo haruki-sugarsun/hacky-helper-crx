@@ -19,6 +19,9 @@
   - Open Tabs
   - Saved Bookrmarks.
 - A session can have some metadata, e.g. ordering, createdAt, updatedAt.
+- **Tab Migration:** Tabs can be moved between sessions (specifically, between the browser windows associated with active sessions). This can be initiated via:
+    - **Button Clicks:** Using dedicated buttons in the UI (e.g., "Migrate Selected Tabs" button, suggestions in the migration dialog).
+    - **Drag-and-Drop:** Dragging tab(s) from the tab list and dropping them onto an active session item in the session list (`tabs.html`). Currently, this targets active sessions/windows. Migration to *closed* sessions via drag-and-drop is a planned feature (TODO).
 
 ### Named Sessions
 
@@ -133,4 +136,7 @@ Active Named Sessions represent sessions that are currently active and bound to 
 
 ### Backend Storage
 
-- Effectively this is Chrome Browser's Bookmark folders for now.
+- Effectively this is Chrome Browser's Bookmark folders for now. This layer provides persistence for Named Sessions (both Active and Closed), including their associated Open Tabs (synced) and Saved Bookmarks.
+- Synchronization between the local session state and this backend is handled by `BookmarkStorage.ts`.
+- Manual synchronization can be triggered via the "Force Sync to Backend" action in the UI, which ultimately calls `SessionManagement.syncSessionToBackend`.
+- Automatic synchronization also occurs periodically (managed by the service worker).
