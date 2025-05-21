@@ -50,3 +50,4 @@ We have unstructured, just-idea notes here:
     - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
 - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
 - In search results, Have "Open tabs" above the "saved bookkarks".
+- Want to have double click as pull window. 
