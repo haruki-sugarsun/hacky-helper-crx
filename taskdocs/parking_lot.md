@@ -52,3 +52,4 @@ We have unstructured, just-idea notes here:
 - Update ARCHITECTURE.md and designdocs based on the recent changes.
 - Fix: Implement missing message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to enable "Force Sync to Backend" functionality.
 - Want to have double click as pull window. or with a modifier?
+- Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
