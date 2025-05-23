@@ -51,3 +51,4 @@ We have unstructured, just-idea notes here:
 - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
 - Fix: Implement missing message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to enable "Force Sync to Backend" functionality.
 - Want to have double click as pull window. or with a modifier?
+- Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
