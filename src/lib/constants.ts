@@ -30,6 +30,7 @@ export const SUGGEST_TAB_DESTINATIONS = "SUGGEST_TAB_DESTINATIONS";
 export const SIMILARITY_THRESHOLD = 0.7; // Default similarity threshold for tab categorization
 
 // Bookmark Storage Constants
+// TODO: Refine/Rename these. As these concepts mismatches with the layers of session-management and its backend (it is or is not Bookmark)
 export const SAVE_TAB_TO_BOOKMARKS = "SAVE_TAB_TO_BOOKMARKS";
 export const OPEN_SAVED_BOOKMARK = "OPEN_SAVED_BOOKMARK";
 export const REMOVE_SAVED_BOOKMARK = "REMOVE_SAVED_BOOKMARK";

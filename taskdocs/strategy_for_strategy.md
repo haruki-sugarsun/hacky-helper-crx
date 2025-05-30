@@ -1,5 +1,9 @@
 ## Strategy to build/execute a Strategy
 
+- METAPLAN Phase:
+  - Find a single actinoable plan and start planning in `taskdoc`.
+  - Prepare or edit a corrensponding file in `taskdoc` directory which contains a file per a plan.
+  - A plan file in `taskdoc` shouid contain a "Strategy and Next Steps" section which list up the detailed changes as detailed as possible.
 - PLAN phase:
   - Read the related files as much as possible.
   - Review and break down the plan in "Strategy and Next Steps" and add details as much as possible.

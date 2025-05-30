@@ -8,7 +8,6 @@
 
 We have unstructured, just-idea notes here:
 
-- Drag-n-Drop for Tab Migrations.
 - Tabs UI updates based on the window/tabs/sessions(open tabs/saved bookmarks) updates.
 - Use some webfont for emojis?
 - Make sure to generate keywords only for the generateKeywords function maybe by specifiying JSON output? -　Show the current LLMTasks status in the popup? e.g. number of the pending tasks, currently-running task etc.
@@ -20,7 +19,6 @@ We have unstructured, just-idea notes here:
 - Action label for "force sync" session should say "to Backend".
 - Replace the new-tab-page with the minimal UI like Tabs UI. ref: https://developer.chrome.com/docs/extensions/develop/ui/override-chrome-pages?hl=ja
 - Allow migration to the closed named session. Migrated tab is just added to the Open Tab in the chosen (closed named) session.
-- Function and hotkey to copy the current page title+URL for easier sharing.
 - Add a flag for saved bookmarks and open them automatically when the session gets activated.
 - In the search result, show the name of the session the open tab belongs to.
 - Session Name should be reflected if updated by other instance. We can compare the timestamp metadata.
@@ -30,6 +28,7 @@ We have unstructured, just-idea notes here:
 - Refactoring Tasks:
   - Replace config accesses to read values with CONFIG_RO.
   - Replace sendMessage usage with service-worker-interface.ts, service-worker-handler.ts, and service-worker-messages.ts.
+  - Migrate message handlers from `service-worker.ts` to `service-worker-handler.ts` for better organization (as indicated by TODO comments).
 - Search for the "saved bookmarks" as well.
 - Close Window in the action menu in Tabs UI.
 - Style in Settings UI.
@@ -44,3 +43,9 @@ We have unstructured, just-idea notes here:
 - Show the last sync timestamp for sessions and diff timer.
 - When there is no pending LLM task, pick up a random tab that is not yet cached?
 - LLM task queueing should behave in LRU style?
+- LLM Task queue should check the currently active tabs and remove the obsolete ones from the queue?
+- Implement tab migration (including drag-and-drop) *to* closed named sessions. This involves:
+    - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
+    - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
+- Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
+- In search results, Have "Open tabs" above the "saved bookkarks".
