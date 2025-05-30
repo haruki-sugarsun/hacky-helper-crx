@@ -271,6 +271,12 @@ async function showSearchResults(query: string): Promise<void> {
         );
       }
 
+      if (matchingTabs.length > 0) {
+        resultComponents = resultComponents.concat(
+          addResultsCategory(searchResults, "Open Tabs", matchingTabs),
+        );
+      }
+
       if (matchingBookmarks.length > 0) {
         resultComponents = resultComponents.concat(
           addResultsCategory(
@@ -278,12 +284,6 @@ async function showSearchResults(query: string): Promise<void> {
             "Saved Bookmarks",
             matchingBookmarks,
           ),
-        );
-      }
-
-      if (matchingTabs.length > 0) {
-        resultComponents = resultComponents.concat(
-          addResultsCategory(searchResults, "Open Tabs", matchingTabs),
         );
       }
 
