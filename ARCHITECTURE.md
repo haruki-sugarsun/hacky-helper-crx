@@ -14,9 +14,9 @@ The service worker is the central component that runs in the background and mana
 - **LLM Task Queue**: Manages a queue (`llmTasks`) of content processing tasks (summarization, keyword extraction, embedding generation) triggered by tab updates or activation. Tasks are processed sequentially (`processNextTask`) and periodically via a Chrome Alarm (`processTasksAlarm`).
 - **Caching**: Stores processed content results using a persistent LRU (Least Recently Used) cache (`DigestManagement`).
 - **Message Handling**: Processes messages from content scripts and other extension components. Message handling is currently split:
-    - `service-worker.ts`: Handles core messages defined in `src/lib/constants.ts` (e.g., LLM tasks like `CREATE_SUMMARY`, session lifecycle like `CREATE_NAMED_SESSION`, `UPDATE_NAMED_SESSION_TABS`, `DELETE_NAMED_SESSION`, `RENAME_NAMED_SESSION`, bookmark operations like `SAVE_TAB_TO_BOOKMARKS`, `OPEN_SAVED_BOOKMARK`, `REMOVE_SAVED_BOOKMARK`, and the `SYNC_SESSION_TO_BOOKMARKS` message which triggers `SessionManagement.syncSessionToBackend`).
-    - `service-worker-handler.ts`: Handles feature-specific messages defined in `src/features/service-worker-messages.ts` (e.g., session actions like `ACTIVATE_SESSION`, `CLONE_SESSION`, `RESTORE_CLOSED_SESSION`, tab actions like `TAKEOVER_TAB`, and the `MIGRATE_TABS` message which triggers `SessionManagement.migrateTabsToWindow` for migrating tabs between active windows. Migration to closed sessions is currently a TODO).
-    - *Note: A refactoring task exists (see `taskdocs/parking_lot.md`) to consolidate handlers into `service-worker-handler.ts`.*
+  - `service-worker.ts`: Handles core messages defined in `src/lib/constants.ts` (e.g., LLM tasks like `CREATE_SUMMARY`, session lifecycle like `CREATE_NAMED_SESSION`, `UPDATE_NAMED_SESSION_TABS`, `DELETE_NAMED_SESSION`, `RENAME_NAMED_SESSION`, bookmark operations like `SAVE_TAB_TO_BOOKMARKS`, `OPEN_SAVED_BOOKMARK`, `REMOVE_SAVED_BOOKMARK`, and the `SYNC_SESSION_TO_BOOKMARKS` message which triggers `SessionManagement.syncSessionToBackend`).
+  - `service-worker-handler.ts`: Handles feature-specific messages defined in `src/features/service-worker-messages.ts` (e.g., session actions like `ACTIVATE_SESSION`, `CLONE_SESSION`, `RESTORE_CLOSED_SESSION`, tab actions like `TAKEOVER_TAB`, and the `MIGRATE_TABS` message which triggers `SessionManagement.migrateTabsToWindow` for migrating tabs between active windows. Migration to closed sessions is currently a TODO).
+  - _Note: A refactoring task exists (see `taskdocs/parking_lot.md`) to consolidate handlers into `service-worker-handler.ts`._
 - **Automatic Session Sync**: Periodically triggers session synchronization to the backend (bookmarks) via a Chrome Alarm (`autoSessionSyncAlarm`) and `SessionManagement.triggerAutoSessionSync`.
 
 ### 2. LLM Services (`llmService.ts`)
@@ -53,9 +53,9 @@ Multiple HTML pages for different extension functionalities:
 - **Side Panel** (`sidepanel.html`, `sidepanel.ts`): Side panel interface for content inspection and analysis
 - **Settings** (`settings.html`): Configuration interface
 - **Tabs Management** (`tabs.html`, `tabs.ts`): Tab organization interface.
-    - Provides a view of active, unnamed, and closed sessions.
-    - Displays tabs within the selected session.
-    - Implements **drag-and-drop tab migration**: Users can drag one or multiple tabs from the tab list and drop them onto a session item in the session list. The event flow involves `dragstart` (setting data and a custom drag image), `dragover`/`dragleave` (providing visual feedback on the target session item using CSS classes like `drag-over`), and `drop` (triggering `handleTabDrop` which communicates with the service worker via `MIGRATE_TABS` message).
+  - Provides a view of active, unnamed, and closed sessions.
+  - Displays tabs within the selected session.
+  - Implements **drag-and-drop tab migration**: Users can drag one or multiple tabs from the tab list and drop them onto a session item in the session list. The event flow involves `dragstart` (setting data and a custom drag image), `dragover`/`dragleave` (providing visual feedback on the target session item using CSS classes like `drag-over`), and `drop` (triggering `handleTabDrop` which communicates with the service worker via `MIGRATE_TABS` message).
 - **Editor** (`editor.html`, `editor.ts`): Text editing interface
 - **Log Viewers** (`logview.html`, `voice_log.html`): Logging interfaces
 

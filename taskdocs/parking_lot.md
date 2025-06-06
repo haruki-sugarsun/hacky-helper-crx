@@ -44,8 +44,8 @@ We have unstructured, just-idea notes here:
 - When there is no pending LLM task, pick up a random tab that is not yet cached?
 - LLM task queueing should behave in LRU style?
 - LLM Task queue should check the currently active tabs and remove the obsolete ones from the queue?
-- Implement tab migration (including drag-and-drop) *to* closed named sessions. This involves:
-    - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
-    - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
+- Implement tab migration (including drag-and-drop) _to_ closed named sessions. This involves:
+  - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
+  - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
 - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
 - In search results, Have "Open tabs" above the "saved bookkarks".

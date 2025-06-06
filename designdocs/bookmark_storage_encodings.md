@@ -28,7 +28,7 @@ Each session is stored as a bookmark folder. The folder title combines the sessi
     ```
     My Session (abc12345-6789-def0)
     ```
-  - *Note: A previously documented format `My Session {"lastModified": ...}` is not explicitly handled by the current decoding logic.*
+  - _Note: A previously documented format `My Session {"lastModified": ...}` is not explicitly handled by the current decoding logic._
 
 **Example Current Folder Title:**
 
