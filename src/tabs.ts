@@ -3129,10 +3129,8 @@ function initMessageListener() {
         return true; // Keep message channel open for async response
       }
 
-      // Handle other message types if needed
-      console.log("[Message Listener] Unhandled message type:", message.type);
-      sendResponse({ success: false, error: "Unknown message type" });
-      return true;
+      // We can just ignore unknown messages.
+      return false;
     },
   );
 
