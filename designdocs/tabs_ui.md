@@ -69,17 +69,17 @@ Tabs UI is an extention component
 
 - Users can drag one or multiple tabs from the **"Open Tabs"** list (specifically, the `<tr>` elements representing tabs in the table body) and drop them onto a session list item (`<li>` element representing an active named or unnamed session) in the "Sessions Area".
 - **User Flow & UI Feedback:**
-    - **Selection:** Users can select multiple tabs using Shift+Click or Ctrl/Cmd+Click.
-    - **Drag Start (`dragstart`):** When dragging starts on a tab row, the IDs of all selected tabs are stored in the `dataTransfer` object as JSON. A custom drag image (a small block showing the number of tabs being dragged) is created and set using `setDragImage`.
-    - **Dragging:** Selected tab rows get a `dragging-multi` class for visual indication (e.g., slight opacity).
-    - **Drag Over/Leave (`dragover`, `dragleave`):** As the dragged tabs move over a potential drop target (session list item), the target gets a `drag-over` class (e.g., highlighted border) to indicate it's a valid drop zone. This class is removed on `dragleave`.
-    - **Drop (`drop`):** When the tabs are dropped onto a valid session item, the `drop` event is triggered on the list item. The `handleTabDrop` function in `src/tabs.ts` is called.
-    - **Feedback:** The target list item briefly gets a `drag-success` class for visual confirmation.
+  - **Selection:** Users can select multiple tabs using Shift+Click or Ctrl/Cmd+Click.
+  - **Drag Start (`dragstart`):** When dragging starts on a tab row, the IDs of all selected tabs are stored in the `dataTransfer` object as JSON. A custom drag image (a small block showing the number of tabs being dragged) is created and set using `setDragImage`.
+  - **Dragging:** Selected tab rows get a `dragging-multi` class for visual indication (e.g., slight opacity).
+  - **Drag Over/Leave (`dragover`, `dragleave`):** As the dragged tabs move over a potential drop target (session list item), the target gets a `drag-over` class (e.g., highlighted border) to indicate it's a valid drop zone. This class is removed on `dragleave`.
+  - **Drop (`drop`):** When the tabs are dropped onto a valid session item, the `drop` event is triggered on the list item. The `handleTabDrop` function in `src/tabs.ts` is called.
+  - **Feedback:** The target list item briefly gets a `drag-success` class for visual confirmation.
 - **Backend Logic:**
-    - The `handleTabDrop` function retrieves the dragged tab IDs from `dataTransfer` and the target `windowId` or `sessionId` from the drop target element.
-    - It then calls `migrateTabs` (if dropping onto an active window/session represented by `windowId`) or `migrateTabsToSession` (if dropping onto a closed session represented by `sessionId` - *Note: This part is currently marked as TODO in the code*).
-    - `migrateTabs` uses the `serviceWorkerInterface` to send a `MIGRATE_TABS` message to the service worker.
-    - The service worker's `handleMigrateTabs` function (in `src/features/service-worker-handler.ts`) receives the message and calls `SessionManagement.migrateTabsToWindow` (in `src/features/session-management.ts`), which uses `chrome.tabs.move` to perform the actual tab migration between windows.
+  - The `handleTabDrop` function retrieves the dragged tab IDs from `dataTransfer` and the target `windowId` or `sessionId` from the drop target element.
+  - It then calls `migrateTabs` (if dropping onto an active window/session represented by `windowId`) or `migrateTabsToSession` (if dropping onto a closed session represented by `sessionId` - _Note: This part is currently marked as TODO in the code_).
+  - `migrateTabs` uses the `serviceWorkerInterface` to send a `MIGRATE_TABS` message to the service worker.
+  - The service worker's `handleMigrateTabs` function (in `src/features/service-worker-handler.ts`) receives the message and calls `SessionManagement.migrateTabsToWindow` (in `src/features/session-management.ts`), which uses `chrome.tabs.move` to perform the actual tab migration between windows.
 
 ### Session Name (`[Session Name]`)
 

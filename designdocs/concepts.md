@@ -20,8 +20,8 @@
   - Saved Bookrmarks.
 - A session can have some metadata, e.g. ordering, createdAt, updatedAt.
 - **Tab Migration:** Tabs can be moved between sessions (specifically, between the browser windows associated with active sessions). This can be initiated via:
-    - **Button Clicks:** Using dedicated buttons in the UI (e.g., "Migrate Selected Tabs" button, suggestions in the migration dialog).
-    - **Drag-and-Drop:** Dragging tab(s) from the tab list and dropping them onto an active session item in the session list (`tabs.html`). Currently, this targets active sessions/windows. Migration to *closed* sessions via drag-and-drop is a planned feature (TODO).
+  - **Button Clicks:** Using dedicated buttons in the UI (e.g., "Migrate Selected Tabs" button, suggestions in the migration dialog).
+  - **Drag-and-Drop:** Dragging tab(s) from the tab list and dropping them onto an active session item in the session list (`tabs.html`). Currently, this targets active sessions/windows. Migration to _closed_ sessions via drag-and-drop is a planned feature (TODO).
 
 ### Named Sessions
 
