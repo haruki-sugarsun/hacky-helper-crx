@@ -808,3 +808,178 @@ content {
   list-style-type: none;
   font-size: 12px;
 }
+
+/* ================================
+   UI State Management - Visual Indicators
+   TODO: Use variable for color to support theme.
+   ================================ */
+
+.ui-outdated-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #ff6b35;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  user-select: none;
+
+  /* Initially hidden */
+  display: none;
+
+  /* Smooth transitions */
+  transition: all 0.3s ease-in-out;
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.ui-outdated-indicator:hover {
+  background-color: #e55a2b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.ui-outdated-indicator:active {
+  transform: translateY(0);
+  transition: all 0.1s ease-in-out;
+}
+
+/* Show animation */
+.ui-outdated-indicator.show {
+  display: block;
+  animation: slideInFade 0.4s ease-out forwards;
+}
+
+/* Hide animation */
+.ui-outdated-indicator.hide {
+  animation: slideOutFade 0.3s ease-in forwards;
+}
+
+/* Keyframe animations */
+@keyframes slideInFade {
+  0% {
+    transform: translateX(100%) translateY(-10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutFade {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) translateY(-10px);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation for attention */
+.ui-outdated-indicator.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 2px 8px rgba(255, 107, 53, 0.4),
+      0 0 20px rgba(255, 107, 53, 0.3);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .ui-outdated-indicator {
+    top: 5px;
+    right: 5px;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ui-outdated-indicator {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin: 5px;
+    width: calc(100% - 10px);
+    text-align: center;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .ui-outdated-indicator {
+    border: 2px solid white;
+    background-color: #d63384;
+  }
+
+  .ui-outdated-indicator:hover {
+    background-color: #b02a5b;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .ui-outdated-indicator {
+    transition: none;
+  }
+
+  .ui-outdated-indicator.show {
+    animation: none;
+    display: block;
+  }
+
+  .ui-outdated-indicator.hide {
+    animation: none;
+    display: none;
+  }
+
+  .ui-outdated-indicator.pulse {
+    animation: none;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .ui-outdated-indicator {
+    background-color: #fd7e14;
+    color: #000;
+  }
+
+  .ui-outdated-indicator:hover {
+    background-color: #e8690b;
+  }
+}
+
+/* Focus states for accessibility */
+.ui-outdated-indicator:focus {
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
+}
+
+.ui-outdated-indicator:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.ui-outdated-indicator:focus-visible {
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
+}
