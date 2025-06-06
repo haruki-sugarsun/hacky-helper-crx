@@ -4,6 +4,7 @@
  *       Generally message passing between service-worker-interface and the
  *       service-worker-handler uses ErrorResult.
  *       And the methods in ServiceWorkerInterface throws Errors.
+ * TODO: Use connect for TabsUI <-> Service-Worker communication.
  */
 import {
   NamedSession,

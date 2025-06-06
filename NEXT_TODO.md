@@ -50,7 +50,7 @@ _"Engage!"_ - We're implementing smart UI updates with in-memory state managemen
 - [x] Connect message handler to `tabsUIState.markAsOutdated()`
 - [x] Add message response for debugging
 
-## Phase 2: Service Worker Communication (Week 2)
+## Phase 2: Service Worker Communication (Week 2) ✅ COMPLETED
 
 ### Task 2.1: Message Constants and Types ✅ COMPLETED
 
@@ -58,25 +58,29 @@ _"Engage!"_ - We're implementing smart UI updates with in-memory state managemen
 - [x] Add `TABS_MARK_UI_OUTDATED` constant
 - [x] Define `TabsUIOutdatedMessage` interface type for UI state updates
 
-### Task 2.2: Service Worker Message Sender
+### Task 2.2: Service Worker Message Sender ✅ COMPLETED
 
-- [ ] **File**: `src/service-worker-handler.ts` (or appropriate file)
-- [ ] Create `notifyTabsUIOutdated(reason: string)` function
-- [ ] Add error handling for when tabs UI is not open
-- [ ] Implement message sending with proper typing
+- [x] **File**: `src/utils/service-worker-messenger.ts`
+- [x] Create `ServiceWorkerMessenger` class with `notifyTabsUIOutdated(reason: string)` function
+- [x] Add error handling for when tabs UI is not open
+- [x] Implement message sending with proper typing
+- [x] **File**: `src/service-worker.ts`
+- [x] Import and integrate ServiceWorkerMessenger
 
-### Task 2.3: Tab/Window Event Listeners
+### Task 2.3: Tab/Window Event Listeners ✅ COMPLETED
 
-- [ ] **File**: Service worker files
-- [ ] Add `chrome.tabs.onCreated` listener
-- [ ] Add `chrome.tabs.onRemoved` listener
-- [ ] Add `chrome.tabs.onUpdated` listener
-- [ ] Add `chrome.tabs.onMoved` listener
-- [ ] Add `chrome.tabs.onActivated` listener
-- [ ] Add `chrome.windows.onCreated` listener
-- [ ] Add `chrome.windows.onRemoved` listener
-- [ ] Add `chrome.windows.onFocusChanged` listener
-- [ ] Connect each event to `notifyTabsUIOutdated()`
+- [x] **File**: `src/service-worker.ts`
+- [x] Enhanced existing `chrome.tabs.onCreated` listener
+- [x] Enhanced existing `chrome.tabs.onRemoved` listener
+- [x] Enhanced existing `chrome.tabs.onUpdated` listener
+- [x] Add `chrome.tabs.onMoved` listener
+- [x] Enhanced existing `chrome.tabs.onActivated` listener
+- [x] Enhanced existing `chrome.windows.onCreated` listener
+- [x] Enhanced existing `chrome.windows.onRemoved` listener
+- [x] Add `chrome.windows.onFocusChanged` listener
+- [x] Connect each event to `ServiceWorkerMessenger.notifyTabsUIOutdated()`
+
+All Phase 2 tasks completed! Service worker now detects tab/window events and sends messages to tabs UI with proper error handling.
 
 ## Phase 3: Integration & Testing (Week 2-3)
 
@@ -169,12 +173,12 @@ interface TabsUIResponse {
 - [x] Professional CSS styling with animations
 - [x] Message listener receives service worker messages
 
-### Phase 2 Complete When:
+### Phase 2 Complete When: ✅ COMPLETED
 
-- [ ] Service worker detects tab/window events
-- [ ] Messages sent to tabs UI successfully
-- [ ] Error handling works when UI not open
-- [ ] Message constants and types defined
+- [x] Service worker detects tab/window events
+- [x] Messages sent to tabs UI successfully
+- [x] Error handling works when UI not open
+- [x] Message constants and types defined
 
 ### Phase 3 Complete When:
 
@@ -191,4 +195,4 @@ _"The first duty of every Starfleet officer is to the truth"_ - Captain Picard
 **Dependencies**: Existing tabs UI refresh functionality
 **Risk Level**: Low (foundation complete, well-defined scope)
 
-**Captain's Orders**: Phase 1 完全完了！All foundation tasks completed including message listener. Proceed with Task 2.1 (Message Constants and Types) to establish service worker communication infrastructure!
+**Captain's Orders**: Phase 2 完全完了！All service worker communication infrastructure is now operational. Ready to proceed with Phase 3 (Integration & Testing) to verify end-to-end functionality!
