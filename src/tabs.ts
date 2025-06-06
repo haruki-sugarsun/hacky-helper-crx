@@ -30,6 +30,14 @@ import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
 import { CONFIG_RO } from "./features/config-store";
 import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
+// Import the new UI state management module
+import {
+  tabsUIState,
+  createVisualIndicatorController,
+  createFocusRefreshController,
+  // UIStateChangeEvent
+} from "./features/tabs-ui-state";
+import { TabsUIOutdatedMessage } from "./messages/messages";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -58,6 +66,93 @@ var state_windows: chrome.windows.Window[]; // All windows
 var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window. This is mostly redundant now that we have tabs in state_windows. TODO: Remove it.
 var state_sessions: NamedSession[] = []; // Named Sessions from the service worker
 var currentTabId: number | undefined; // ID of the current tab
+
+// ================================
+// UI State Management Setup
+// ================================
+
+// Global debug logging flag (can be used by other features too)
+let enableDebugLogging = true;
+
+// Configure the global UI state manager
+tabsUIState.setDebugLogging(enableDebugLogging);
+
+// Setup focus-based refresh controller
+let focusRefreshCleanup: (() => void) | null = null;
+let visualIndicatorCleanup: (() => void) | null = null;
+
+/**
+ * Initialize UI state management with focus detection and visual indicators
+ */
+function initUIStateManagement() {
+  // Create refresh callback that updates the UI
+  const refreshCallback = async () => {
+    console.log("[UI State] Refreshing tabs data due to outdated state");
+
+    // Refresh windows and tabs data
+    const windows = await chrome.windows.getAll({ populate: true });
+    state_windows = windows;
+
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    state_tabs = tabs;
+
+    // Update UI with current selection maintained
+    const selectedSessionInfo = getSelectedSessionInfo();
+    updateUI(state_windows, selectedSessionInfo);
+  };
+
+  // Setup focus-based refresh
+  focusRefreshCleanup = createFocusRefreshController(
+    refreshCallback,
+    tabsUIState,
+  );
+
+  // Setup visual indicator (create a simple indicator element if not exists)
+  let indicatorElement = document.querySelector(
+    "#ui-outdated-indicator",
+  ) as HTMLElement;
+  if (!indicatorElement) {
+    // TODO: Consider add this element explicitly in the tabs.html.
+    indicatorElement = document.createElement("div");
+    indicatorElement.id = "ui-outdated-indicator";
+    indicatorElement.className = "ui-outdated-indicator";
+    indicatorElement.textContent = "🔄 UI needs refresh";
+    indicatorElement.setAttribute("aria-hidden", "true");
+    indicatorElement.setAttribute("role", "status");
+    indicatorElement.setAttribute("aria-live", "polite");
+    indicatorElement.setAttribute("tabindex", "0");
+    indicatorElement.title = "Click to refresh the UI with latest data";
+    document.body.appendChild(indicatorElement);
+  }
+
+  visualIndicatorCleanup = createVisualIndicatorController(
+    indicatorElement,
+    tabsUIState,
+  );
+
+  // Optional: Add click handler to manually refresh
+  indicatorElement.addEventListener("click", refreshCallback);
+
+  // Initialize message listener for service worker communication
+  initMessageListener();
+
+  console.log("[UI State] UI state management initialized");
+}
+
+/**
+ * Cleanup UI state management listeners
+ * TODO: Consider if we really need this or not.
+ */
+function cleanupUIStateManagement() {
+  if (focusRefreshCleanup) {
+    focusRefreshCleanup();
+    focusRefreshCleanup = null;
+  }
+  if (visualIndicatorCleanup) {
+    visualIndicatorCleanup();
+    visualIndicatorCleanup = null;
+  }
+}
 
 /**
  * Helper function to handle a drop event for a tab item.
@@ -303,6 +398,9 @@ async function init() {
     return;
   }
 
+  // Initialize UI state management
+  initUIStateManagement();
+
   const allNamedSessions = await serviceWorkerInterface.getNamedSessions();
 
   // Check for session parameters in URL and restore session-window association if needed
@@ -372,6 +470,11 @@ document.addEventListener("DOMContentLoaded", () => {
   init();
   // Initialize search functionality
   initSearchFunctionality();
+});
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", () => {
+  cleanupUIStateManagement();
 });
 
 // Add event listener for the toggle bookmarks button
@@ -2902,4 +3005,45 @@ function getSelectedSessionInfo(): {
   }
 
   return { sessionId };
+}
+
+// ================================
+// Message Listener Setup (Task 1.3)
+// ================================
+
+/**
+ * Setup chrome runtime message listener for UI state updates
+ */
+function initMessageListener() {
+  chrome.runtime.onMessage.addListener(
+    (message: TabsUIOutdatedMessage, _sender, sendResponse) => {
+      console.log("[Message Listener] Received message:", message);
+
+      // Handle MARK_UI_OUTDATED message type
+      if (message.type === "TABS_MARK_UI_OUTDATED") {
+        // TODO: Define a constant in messeges.ts
+        const reason = message.reason || "Unknown reason";
+        console.log(`[Message Listener] Marking UI as outdated: ${reason}`);
+
+        // Mark the UI state as outdated
+        tabsUIState.markAsOutdated(reason);
+
+        // Send response for debugging
+        sendResponse({
+          success: true,
+          currentState: tabsUIState.getState(),
+          timestamp: Date.now(),
+        });
+
+        return true; // Keep message channel open for async response
+      }
+
+      // Handle other message types if needed
+      console.log("[Message Listener] Unhandled message type:", message.type);
+      sendResponse({ success: false, error: "Unknown message type" });
+      return true;
+    },
+  );
+
+  console.log("[Message Listener] Chrome runtime message listener initialized");
 }
