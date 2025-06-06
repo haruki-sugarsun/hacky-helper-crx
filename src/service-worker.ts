@@ -59,6 +59,7 @@ import { handleServiceWorkerMessage } from "./features/service-worker-handler";
 import { triggerCopyPageInfo } from "./popup/popup-messages";
 import { openSidePanel } from "./sidepanel-helper";
 import { SP_TRIGGER } from "./messages/messages.ts";
+import { ServiceWorkerMessenger } from "./utils/service-worker-messenger";
 
 // Entrypoint logging:
 console.log("service-worker.ts", new Date());
@@ -203,6 +204,9 @@ async function initializeTabManagement() {
     console.log("Updated currentTabs:", currentTabs);
     // Add your logic here
     // TODO: Implement sessions sync based on the events. or we may just rely on querying by tabs API.
+
+    // Notify tabs UI about the change
+    ServiceWorkerMessenger.notifyTabsUIOutdated("Tab created");
   });
 
   chrome.tabs.onRemoved.addListener((tabId, _removeInfo) => {
@@ -211,6 +215,9 @@ async function initializeTabManagement() {
 
     // TODO: Clear the pending tasks in the llmTasks.
     console.log("Updated currentTabs:", currentTabs);
+
+    // Notify tabs UI about the change
+    ServiceWorkerMessenger.notifyTabsUIOutdated("Tab removed");
   });
 
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -219,6 +226,11 @@ async function initializeTabManagement() {
     if (index !== -1) {
       currentTabs[index] = tab;
       console.log("Updated currentTabs:", currentTabs);
+    }
+
+    // Notify tabs UI about significant updates
+    if (changeInfo.status === "complete" || changeInfo.url) {
+      ServiceWorkerMessenger.notifyTabsUIOutdated("Tab updated");
     }
 
     // Generate and cache summary when a tab's content is updated
@@ -247,6 +259,10 @@ async function initializeTabManagement() {
   chrome.tabs.onActivated.addListener(async (activeInfo) => {
     const activeTab = await chrome.tabs.get(activeInfo.tabId);
     console.log("Tab Activated:", activeTab);
+
+    // Notify tabs UI about tab activation
+    // TODO: Consider if this is needed?
+    ServiceWorkerMessenger.notifyTabsUIOutdated("Tab activated");
 
     // Conditions for task enqueue: empty task queue or no digest computed
     const canEnqueue =
@@ -292,25 +308,54 @@ async function updateSessionForWindow(windowId: number) {
 chrome.windows.onCreated.addListener((window) => {
   if (window && window.id) {
     updateSessionForWindow(window.id); // TODO: Can it be meaninful?
+    // Notify tabs UI about window creation
+    ServiceWorkerMessenger.notifyTabsUIOutdated("Window created");
   }
 });
+
 chrome.windows.onRemoved.addListener((windowId) => {
   updateSessionForWindow(windowId); // TODO: This should be something else?
+  // Notify tabs UI about window removal
+  ServiceWorkerMessenger.notifyTabsUIOutdated("Window removed");
 });
+
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab && tab.windowId) {
     updateSessionForWindow(tab.windowId);
+    // Note: This is a duplicate listener - notification already added above
+    // TODO: refactor to merge the dups.
   }
 });
+
 chrome.tabs.onUpdated.addListener((_tabId, _changeInfo, tab) => {
   if (tab && tab.windowId) {
     updateSessionForWindow(tab.windowId);
+    // Note: This is a duplicate listener - notification already added above
+    // TODO: refactor to merge the dups.
   }
 });
+
 chrome.tabs.onRemoved.addListener((_tabId, removeInfo) => {
   if (removeInfo && removeInfo.windowId) {
     updateSessionForWindow(removeInfo.windowId);
+    // Note: This is a duplicate listener - notification already added above
+    // TODO: refactor to merge the dups.
   }
+});
+
+// Add missing window focus event listener (Task 2.3)
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+    console.log("Window focus changed:", windowId);
+    updateSessionForWindow(windowId);
+    ServiceWorkerMessenger.notifyTabsUIOutdated("Window focus changed");
+  }
+});
+
+// Add tabs.onMoved listener (Task 2.3)
+chrome.tabs.onMoved.addListener((tabId, moveInfo) => {
+  console.log("Tab moved:", tabId, moveInfo);
+  ServiceWorkerMessenger.notifyTabsUIOutdated("Tab moved");
 });
 
 // Queue of the background LLM related tasks:
