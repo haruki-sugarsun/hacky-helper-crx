@@ -16,6 +16,7 @@ export async function ensureTabsHtmlInWindow(windowId: number): Promise<void> {
     );
 
     // Use a more specific pattern to match only our tabs.html page
+    // TODO: This "get all Tabs UI tabs" can be a common method.
     const tabsInWindow = await chrome.tabs.query({
       windowId: windowId,
       url: [
@@ -114,4 +115,15 @@ export async function openTabsPage() {
   } catch (error) {
     console.error("Error opening tabs.html:", error);
   }
+}
+
+/**
+ * Check if a tab URL is the extension's tabs UI
+ * @param url - Tab URL to check
+ * @returns true if the URL is the tabs UI
+ */
+export function isTabsUIUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  // TODO: We should check if the URL is the extension's own URL.
+  return url.includes("chrome-extension://") && url.includes("tabs.html");
 }

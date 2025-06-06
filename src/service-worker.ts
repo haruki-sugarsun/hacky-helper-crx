@@ -228,9 +228,9 @@ async function initializeTabManagement() {
       console.log("Updated currentTabs:", currentTabs);
     }
 
-    // Notify tabs UI about significant updates
+    // Notify tabs UI about significant updates, but ignore tabs UI self-updates
     if (changeInfo.status === "complete" || changeInfo.url) {
-      ServiceWorkerMessenger.notifyTabsUIOutdated("Tab updated");
+      ServiceWorkerMessenger.notifyTabsUIOutdated("Tab updated", tab.url);
     }
 
     // Generate and cache summary when a tab's content is updated
@@ -262,7 +262,7 @@ async function initializeTabManagement() {
 
     // Notify tabs UI about tab activation
     // TODO: Consider if this is needed?
-    ServiceWorkerMessenger.notifyTabsUIOutdated("Tab activated");
+    // ServiceWorkerMessenger.notifyTabsUIOutdated("Tab activated");
 
     // Conditions for task enqueue: empty task queue or no digest computed
     const canEnqueue =
@@ -348,6 +348,7 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId !== chrome.windows.WINDOW_ID_NONE) {
     console.log("Window focus changed:", windowId);
     updateSessionForWindow(windowId);
+    // TODO: Consider if this actually helps or not?
     ServiceWorkerMessenger.notifyTabsUIOutdated("Window focus changed");
   }
 });
