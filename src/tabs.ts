@@ -38,6 +38,7 @@ import {
   // UIStateChangeEvent
 } from "./features/tabs-ui-state";
 import { TabsUIOutdatedMessage } from "./messages/messages";
+import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
