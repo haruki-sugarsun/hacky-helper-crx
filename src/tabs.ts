@@ -29,6 +29,7 @@ import "./ui/session-metadata";
 import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
 import { CONFIG_RO } from "./features/config-store";
+import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -271,6 +272,30 @@ async function updateTabsUITitleWithSessionName(
 async function init() {
   console.log("init");
 
+  // Register message listener for TB_TOGGLE_BOOKMARKS_PANE
+  chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    if (message?.type === TB_TOGGLE_BOOKMARKS_PANE) {
+      // If the page currently shows other session info, switch to the current tab info.
+      chrome.windows.getCurrent().then((currentWindow) => {
+        // Find the currently selected session/window in the UI
+        const selected = document.querySelector(
+          "#named_sessions li.selected, #tabs_sessions li.selected",
+        );
+        let selectedWindowId: number | undefined = undefined;
+        if (selected && selected.hasAttribute("data-window-id")) {
+          selectedWindowId = Number(selected.getAttribute("data-window-id"));
+        }
+        if (selectedWindowId !== currentWindow.id) {
+          // Switch UI to current window
+          updateUI(state_windows, { windowId: currentWindow.id });
+        }
+        // Now toggle the bookmarks pane
+        // TODO: Only call toggleBookmarksPane() for Named Active session (as unnamed do not have bookmarks.)
+        toggleBookmarksPane();
+      });
+    }
+  });
+
   // Check for duplicates first
   const isDuplicate = await checkForDuplicates();
   if (isDuplicate) {
@@ -324,6 +349,24 @@ async function init() {
     });
 }
 
+// TODO: Separate lengthy UI operations to a dedicated file.
+function toggleBookmarksPane() {
+  const savedBookmarksContainer =
+    document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
+  const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
+    "#toggleBookmarksButton",
+  );
+  if (!savedBookmarksContainer || !toggleBookmarksButton) return;
+  savedBookmarksContainer.classList.toggle("collapsed");
+  if (savedBookmarksContainer.classList.contains("collapsed")) {
+    toggleBookmarksButton.textContent = "🔖";
+    toggleBookmarksButton.title = "Show bookmarks panel";
+  } else {
+    toggleBookmarksButton.textContent = "❌";
+    toggleBookmarksButton.title = "Collapse bookmarks panel";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize the page
   init();
@@ -336,20 +379,7 @@ const toggleBookmarksButton = document.querySelector<HTMLButtonElement>(
   "#toggleBookmarksButton",
 );
 if (toggleBookmarksButton) {
-  toggleBookmarksButton.addEventListener("click", () => {
-    const savedBookmarksContainer =
-      document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
-    savedBookmarksContainer.classList.toggle("collapsed");
-
-    // Update button text based on state
-    if (savedBookmarksContainer.classList.contains("collapsed")) {
-      toggleBookmarksButton.textContent = "🔖";
-      toggleBookmarksButton.title = "Show bookmarks panel";
-    } else {
-      toggleBookmarksButton.textContent = "❌";
-      toggleBookmarksButton.title = "Collapse bookmarks panel";
-    }
-  });
+  toggleBookmarksButton.addEventListener("click", toggleBookmarksPane);
 }
 
 // Synced tabs are now always visible, no toggle button needed
@@ -1244,6 +1274,7 @@ async function updateUI(
         });
 
         // If this is a named session, fetch and display saved bookmarks and synced tabs
+        // TODO: We have very similar logic and we can refactor.
         if (associatedSession) {
           // For named session, make sure the "Saved Bookmarks" UI is visible
           const savedBookmarksContainer =
@@ -1457,6 +1488,12 @@ async function updateUI(
       );
       // TODO: We have similar code snippet in this method. Consider refactoring them into renderSessionTabsPane() or something.
       if (associatedSession) {
+        // TODO: Show the #saved_bookmarks element with display:block.
+        const savedBookmarksContainer =
+          document.querySelector<HTMLDivElement>("#saved_bookmarks");
+        if (savedBookmarksContainer) {
+          savedBookmarksContainer.style.display = "block";
+        }
         fetchAndDisplaySavedBookmarks(associatedSession.id);
         fetchAndDisplaySyncedTabs(associatedSession.id);
 
