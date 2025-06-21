@@ -183,3 +183,14 @@ The extension uses multiple storage mechanisms:
 ## Testing
 
 The project utilizes **Vitest** for its testing framework, chosen for its speed and compatibility with the Vite build tool. Tests cover core functionalities such as service worker message handling (`service-worker-handler.test.ts`) and session management (`session-management.test.ts`, `bookmark-storage.test.ts`). The testing strategy focuses on ensuring the reliability of key components and interactions.
+
+## Internal Message Type Naming Rules
+
+- All internal message types exchanged between extension components (e.g., service worker, Tabs UI) must be defined as exported constants in `src/messages/messages.ts`.
+- For messages intended for the Tabs UI, use the prefix `TB_` (e.g., `TB_TOGGLE_BOOKMARKS_PANE`).
+- For side panel messages, use the prefix `SP_` (e.g., `SP_TRIGGER`).
+- Never use string literals for message types in code; always import the constant from `messages.ts`.
+- When introducing a new message type, update `messages.ts` and ensure all senders/receivers use the constant.
+- This rule is mandatory and must be maintained as part of our internal regulations.
+
+> See also: `DEVPLANS.md` for development workflow and `NEXT_TODO.md` for task tracking.
