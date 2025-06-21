@@ -16,3 +16,7 @@ Example Instructions:
 - Each task has a dedicated file in `taskdocs` directory.
 - The dedicated file in `taskdocs` should have the detailed changes to make as much as possible.
 - The tasks should be keep updated with current status.
+
+- [ ] Hotkey Open-Tabs-Page Improvements
+  - See: `taskdocs/hotkey-tabs-ui-improvements.md` for detailed plan.
+  - Status: PLANNED
