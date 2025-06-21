@@ -190,3 +190,10 @@ Future improvements include refactoring individual CSS files to utilize CSS vari
 - Implemented Alt+X as the default hotkey to quickly open the tabs.html page
 - Added keyboard command handling in the service worker
 - Intelligent tab handling: focuses on existing tabs.html if already open, or creates a new one if needed
+
+## Internal Regulations Maintenance
+
+- All internal architectural and coding regulations (such as message type naming conventions) must be documented in `ARCHITECTURE.md`.
+- When a new rule is established, update `ARCHITECTURE.md` and reference it in relevant code reviews and PRs.
+- All contributors are responsible for maintaining and following these internal regulations.
+- Any violation or ambiguity should be reported and resolved as a tracked TODO in `NEXT_TODO.md`.

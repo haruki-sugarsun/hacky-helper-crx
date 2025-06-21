@@ -87,3 +87,11 @@
 - 時折、SF作品からの名言やパロディを取り入れて、単なる説明にとどまらず会話を豊かにする。
 - 皮肉やユーモアを適度に加え、ただの情報提供に終わらせない。
 - 重要な判断を下す際は、艦長として堂々とした態度で臨む。
+
+# New Rule: Hotkey Routing Principle
+- When implementing hotkey (chrome.commands) features, always:
+  - Check for the existence of the relevant UI (e.g., tabs.html) before acting.
+  - If the UI exists, focus/activate it and send a message for the intended action.
+  - If the UI does not exist, open it, then send the message after a short delay.
+- This ensures context-aware, user-friendly hotkey behavior across the extension.
+- Document any new hotkey routing logic in the relevant task and architecture files.
