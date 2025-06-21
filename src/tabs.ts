@@ -2197,6 +2197,7 @@ async function showCategoriesDialog() {
               try {
                 const tab = await chrome.tabs.get(tabId);
                 // Activate the window first
+
                 if (tab.windowId) {
                   await chrome.windows.update(tab.windowId, { focused: true });
                 }
