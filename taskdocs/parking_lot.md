@@ -48,4 +48,3 @@ We have unstructured, just-idea notes here:
   - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
   - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
 - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
-- In search results, Have "Open tabs" above the "saved bookkarks".
