@@ -831,6 +831,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 async function getTabContent(tabId: number): Promise<string | null> {
   try {
     // Execute a script in the tab to get its content
+    // TODO: We can ignore errors for the extension pages.
     const results = await chrome.scripting.executeScript({
       target: { tabId },
       func: () => document.body.innerText,

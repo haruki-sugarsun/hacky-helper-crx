@@ -1,4 +1,5 @@
 import * as SessionManagement from "./session-management";
+import { TB_TOGGLE_BOOKMARKS_PANE } from "../messages/messages";
 
 /**
  * Ensures a tabs.html tab exists in the specified window.
@@ -88,19 +89,27 @@ export async function openTabsPage() {
       url: chrome.runtime.getURL("tabs.html*"), // Use wildcard to match any tabs.html URL with query parameters
     });
 
+    let targetTabId: number | undefined;
     if (existingTabs.length > 0) {
       // If tabs.html is already open, focus on that tab and reload it
       const existingTab = existingTabs[0];
       await chrome.windows.update(existingTab.windowId!, { focused: true });
       await chrome.tabs.update(existingTab.id!, { active: true });
-      // Reload the tab to refresh its content with the current URL
-      // TODO: We want to replace this with sending a reset-UI message if the tabs UI is connected.
-      await chrome.tabs.update(existingTab.id!, { url: existingTab.url });
+      targetTabId = existingTab.id;
       console.log("Focused on existing tabs.html tab and updated it");
     } else {
       // If tabs.html is not open, create a new tab with tabs.html in pinned status.
-      await chrome.tabs.create({ url: tabsUrl, pinned: true });
+      const newTab = await chrome.tabs.create({ url: tabsUrl, pinned: true });
+      targetTabId = newTab.id;
       console.log("Created new tabs.html tab");
+    }
+
+    // TODO: check if we should use long-lived connected port or not.
+    // After opening/focusing, send a message to toggle bookmarks pane
+    if (targetTabId) {
+      chrome.tabs.sendMessage(targetTabId, {
+        type: TB_TOGGLE_BOOKMARKS_PANE,
+      });
     }
   } catch (error) {
     console.error("Error opening tabs.html:", error);
