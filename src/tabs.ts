@@ -29,7 +29,6 @@ import "./ui/session-metadata";
 import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
 import { CONFIG_RO } from "./features/config-store";
-import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
 // Import the new UI state management module
 import {
   tabsUIState,
