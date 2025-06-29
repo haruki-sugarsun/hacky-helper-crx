@@ -37,8 +37,11 @@ import {
   createFocusRefreshController,
   // UIStateChangeEvent
 } from "./features/tabs-ui-state";
-import { TabsUIOutdatedMessage } from "./messages/messages";
 import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
+import {
+  TabsUIOutdatedMessage,
+  TABS_MARK_UI_OUTDATED,
+} from "./messages/messages";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -3021,8 +3024,7 @@ function initMessageListener() {
       console.log("[Message Listener] Received message:", message);
 
       // Handle MARK_UI_OUTDATED message type
-      if (message.type === "TABS_MARK_UI_OUTDATED") {
-        // TODO: Define a constant in messeges.ts
+      if (message.type === TABS_MARK_UI_OUTDATED) {
         const reason = message.reason || "Unknown reason";
         console.log(`[Message Listener] Marking UI as outdated: ${reason}`);
 
