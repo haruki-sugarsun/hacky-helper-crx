@@ -389,6 +389,29 @@ async function init() {
         }
         // Now toggle the bookmarks pane
         // TODO: Only call toggleBookmarksPane() for Named Active session (as unnamed do not have bookmarks.)
+        // If the UI is flagged as outdated, refresh before toggling bookmarks pane
+        // TODO: Consider if these complex conditions and final updateUI() calls can be optimized.
+        if (tabsUIState.getState().isOutdated) {
+          // Optionally show a log or indicator
+          console.log(
+            "[TB_TOGGLE_BOOKMARKS_PANE] UI is outdated, refreshing before toggling bookmarks pane",
+          );
+          // Refresh windows and tabs data
+          chrome.windows.getAll({ populate: true }).then((windows) => {
+            state_windows = windows;
+            chrome.tabs.query({ currentWindow: true }).then((tabs) => {
+              state_tabs = tabs;
+              // Update UI with current selection maintained
+              const selectedSessionInfo = getSelectedSessionInfo();
+              updateUI(state_windows, selectedSessionInfo);
+              // After refresh, clear outdated flag
+              tabsUIState.clearOutdatedState();
+              // Now toggle the bookmarks pane
+              toggleBookmarksPane();
+            });
+          });
+          return;
+        }
         toggleBookmarksPane();
       });
     }
