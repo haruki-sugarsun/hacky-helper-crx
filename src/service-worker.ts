@@ -349,7 +349,7 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
     console.log("Window focus changed:", windowId);
     updateSessionForWindow(windowId);
     // TODO: Consider if this actually helps or not?
-    ServiceWorkerMessenger.notifyTabsUIOutdated("Window focus changed");
+    // ServiceWorkerMessenger.notifyTabsUIOutdated("Window focus changed");
   }
 });
 
