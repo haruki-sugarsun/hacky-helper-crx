@@ -50,60 +50,52 @@ _"Engage!"_ - We're implementing smart UI updates with in-memory state managemen
 - [x] Connect message handler to `tabsUIState.markAsOutdated()`
 - [x] Add message response for debugging
 
-## Phase 2: Service Worker Communication (Week 2) ✅ COMPLETED
+## Phase 2: Event Listeners (Week 2) ✅ COMPLETED
 
-### Task 2.1: Message Constants and Types ✅ COMPLETED
+### Task 2.1: Tab/Window Event Listeners ✅ COMPLETED
 
-- [x] **File**: `src/messages/messages.ts`
-- [x] Add `TABS_MARK_UI_OUTDATED` constant
-- [x] Define `TabsUIOutdatedMessage` interface type for UI state updates
+- [x] **File**: `src/service-worker.ts`
+- [x] Listen for tab/window events (created, removed, updated, activated)
+- [x] Notify tabs UI via ServiceWorkerMessenger
 
-### Task 2.2: Service Worker Message Sender ✅ COMPLETED
+### Task 2.2: Service Worker Messaging ✅ COMPLETED
 
 - [x] **File**: `src/utils/service-worker-messenger.ts`
-- [x] Create `ServiceWorkerMessenger` class with `notifyTabsUIOutdated(reason: string)` function
-- [x] Add error handling for when tabs UI is not open
-- [x] Implement message sending with proper typing
-- [x] **File**: `src/service-worker.ts`
-- [x] Import and integrate ServiceWorkerMessenger
+- [x] Implement notifyTabsUIOutdated()
+- [x] Filter out self-notifications
 
-### Task 2.3: Tab/Window Event Listeners ✅ COMPLETED
+## Phase 3: Focus Detection (Week 2-3) ✅ COMPLETED
 
-- [x] **File**: `src/service-worker.ts`
-- [x] Enhanced existing `chrome.tabs.onCreated` listener
-- [x] Enhanced existing `chrome.tabs.onRemoved` listener
-- [x] Enhanced existing `chrome.tabs.onUpdated` listener
-- [x] Add `chrome.tabs.onMoved` listener
-- [x] Enhanced existing `chrome.tabs.onActivated` listener
-- [x] Enhanced existing `chrome.windows.onCreated` listener
-- [x] Enhanced existing `chrome.windows.onRemoved` listener
-- [x] Add `chrome.windows.onFocusChanged` listener
-- [x] Connect each event to `ServiceWorkerMessenger.notifyTabsUIOutdated()`
+### Task 3.1: Focus-Based Refresh Controller ✅ COMPLETED
 
-All Phase 2 tasks completed! Service worker now detects tab/window events and sends messages to tabs UI with proper error handling.
+- [x] **File**: `src/features/tabs-ui-state.ts`, `src/tabs.ts`
+- [x] Implement createFocusRefreshController
+- [x] Listen for focus/visibility/page events
+- [x] Debounce refresh logic
 
-## Phase 3: Integration & Testing (Week 2-3)
+## Phase 4: Update Mechanism (Week 3) ✅ COMPLETED
 
-### Task 3.1: End-to-End Message Flow
+### Task 4.1: Conditional Refresh Logic ✅ COMPLETED
 
-- [ ] Test message flow: service worker → tabs UI
-- [ ] Verify state management works correctly
-- [ ] Check visual indicators appear/disappear
-- [ ] Test focus detection in different scenarios
+- [x] **File**: `src/tabs.ts`
+- [x] Only refresh if UI is outdated
+- [x] Show/hide visual indicator
+- [x] Manual refresh via indicator click
 
-### Task 3.2: Error Handling & Edge Cases
+---
 
-- [ ] Handle tabs UI not open scenarios
-- [ ] Test with multiple windows
-- [ ] Verify cleanup on page unload
-- [ ] Add fallback manual refresh option
+## 🧪 Next Steps: Testing & Review
 
-### Task 3.3: Documentation Update
+- [ ] Test end-to-end in browser (tab events, focus, indicator, refresh)
+- [ ] Review performance under heavy tab usage
+- [ ] Gather user feedback
 
-- [ ] Update implementation details in plan
-- [ ] Document message interface
-- [ ] Add debugging guide
-- [ ] Update ARCHITECTURE.md if needed
+## 🚀 Optional: Phase 5 - Advanced Optimizations (Future)
+
+- [ ] Implement advanced debouncing/throttling if needed
+- [ ] Memory management/performance tuning
+
+---
 
 ## Implementation Notes
 
