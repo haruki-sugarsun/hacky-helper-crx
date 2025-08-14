@@ -83,6 +83,8 @@ We have unstructured, just-idea notes here:
 - Implement tab migration (including drag-and-drop) _to_ closed named sessions. This involves:
   - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
   - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
+  - Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
+- Have a special menu in Tabs UI and Implement an action to apply "Pull Window" for all the existing windows
 
 ### Tests, QA & Misc
 
