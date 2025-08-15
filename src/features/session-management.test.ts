@@ -536,6 +536,8 @@ describe("takeoverTab", () => {
 
     mockBookmarkStorage.getSyncedOpenTabs.mockResolvedValue(mockSyncedTabs);
 
+    // TODO: Consider replacing these with more general solution.
+    // Create a complete mock tab that satisfies the chrome.tabs.Tab interface
     const mockExistingTab = {
       id: 123,
       url: "https://example.com",
@@ -554,59 +556,6 @@ describe("takeoverTab", () => {
 
     vi.mocked(chrome.tabs.query).mockResolvedValue([mockExistingTab]);
 
-    // TODO: Consider replacing these with more general solution.
-    // Create a complete mock tab that satisfies the chrome.tabs.Tab interface
-    const mockExistingTabs = [
-      {
-        id: 123,
-        url: "https://example.com",
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: true,
-        groupId: -1,
-      },
-    ] as chrome.tabs.Tab[];
-
-    // Mock chrome global
-    global.chrome = {
-      tabs: {
-        query: jest.fn().mockResolvedValueOnce(mockExistingTabs),
-        update: jest.fn().mockResolvedValueOnce({} as chrome.tabs.Tab),
-      },
-    } as unknown as typeof chrome;
-
-    // TODO: Consider replacing these with more general solution.
-    // Create a complete mock tab that satisfies the chrome.tabs.Tab interface
-    const mockExistingTabs = [
-      {
-        id: 123,
-        url: "https://example.com",
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: true,
-        groupId: -1,
-      },
-    ] as chrome.tabs.Tab[];
-
-    // Mock chrome global
-    global.chrome = {
-      tabs: {
-        query: jest.fn().mockResolvedValueOnce(mockExistingTabs),
-        update: jest.fn().mockResolvedValueOnce({} as chrome.tabs.Tab),
-      },
-    } as unknown as typeof chrome;
 
     await takeoverTab("test-tab-id", "test-session-id");
 
