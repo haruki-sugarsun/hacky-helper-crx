@@ -17,6 +17,7 @@ The service worker is the central component that runs in the background and mana
   - `service-worker.ts`: Handles core messages defined in `src/lib/constants.ts` (e.g., LLM tasks like `CREATE_SUMMARY`, session lifecycle like `CREATE_NAMED_SESSION`, `UPDATE_NAMED_SESSION_TABS`, `DELETE_NAMED_SESSION`, `RENAME_NAMED_SESSION`, bookmark operations like `SAVE_TAB_TO_BOOKMARKS`, `OPEN_SAVED_BOOKMARK`, `REMOVE_SAVED_BOOKMARK`, and the `SYNC_SESSION_TO_BOOKMARKS` message which triggers `SessionManagement.syncSessionToBackend`).
   - `service-worker-handler.ts`: Handles feature-specific messages defined in `src/features/service-worker-messages.ts` (e.g., session actions like `ACTIVATE_SESSION`, `CLONE_SESSION`, `RESTORE_CLOSED_SESSION`, tab actions like `TAKEOVER_TAB`, and the `MIGRATE_TABS` message which triggers `SessionManagement.migrateTabsToWindow` for migrating tabs between active windows. Migration to closed sessions is currently a TODO).
   - _Note: A refactoring task exists (see `taskdocs/parking_lot.md`) to consolidate handlers into `service-worker-handler.ts`._
+  - A new Event Logging System has been added: the service worker now accepts logging-related messages (e.g. `LOG_EVENT`, `QUERY_LOGS`, `CLEAR_LOGS`, `EXPORT_LOGS`) and routes them to an in-memory + persistent `EventLogStore` (persisted to `chrome.storage.local`).
 - **Automatic Session Sync**: Periodically triggers session synchronization to the backend (bookmarks) via a Chrome Alarm (`autoSessionSyncAlarm`) and `SessionManagement.triggerAutoSessionSync`.
 
 ### 2. LLM Services (`llmService.ts`)
@@ -179,6 +180,34 @@ The extension uses multiple storage mechanisms:
 - **Web Speech API**: For text-to-speech functionality
 - **Modern DOM APIs**: For efficient content extraction
 - **Vitest**: For unit and integration testing.
+
+## Event Logging System (new)
+
+Purpose: Provide a lightweight, unified event logging facility that can be used by extension pages and the service worker to record structured events (info/debug/warn/error) for debugging and operational visibility.
+
+Overview:
+
+- Message-based API: UI pages and content scripts send messages to the service worker using standardized message types: `LOG_EVENT`, `QUERY_LOGS`, `CLEAR_LOGS`, and `EXPORT_LOGS`.
+- Service worker store: A new `EventLogStore` lives in the service worker process. It keeps a bounded in-memory buffer of `EventLogEntry` objects and periodically flushes them to `chrome.storage.local` for persistence. Each entry includes an `id`, `ts` (timestamp), `level`, `type`, `message`, optional `context`, and `source`.
+- Retention & eviction: The store enforces retention limits (size/time-based) and will trim oldest entries when necessary during flush or on storage errors.
+- Client API: `src/features/service-worker-interface.ts` gained helper methods: `logEvent()`, `queryLogs()`, `clearLogs()`, and `exportLogs()` which wrap `chrome.runtime.sendMessage` calls and return typed results.
+- Log viewer: A `logview.html` page and `src/logview.ts` were added as a developer-facing UI to query, filter, paginate, and export logs. It's included in the Vite build and available from `dist/logview.html`.
+
+Integration notes:
+
+- Tabs UI: The previous `alert("Tab saved to bookmarks successfully")` call in `src/tabs.ts` was replaced with a structured log event (`tab.saved_to_bookmarks`) sent via `ServiceWorkerInterface.logEvent(...)`. This avoids blocking alerts and centralizes client-side telemetry.
+- Settings UI: `settings.html` now includes a link to the log viewer and a simple "unread" badge which polls the service worker (via `queryLogs`) to display recent event counts. This is a simple heuristic; true unread semantics can be implemented by storing last-seen timestamps per user.
+
+Development & testing:
+
+- Unit tests were added for `EventLogStore` (Vitest) which mock `chrome.storage.local` and verify append/query/clear and persistence behavior.
+- The build continues to use Vite; the log viewer is emitted as part of the standard build.
+
+Next steps / improvements:
+
+- Replace polling badge with a push model: the service worker can broadcast `NEW_LOG_EVENT` messages to open windows via `clients.matchAll()` when new logs are appended.
+- Add configurable retention, PII redaction, and log rotation strategies to the `EventLogStore`.
+- Add an integration test covering the message round-trip (UI -> service worker -> storage -> query).
 
 ## Testing
 
