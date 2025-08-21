@@ -36,6 +36,7 @@ We have unstructured, just-idea notes here:
 - Common modal behavior e.g. close on ESC.
 - Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user if they want to open or takeover others' tabs.
 - end-to-end tests
+- Event Logging System across Extension Pages and Service worker.
 - Toast message+log collection instead of alert, and timeout measurement stops while the focus is not on the window.
 - Clear the query in the input on focus-search-bar key action.
 - Search for entries matching the URL.
