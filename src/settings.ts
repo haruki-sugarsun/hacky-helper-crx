@@ -14,6 +14,7 @@ import {
   OLLAMA_MODEL_DEFAULT,
   OLLAMA_EMBEDDINGS_MODEL_DEFAULT,
 } from "./lib/constants";
+import serviceWorkerInterface from "./features/service-worker-interface";
 
 import "./style.css";
 import "./settings.css";
@@ -117,6 +118,45 @@ async function initializeForm() {
       instanceIdInput.nextSibling,
     );
   }
+
+  // Setup unread log badge updater
+  try {
+    setupLogUnreadBadge();
+  } catch (e) {
+    console.error("Failed to setup log unread badge:", e);
+  }
+}
+
+// Poll the service worker for recent logs and update the badge.
+function setupLogUnreadBadge() {
+  const badge = document.getElementById("log-unread-badge");
+  if (!badge) return;
+
+  // Query timeframe: last 24 hours by default
+  const timeframeMs = 24 * 60 * 60 * 1000;
+
+  async function refresh() {
+    if (!badge) return;
+    try {
+      const now = Date.now();
+      const res = await serviceWorkerInterface.queryLogs({
+        fromTs: now - timeframeMs,
+        limit: 1000,
+      });
+      const total = res?.total ?? (res.entries ? res.entries.length : 0);
+      // For simplicity, show total events in timeframe as "unread" count.
+      badge.textContent = String(total);
+      badge.style.display = total > 0 ? "inline-block" : "none";
+    } catch (err) {
+      console.error("Error refreshing log unread badge:", err);
+      badge.textContent = "?";
+      badge.style.display = "inline-block";
+    }
+  }
+
+  // Initial refresh and periodic polling every 30s
+  refresh();
+  setInterval(refresh, 30 * 1000);
 }
 
 // Function to create a bookmark folder chooser

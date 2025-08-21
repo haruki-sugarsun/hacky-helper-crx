@@ -90,3 +90,5 @@ We have unstructured, just-idea notes here:
 - Use some webfont for emojis?
 - Action label for "force sync" session should say "to Backend".
 - Keep pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.
+- Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
+- Common Style for page elements e.g. header/footer.
