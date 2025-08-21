@@ -2285,7 +2285,19 @@ async function saveTabToBookmarks(tabId: number) {
       response.payload.success
     ) {
       console.log("Tab saved to bookmarks successfully");
+      // TODO: Implement an abstraction method to do logging + toast message. We can then remove the alert.
       alert("Tab saved to bookmarks successfully");
+      // Log the successful save via the centralized event logging system
+      try {
+        await serviceWorkerInterface.logEvent({
+          type: "tab.saved_to_bookmarks",
+          level: "info",
+          message: "Tab saved to bookmarks successfully",
+          context: { sessionId, tabId },
+        });
+      } catch (e) {
+        console.error("Failed to send log event:", e);
+      }
     } else {
       console.error("Error saving tab to bookmarks:", response);
       alert("Error saving tab to bookmarks");
