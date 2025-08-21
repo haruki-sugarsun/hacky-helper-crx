@@ -24,6 +24,13 @@ import {
   MIGRATE_TABS,
 } from "./service-worker-messages";
 
+import {
+  LOG_EVENT,
+  QUERY_LOGS,
+  CLEAR_LOGS,
+  EXPORT_LOGS,
+} from "../messages/service-worker-logging-messages";
+
 /**
  * ServiceWorkerInterface provides a typed abstraction layer for interacting with the Chrome Extension's background Service Worker.
  *
@@ -128,6 +135,65 @@ class ServiceWorkerInterface {
     return response;
   }
 
+  /**
+   * Log an event to the service worker's event log store
+   */
+  async logEvent(event: {
+    type: string;
+    level?: "debug" | "info" | "warn" | "error";
+    message?: string;
+    context?: Record<string, unknown>;
+  }): Promise<{ success: boolean; id?: string }> {
+    try {
+      const resp = await chrome.runtime.sendMessage({
+        type: LOG_EVENT,
+        payload: event,
+      });
+      return resp?.payload || { success: false };
+    } catch (error) {
+      console.error("Error in logEvent:", error);
+      return { success: false };
+    }
+  }
+
+  async queryLogs(query: any): Promise<{ entries: any[]; total: number }> {
+    try {
+      const resp = await chrome.runtime.sendMessage({
+        type: QUERY_LOGS,
+        payload: query,
+      });
+      return resp?.payload || { entries: [], total: 0 };
+    } catch (error) {
+      console.error("Error in queryLogs:", error);
+      return { entries: [], total: 0 };
+    }
+  }
+
+  async clearLogs(opts?: { beforeTs?: number }): Promise<{ success: boolean }> {
+    try {
+      const resp = await chrome.runtime.sendMessage({
+        type: CLEAR_LOGS,
+        payload: opts || {},
+      });
+      return resp?.payload || { success: false };
+    } catch (error) {
+      console.error("Error in clearLogs:", error);
+      return { success: false };
+    }
+  }
+
+  async exportLogs(query?: any): Promise<{ entries: any[]; total: number }> {
+    try {
+      const resp = await chrome.runtime.sendMessage({
+        type: EXPORT_LOGS,
+        payload: query || {},
+      });
+      return resp?.payload || { entries: [], total: 0 };
+    } catch (error) {
+      console.error("Error in exportLogs:", error);
+      return { entries: [], total: 0 };
+    }
+  }
   /**
    * Activates a session with the specified ID.
    * It also restores it if the sessions is closed.
