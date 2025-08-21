@@ -56,6 +56,13 @@ import * as DigestManagement from "./features/digest-management";
 import { BookmarkStorage } from "./features/BookmarkStorage.ts";
 import { openTabsPage } from "./features/tabs-helpers.ts";
 import { handleServiceWorkerMessage } from "./features/service-worker-handler";
+import EventLogStore from "./lib/event-log-store";
+import {
+  LOG_EVENT,
+  QUERY_LOGS,
+  CLEAR_LOGS,
+  EXPORT_LOGS,
+} from "./messages/service-worker-logging-messages";
 import { triggerCopyPageInfo } from "./popup/popup-messages";
 import { openSidePanel } from "./sidepanel-helper";
 import { SP_TRIGGER } from "./messages/messages.ts";
@@ -191,6 +198,12 @@ self.addEventListener("activate", () =>
 // var _windowIds: (number | undefined)[] = [];
 // Track current tabs and their states
 let currentTabs: chrome.tabs.Tab[] = [];
+
+// Event log store (singleton)
+const eventLogStore = new EventLogStore();
+(async () => {
+  await eventLogStore.loadFromStorage();
+})();
 
 async function initializeTabManagement() {
   currentTabs = await chrome.tabs.query({});
@@ -481,6 +494,76 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     // TODO: Consider organize the switch-case and try-catch structures for readability.
     try {
       switch (type) {
+        case LOG_EVENT: {
+          try {
+            const entry = eventLogStore.append(
+              payload as any,
+              _sender?.id ? "service-worker" : "unknown",
+            );
+            sendResponse({
+              type: "LOG_EVENT_RESULT",
+              payload: { success: true, id: entry.id },
+            });
+          } catch (error) {
+            console.error("Failed to log event:", error);
+            sendResponse({
+              type: "LOG_EVENT_RESULT",
+              payload: { success: false },
+            });
+          }
+          break;
+        }
+        case QUERY_LOGS: {
+          try {
+            const q = payload || {};
+            const result = eventLogStore.query(q);
+            sendResponse({
+              type: "QUERY_LOGS",
+              payload: { entries: result.entries, total: result.total },
+            });
+          } catch (error) {
+            console.error("Failed to query logs:", error);
+            sendResponse({
+              type: "QUERY_LOGS",
+              payload: { entries: [], total: 0 },
+            });
+          }
+          break;
+        }
+        case CLEAR_LOGS: {
+          try {
+            const beforeTs = payload?.beforeTs;
+            await eventLogStore.clear(beforeTs);
+            sendResponse({
+              type: "CLEAR_LOGS_RESULT",
+              payload: { success: true },
+            });
+          } catch (error) {
+            console.error("Failed to clear logs:", error);
+            sendResponse({
+              type: "CLEAR_LOGS_RESULT",
+              payload: { success: false },
+            });
+          }
+          break;
+        }
+        case EXPORT_LOGS: {
+          try {
+            const q = payload || {};
+            const result = eventLogStore.query(q);
+            sendResponse({
+              type: "EXPORT_LOGS_RESULT",
+              payload: { entries: result.entries, total: result.total },
+            });
+          } catch (error) {
+            console.error("Failed to export logs:", error);
+            sendResponse({
+              type: "EXPORT_LOGS_RESULT",
+              payload: { entries: [], total: 0 },
+            });
+          }
+          break;
+        }
         case CREATE_SUMMARY: // TODO: Consider if we really need this or not.
           const summary = await generateSummary(
             payload.content,
