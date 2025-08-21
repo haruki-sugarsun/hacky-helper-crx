@@ -34,6 +34,7 @@ export default defineConfig({
         popup: "popup.html",
         editor: "editor.html",
         voice_log: "voice-log.html",
+        logview: "logview.html",
         tabs: "tabs.html",
         settings: "settings.html",
       },
