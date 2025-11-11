@@ -474,6 +474,28 @@ if (takeoverSyncedTabsButton) {
   });
 }
 
+// TODO: Have the global listener registration in a dedicated ts file.
+// Add event listener for the "Pull All Windows" button
+const pullAllWindowsButton = document.querySelector<HTMLButtonElement>(
+  "#pullAllWindowsButton",
+);
+if (pullAllWindowsButton) {
+  pullAllWindowsButton.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to pull all windows to this position?"))
+      return;
+    const currentWindow = await chrome.windows.getCurrent();
+    const allWindows = await chrome.windows.getAll();
+    let pulledCount = 0;
+    for (const win of allWindows) {
+      if (win.id && win.id !== currentWindow.id) {
+        await pullWindow(win.id);
+        pulledCount++;
+      }
+    }
+    alert(`Pulled ${pulledCount} windows to current position.`);
+  });
+}
+
 // Helper function to create a session list item with common styling and behavior.
 // TODO: Consider adding more session info so that we can pass more hints to the action handlers.
 function createSessionListItem(
