@@ -11,6 +11,11 @@
   width: 100%;
 }
 
+.global-menu {
+  display: inline-block;
+  margin-left: 1em;
+}
+
 /* Left Pane: Sessions list */
 #sessions {
   margin: 0 10px;
