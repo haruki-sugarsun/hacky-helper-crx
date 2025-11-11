@@ -49,3 +49,5 @@ We have unstructured, just-idea notes here:
 - Update ARCHITECTURE.md and designdocs based on the recent changes.
 - Want to have double click as pull window. or with a modifier?
 - Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
+- Add "Bring here" button in the tab search results
+- Adjust the tabs table width to match, not to exceed, the window width. 
