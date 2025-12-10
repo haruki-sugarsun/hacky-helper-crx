@@ -105,9 +105,17 @@ export class BoolConfig extends Config {
 }
 
 export class StringConfig extends Config {
-  constructor(key: string, description: string, longDescription: string) {
+  constructor(
+    key: string,
+    description: string,
+    longDescription: string,
+    defaultValue: string = "",
+  ) {
     super(key, description, longDescription);
+    this.defaultValue = defaultValue;
   }
+
+  defaultValue: string;
 
   async get() {
     const value = await Config._get(this.key);
@@ -115,9 +123,9 @@ export class StringConfig extends Config {
       return value;
     } else {
       console.warn(
-        `Expected string for key ${this.key}, but got ${typeof value}`,
+        `Expected string for key ${this.key}, but got ${typeof value}. Returning default value.`,
       );
-      return "";
+      return this.defaultValue;
     }
   }
 
@@ -135,7 +143,6 @@ export class StringConfig extends Config {
 export class ConfigStore {
   asConfigStoreRO() {
     return {
-      // TODO: This might just needs some wrapper functions. and we can remove the each method definitions.
       SORT_ON_TAB_SWITCH: this.SORT_ON_TAB_SWITCH.bind(this),
       OPENAI_API_KEY: this.OPENAI_API_KEY.bind(this),
       OPENAI_API_BASE_URL: this.OPENAI_API_BASE_URL.bind(this),
@@ -178,12 +185,6 @@ export class ConfigStore {
     "When enabled, the extension will use a local Ollama instance instead of OpenAI for LLM services.",
   );
 
-  static OLLAMA_API_URL = new StringConfig(
-    "OLLAMA_API_URL",
-    "Ollama API URL",
-    "The URL of the Ollama API endpoint (default: http://localhost:11434).",
-  );
-
   static OLLAMA_MODEL = new StringConfig(
     "OLLAMA_MODEL",
     "Ollama Model",
@@ -194,6 +195,13 @@ export class ConfigStore {
     "OLLAMA_EMBEDDINGS_MODEL",
     "Ollama Embeddings Model",
     "The name of the Ollama model to use for generating embeddings (e.g., nomic-embed-text).",
+  );
+
+  static OLLAMA_API_URL = new StringConfig(
+    "OLLAMA_API_URL",
+    "Ollama API URL",
+    "The URL of the Ollama API endpoint (default: http://localhost:11434).",
+    "http://localhost:11434",
   );
 
   static BOOKMARK_PARENT_ID = new StringConfig(
