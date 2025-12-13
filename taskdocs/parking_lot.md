@@ -8,46 +8,75 @@
 
 We have unstructured, just-idea notes here:
 
-- Tabs UI updates based on the window/tabs/sessions(open tabs/saved bookmarks) updates.
-- Use some webfont for emojis?
-- Make sure to generate keywords only for the generateKeywords function maybe by specifiying JSON output? -　Show the current LLMTasks status in the popup? e.g. number of the pending tasks, currently-running task etc.
-- Keeping pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.
-- Improve session restoration on browser start. We can refer the sessionId in URL, but it is not working well yet.
+### UI & UX
+
+- Tabs UI updates based on the window/tabs/sessions (open tabs / saved bookmarks) updates.
+- Update Tabs UI title with the session title.
+- Show Favicon in Tabs UI Tab list table.
+- Show favicon in the Tabs table.
+- Adjust the tabs table width to match, not to exceed, the window width.
+- Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
+- Clear the query in the input on focus-search-bar key action.
+- Search for entries matching the URL.
 - Replace the new-tab-page with the minimal UI like Tabs UI. ref: https://developer.chrome.com/docs/extensions/develop/ui/override-chrome-pages?hl=ja
+- Close Window in the action menu in Tabs UI.
+- Add "Bring here" button in the tab search results.
+- "Edit" feature for Saved Bookmarks.
+- Style in Settings UI.
+- Searching for similar tabs (based on URL/keyword?)
+
+### Shortcuts & Interaction
+
+- Properly handle shortcut keys in the service-worker even if the service-worker is inactive: ensure commands registered in the manifest wake or route through the service-worker so shortcuts trigger the intended action—consider message-passthrough to the active client or a lightweight wake/forward handler that guarantees shortcut handling when the worker is idle.
+- Hot key to trigger the sidepanel feature?
+- Want to have double click as pull window, or with a modifier?
+- Common modal behavior e.g. close on ESC.
+
+### Sessions, Sync & Restoration
+
+- Improve session restoration on browser start. We can refer the sessionId in URL, but it is not working well yet.
+- Session restoration should open the tabs owned by the current instance. Other synced open tabs can be opened via "takeover"; consider a dialog with timeout to ask the user if they want to open or takeover others' tabs.
+- Reactivating the session restores the tabs owned by others, but won't take over the ownership. This can result in many dups. Consider automatically taking over them.
 - Allow migration to the closed named session. Migrated tab is just added to the Open Tab in the chosen (closed named) session.
 - Add a flag for saved bookmarks and open them automatically when the session gets activated.
+- Show the last sync timestamp for sessions and diff timer.
 - In the search result, show the name of the session the open tab belongs to.
 - Session Name should be reflected if updated by other instance. We can compare the timestamp metadata.
+
+### Bookmarks & Saved Sessions
+
+- Search for the "saved bookmarks" as well.
 - Allow the user to rename the saved bookmarks.
-- Close Window in the action menu in Tabs UI.
+- Add a flag for saved bookmarks and open them automatically when the session gets activated.
+- Allow migration to the closed named session and support migrating tabs into closed sessions (backend + UI).
+
+### Refactor, Architecture & Message Handling
+
 - Refactoring Tasks:
   - Replace config accesses to read values with CONFIG_RO. -> Can we now refactor config-store?
   - Replace sendMessage usage with service-worker-interface.ts, service-worker-handler.ts, and service-worker-messages.ts.
   - Migrate message handlers from `service-worker.ts` to `service-worker-handler.ts` for better organization (as indicated by TODO comments).
-- Search for the "saved bookmarks" as well.
-- Close Window in the action menu in Tabs UI.
-- Style in Settings UI.
-- Reactivating the session restores the tabs owned by others, but won't take over the ownership. This can result in many dups. Consider automatically taking over them.
-- Common modal behavior e.g. close on ESC.
-- Session restoration should open the tabs owned by the current instance. Other synced open tabs can be open via "takeover". We may show a dialog with timeout to ask the user if they want to open or takeover others' tabs.
-- end-to-end tests
-- Toast message+log collection instead of alert, and timeout measurement stops while the focus is not on the window.
-- Update Tabs UI title with the session title.
-- Clear the query in the input on focus-search-bar key action.
-- Search for entries matching the URL.
-- Show Favicon in Tabs UI Tab list table.
-- Show the last sync timestamp for sessions and diff timer.
-- When there is no pending LLM task, pick up a random tab that is not yet cached?
-- LLM task queueing should behave in LRU style?
-- LLM Task queue should check the currently active tabs and remove the obsolete ones from the queue?
+- Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better wording for "Force Sync to Backend" functionality.
+- Update ARCHITECTURE.md and designdocs based on the recent changes.
+
+### Background Tasks, LLM & Automation
+
+- Make sure to generate keywords only for the `generateKeywords` function, maybe by specifying JSON output.
+- Show the current LLMTasks status in the popup (e.g. number of pending tasks, currently-running task etc.).
+- When there is no pending LLM task, pick up a random tab that is not yet cached.
+- LLM task queueing should behave in LRU style.
+- LLM Task queue should check the currently active tabs and remove obsolete ones from the queue.
+- Toast message + log collection instead of alert, and timeout measurement stops while the focus is not on the window.
+
+### Migration & Tab Drag-and-Drop
+
 - Implement tab migration (including drag-and-drop) _to_ closed named sessions. This involves:
   - Backend logic in the service worker (`service-worker-handler.ts`, `session-management.ts`) to handle adding the tab data to the closed session's bookmark representation.
   - Potential UI updates (`tabs.ts`) to enable dropping onto closed session elements and provide appropriate user feedback (e.g., confirmation dialog).
-- Show favicon in the Tabs table.
-- "Edit" feature for Saved Bookmarks.
-- Fix: Improve message handler for `SYNC_SESSION_TO_BOOKMARKS` in `service-worker-handler.ts` to have better layer/wording for "Force Sync to Backend" (instead of Bookmark) functionality.
-- Update ARCHITECTURE.md and designdocs based on the recent changes.
-- Want to have double click as pull window. or with a modifier?
-- Separate the scrollable areas for the Tabs UI left pane (sessions) and the right pane (tabs table).
-- Add "Bring here" button in the tab search results
-- Adjust the tabs table width to match, not to exceed, the window width. 
+
+### Tests, QA & Misc
+
+- end-to-end tests
+- Use some webfont for emojis?
+- Action label for "force sync" session should say "to Backend".
+- Keep pinned tabs feature following the active window. Refer the old Hacky-Tab-Enhancer impl.
