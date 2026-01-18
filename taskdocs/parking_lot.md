@@ -8,6 +8,8 @@
 
 We have unstructured, just-idea notes here:
 
+- Support drag to closed session, which triggers add to the "Opened tab" for the session, and close the dragged tabs.
+
 ### UI & UX
 
 - Tabs UI updates based on the window/tabs/sessions (open tabs / saved bookmarks) updates.
