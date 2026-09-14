@@ -22,6 +22,7 @@ import {
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
   MIGRATE_TABS,
+  GET_CACHED_SESSION_TITLE_SUGGESTION,
 } from "./service-worker-messages";
 
 /**
@@ -212,6 +213,20 @@ class ServiceWorkerInterface {
       throw new Error(`Error in migrateTabs: ${response.error}`);
     }
     return response;
+  }
+
+  /** Suggests a short, non-persistent title for an unnamed browser window. */
+  async getCachedSessionTitleSuggestion(windowId: number): Promise<string> {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: GET_CACHED_SESSION_TITLE_SUGGESTION,
+        payload: { windowId },
+      });
+      return response?.title || "";
+    } catch (error) {
+      console.error("Error in getCachedSessionTitleSuggestion:", error);
+      return "";
+    }
   }
 
   /**

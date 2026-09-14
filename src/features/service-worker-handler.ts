@@ -8,6 +8,9 @@ import {
   NamedSession,
   SyncedTabEntity,
 } from "../lib/types";
+import type { LLMService } from "./llm-service";
+import * as DigestManagement from "./digest-management";
+import { CONFIG_RO } from "./config-store";
 import {
   SuccessResult,
   ErrorResult,
@@ -21,8 +24,14 @@ import {
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   MIGRATE_TABS,
+  GET_CACHED_SESSION_TITLE_SUGGESTION,
 } from "./service-worker-messages";
 import * as SessionManagement from "./session-management";
+
+// TODO: Consider if we can/should enclose this as a part of DigestManagement 
+const sessionTitleCache = new Map<string, { fingerprint: string; title: string }>();
+
+const pendingSessionTitleRequests = new Map<string, Promise<string>>();
 
 /**
  * Handles incoming messages to the service worker.
@@ -35,6 +44,7 @@ export function handleServiceWorkerMessage(
   message: any,
   _sender: chrome.runtime.MessageSender,
   sendResponse: (response?: any) => void,
+  llmService: LLMService,
 ): boolean {
   switch (message.type) {
     case ACTIVATE_SESSION:
@@ -77,12 +87,84 @@ export function handleServiceWorkerMessage(
       handleRestoreClosedSession(message, sendResponse);
       break;
 
+    case GET_CACHED_SESSION_TITLE_SUGGESTION:
+      handleGetCachedSessionTitleSuggestion(message, sendResponse, llmService);
+      break;
+
     default:
       console.warn("Unknown message type:", message.type);
       sendResponse({ error: "Unknown message type" });
       return false;
   }
   return true;
+}
+
+async function handleGetCachedSessionTitleSuggestion(
+  message: { payload: { windowId: number } },
+  sendResponse: (response?: any) => void,
+  llmService: LLMService,
+): Promise<void> {
+  const { windowId } = message.payload;
+  if (!windowId) {
+    sendResponse({ error: "Window ID is required" });
+    return;
+  }
+
+  try {
+    const tabs = await chrome.tabs.query({ windowId, pinned: false });
+    const tabSummaries = await Promise.all(
+      tabs
+        .filter((tab) => tab.url && /^https?:|^chrome-extension:/.test(tab.url))
+        .map(async (tab) => {
+          const summaries = await DigestManagement.getCachedSummaries(tab.url!);
+          const summary = summaries?.[0]?.summary;
+          return summary ? `${tab.title || "Untitled tab"}: ${summary}` : "";
+        }),
+    );
+    const usableSummaries = tabSummaries.filter(Boolean);
+    if (usableSummaries.length === 0) {
+      sendResponse({ title: "" });
+      return;
+    }
+
+    const cacheKey = String(windowId);
+    const fingerprint = usableSummaries.join("\n");
+    const cached = sessionTitleCache.get(cacheKey);
+    if (cached?.fingerprint === fingerprint) {
+      sendResponse({ title: cached.title });
+      return;
+    }
+
+    const llmEnabled = await CONFIG_RO.LLM_ENABLED();
+    if (!llmEnabled) {
+      sendResponse({ title: cached?.title || "" });
+      return;
+    }
+
+    const pending = pendingSessionTitleRequests.get(cacheKey);
+    if (!pending) {
+      const titlePromise = (async () => {
+        try {
+          const title = await llmService.createSessionTitle(usableSummaries);
+          if (title) sessionTitleCache.set(cacheKey, { fingerprint, title });
+          return title;
+        } finally {
+          pendingSessionTitleRequests.delete(cacheKey);
+        }
+      })();
+      pendingSessionTitleRequests.set(cacheKey, titlePromise);
+      void titlePromise.catch((error) => {
+        console.error(`Error generating title for window ${windowId}:`, error);
+      });
+    }
+
+    // Do not block the Tabs UI on a new or refreshed LLM request. Return the
+    // previous title when available; a later UI refresh will read the update.
+    sendResponse({ title: cached?.title || "" });
+  } catch (error) {
+    console.error(`Error suggesting title for window ${windowId}:`, error);
+    sendResponse({ title: "" });
+  }
 }
 
 /**
