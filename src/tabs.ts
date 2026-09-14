@@ -1898,7 +1898,7 @@ async function showMigrationDialog(tabId: number, tabUrl: string) {
   const allTabs = await chrome.tabs.query({});
   const tabUrls = allTabs
     .map((tab) => tab.url!)
-    .filter((url) => url && url !== tabUrl);
+    .filter((url) => url);
 
   // Request suggested destinations
   suggestedDestinationsDiv.innerHTML = "<p>Loading suggestions...</p>";
