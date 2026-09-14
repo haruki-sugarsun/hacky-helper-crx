@@ -32,27 +32,53 @@ export function handleMessages(
   return false;
 }
 
+/**
+ * Display the result of a copy action without interrupting the popup.
+ * The element is created here so the same message handler works when the
+ * popup is opened by a keyboard shortcut as well as by a mouse click.
+ */
+export function showCopyPageInfoToast(
+  message: string,
+  type: "success" | "error" = "success",
+  duration = 2500,
+) {
+  const existingToast = document.getElementById("copy-page-info-toast");
+  existingToast?.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "copy-page-info-toast";
+  toast.className = `copy-page-info-toast ${type}`;
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  window.setTimeout(() => toast.remove(), duration);
+}
+
 // Function to copy page info by retrieving the active tab's title and URL
 // TODO: Use the shared definition of Success/Error Results.
 function copyPageInfo(sendResponse: (response?: any) => void) {
-  // TODO: Show a toast in Popup UI.
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs && tabs.length > 0) {
       const activeTab = tabs[0];
       const title = activeTab.title || "";
       const url = activeTab.url || "";
       const textToCopy = `${title} - ${url}`;
-      navigator.clipboard
-        .writeText(textToCopy)
+      Promise.resolve()
+        .then(() => navigator.clipboard.writeText(textToCopy))
         .then(() => {
           console.log("Page info copied successfully:", textToCopy);
+          showCopyPageInfoToast("Page title and URL copied");
           sendResponse({ success: true });
         })
         .catch((err) => {
           console.error("Failed to copy page info:", err);
+          showCopyPageInfoToast("Could not copy page title and URL", "error");
           sendResponse({ success: false, error: err });
         });
     } else {
+      showCopyPageInfoToast("Could not find an active tab", "error");
       sendResponse({ success: false, error: "No active tab found" });
     }
   });
