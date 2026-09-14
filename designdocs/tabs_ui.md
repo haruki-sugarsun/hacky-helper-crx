@@ -59,6 +59,13 @@ Tabs UI is an extention component
 
 ### Unnamed Sessions (`[Unnamed]`)
 
+- The Tabs UI requests a non-persistent title suggestion for unnamed windows
+  through the service worker.
+- The worker uses cached per-URL summaries as prompt input and deduplicates
+  requests by window and summary fingerprint.
+- If summaries or the configured LLM are unavailable, the UI falls back to
+  the existing `Window <id>` label.
+
 ### Closed Sessions (`[Closed]`)
 
 ## Tabs Area (`(Tabs)`)
