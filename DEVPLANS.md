@@ -190,3 +190,16 @@ Future improvements include refactoring individual CSS files to utilize CSS vari
 - Implemented Alt+X as the default hotkey to quickly open the tabs.html page
 - Added keyboard command handling in the service worker
 - Intelligent tab handling: focuses on existing tabs.html if already open, or creates a new one if needed
+
+## Unnamed Session Title Suggestions
+
+- [x] Use cached tab summaries to request a concise title from the configured LLM.
+- [x] Display the suggestion only in the unnamed-session list; do not rename or persist the session.
+- [x] Cache and deduplicate suggestions in the service worker.
+- [x] Preserve a `Window <id>` fallback when LLM processing is disabled, unavailable, or uncached.
+
+## Centralized LLM Lifecycle
+
+- [ ] Keep all LLM-related processing behind the service worker and its message handlers.
+- [ ] Reload or refresh the active `LLMService` instance when LLM configuration changes.
+- [ ] Ensure subsequent requests use the refreshed provider, model, endpoint, and related settings without requiring UI reloads.

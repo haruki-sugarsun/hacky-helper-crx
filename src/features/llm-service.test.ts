@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EMBEDDING_CHUNK_SIZE, splitEmbeddingContent } from "./llm-service";
+import {
+  EMBEDDING_CHUNK_SIZE,
+  splitEmbeddingContent,
+  sanitizeSessionTitle,
+} from "./llm-service";
 
 describe("splitEmbeddingContent", () => {
   it("leaves content within the safe limit unchanged", () => {
@@ -31,5 +35,14 @@ describe("splitEmbeddingContent", () => {
     expect(() => splitEmbeddingContent("content", 0)).toThrow(
       "Embedding chunk size must be greater than zero",
     );
+  });
+});
+
+describe("session title suggestions", () => {
+  it("normalizes model output into a short title", () => {
+    expect(sanitizeSessionTitle('```text\n"TypeScript Docs".\n```')).toBe(
+      "TypeScript Docs",
+    );
+    expect(sanitizeSessionTitle(" ".repeat(10))).toBe("");
   });
 });
