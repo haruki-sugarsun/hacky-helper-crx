@@ -722,6 +722,10 @@ content {
   flex-direction: column;
 }
 
+#tabs_tablist td.actions-cell {
+  vertical-align: top;
+}
+
 .tab-action-button {
   background-color: #444466;
   color: white;
