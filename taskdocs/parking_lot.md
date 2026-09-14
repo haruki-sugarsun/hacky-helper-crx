@@ -8,6 +8,7 @@
 
 We have unstructured, just-idea notes here:
 
+- Support drag to closed session, which triggers add to the "Opened tab" for the session, and close the dragged tabs.
 ### Not-yet Categorized:
 - Show a message toast for copy-url-and-title trigger.
 - "Suggested Destinations" in the tab migration diable should suggest top 3 destinations based on our knowledge.
