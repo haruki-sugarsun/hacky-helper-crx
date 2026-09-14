@@ -9,6 +9,8 @@ export const SUMMARY_PROMPT =
   'Summarize the following content in a single line of exactly 140 characters or less. Return a JSON with only a `summary` field. e.g. `{summary:"This is a summary 140 char or less."}`:\n\n';
 export const KEYWORDS_PROMPT =
   'Extract 5-10 important keywords from the following content. Return a JSON with only a `keywords` field of string array. e.g. `{keywords:["Key1", "Word2", "Topic", "Theme", "ワンちゃん"]}`:\n\n';
+export const SESSION_TITLE_PROMPT =
+  "Suggest a concise session title based on the browser tab summaries below. Return only the title, with no quotation marks, punctuation at the end, or explanation. Use at most 6 words and 60 characters. If the content is mixed, choose the most useful common theme.\n\n";
 
 // OpenAI API Models
 export const OPENAI_CHAT_MODEL = "gpt-3.5-turbo";
