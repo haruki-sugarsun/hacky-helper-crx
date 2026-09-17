@@ -428,17 +428,37 @@ async function processNextTask() {
   }
   // Check the llmTasks if we have anything to execute:
   console.log(`Number of tasks in the queue: ${llmTasks.length}`);
+  console.table(
+    llmTasks.map((task, index) => ({
+      index,
+      url: task.url,
+    })),
+  );
   if (
-    llmTasks.length == 0 ||
-    (runningLlmTask &&
-      (await getPromiseState(runningLlmTask)).state == "pending")
+    runningLlmTask &&
+    (await getPromiseState(runningLlmTask)).state == "pending"
   ) {
     console.log("The last LLM Task is running. Waiting....");
     // Nothing to do.
     return;
   }
 
+  if (llmTasks.length === 0) {
+    await enqueueOldestTabWithoutDigest();
+    return;
+  }
+
   try {
+    const queuedTask = llmTasks[0];
+    const openTabs = await chrome.tabs.query({ url: queuedTask.url });
+    if (openTabs.length === 0) {
+      llmTasks.shift();
+      console.log("Skipping queued task because its URL is no longer open:", {
+        url: queuedTask.url,
+      });
+      return;
+    }
+
     const task = llmTasks.shift()!;
     const { url, timestamp, title, content, resolve } = task;
 
@@ -471,6 +491,43 @@ async function processNextTask() {
   } catch (error) {
     console.error("Error processing task:", error);
   }
+}
+
+async function enqueueOldestTabWithoutDigest() {
+  const tabs = await chrome.tabs.query({});
+  const candidateTabs = tabs
+    .filter(
+      (tab): tab is chrome.tabs.Tab & { id: number; url: string } =>
+        tab.id !== undefined &&
+        tab.url !== undefined &&
+        (tab.url.startsWith("http://") || tab.url.startsWith("https://")),
+    )
+    .sort(
+      (first, second) =>
+        (first.lastAccessed ?? Number.POSITIVE_INFINITY) -
+        (second.lastAccessed ?? Number.POSITIVE_INFINITY),
+    );
+
+  for (const tab of candidateTabs) {
+    const cachedDigests = await getCachedSummaries(tab.url);
+    if (cachedDigests && cachedDigests.length > 0) {
+      continue;
+    }
+
+    const content = await getTabContent(tab.id);
+    if (!content) {
+      continue;
+    }
+
+    await maybeQueueTaskForProcessing(tab.url, content, tab.title || "");
+    console.log("Queued oldest open tab without a cached digest:", {
+      url: tab.url,
+      lastAccessed: tab.lastAccessed,
+    });
+    return;
+  }
+
+  console.log("No open tab without a cached digest was found.");
 }
 
 // Handle incoming messages from content scripts
