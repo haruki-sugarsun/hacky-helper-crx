@@ -51,6 +51,8 @@ const VOICE_LOG_LAYOUT_STORAGE_KEY = "voice_log_layout";
 const VOICE_LOG_CARD_ORDER_STORAGE_KEY = "voice_log_card_order";
 const AUTO_CONDENSATION_TIMEOUT_MS = 30_000;
 const AUTO_CONDENSATION_CHANGE_RATIO = 0.5;
+const RECOGNITION_INACTIVITY_LIMIT_MS = 10 * 60 * 1000;
+const RECOGNITION_SESSION_LIMIT_MS = 30 * 60 * 1000;
 
 const voiceMain = document.querySelector<HTMLElement>(".voice-main")!;
 const verticalLayoutButton =
@@ -441,6 +443,50 @@ modelSelect.addEventListener("change", () => {
 
 let recognition: SpeechRecognition;
 let usingLocalSpeechRecognition = false;
+let recognitionInactivityTimer: ReturnType<typeof setTimeout> | undefined;
+let recognitionSessionTimer: ReturnType<typeof setTimeout> | undefined;
+let recognitionStopRequested = false;
+let recognitionStopReason: string | null = null;
+
+function clearRecognitionTimers() {
+  if (recognitionInactivityTimer) clearTimeout(recognitionInactivityTimer);
+  if (recognitionSessionTimer) clearTimeout(recognitionSessionTimer);
+  recognitionInactivityTimer = undefined;
+  recognitionSessionTimer = undefined;
+}
+
+function stopRecognition(reason?: string) {
+  recognitionStopRequested = true;
+  recognitionStopReason = reason || null;
+  clearRecognitionTimers();
+  recognitionToggle.checked = false;
+  if (recognition) {
+    try {
+      recognition.stop();
+    } catch (error) {
+      console.warn("Speech recognition was already stopped:", error);
+    }
+  }
+  if (reason) statusText.textContent = reason;
+}
+
+function scheduleRecognitionInactivityStop() {
+  if (recognitionInactivityTimer) clearTimeout(recognitionInactivityTimer);
+  recognitionInactivityTimer = setTimeout(() => {
+    if (recognitionToggle.checked && !recognitionStopRequested) {
+      stopRecognition("Recognition stopped after 10 minutes without meaningful text.");
+    }
+  }, RECOGNITION_INACTIVITY_LIMIT_MS);
+}
+
+function scheduleRecognitionSessionStop() {
+  if (recognitionSessionTimer) clearTimeout(recognitionSessionTimer);
+  recognitionSessionTimer = setTimeout(() => {
+    if (recognitionToggle.checked && !recognitionStopRequested) {
+      stopRecognition("Recognition stopped after the 30-minute session limit.");
+    }
+  }, RECOGNITION_SESSION_LIMIT_MS);
+}
 
 // Content Save
 // Initial load:
@@ -497,6 +543,12 @@ function startRecognition() {
   }
   console.log("Speech recognition supported!");
 
+  recognitionStopRequested = false;
+  recognitionStopReason = null;
+  clearRecognitionTimers();
+  scheduleRecognitionInactivityStop();
+  scheduleRecognitionSessionStop();
+
   recognition = new speechRecognition();
   const localRecognition = recognition as SpeechRecognition & {
     processLocally?: boolean;
@@ -528,6 +580,7 @@ function startRecognition() {
       console.log("Latest Transcript:", transcript);
 
       if (transcript) {
+        scheduleRecognitionInactivityStop();
         // Append the new transcript with a <br> for a new line
         monologueLog.innerHTML += transcript + "<br> // "; //'<span> // </span>';
 
@@ -581,10 +634,9 @@ function startRecognition() {
   recognition.onend = function () {
     console.log("Speech recognition ended");
 
-    statusText.textContent = "Recognition is off";
-    // Optionally restart if the toggle is still on
-    // TODO: Implement count / length limitation maybe.
-    if (recognitionToggle.checked) {
+    statusText.textContent = recognitionStopReason || "Recognition is off";
+    recognitionStopReason = null;
+    if (recognitionToggle.checked && !recognitionStopRequested) {
       recognition!.start();
     }
   };
@@ -597,7 +649,7 @@ recognitionToggle.addEventListener("change", function () {
     startRecognition();
     // if (recognition) recognition.start();
   } else {
-    if (recognition) recognition.stop();
+    stopRecognition();
   }
 });
 
