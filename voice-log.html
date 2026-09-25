@@ -9,7 +9,18 @@
   <body>
     <script type="module" src="/src/components.ts"></script>
 
-    <header class="voice-header">
+    <details id="voice-controls" class="voice-controls" open>
+      <summary>
+        <span class="controls-summary-title">Voice Log Controls</span>
+        <span class="controls-summary-hint">Recognition, condensation, and layout</span>
+        <span class="controls-summary-status" aria-live="polite">
+          <span id="summary-recognition-status">Recognition is off.</span>
+          <span id="summary-processing-status">Checking local model…</span>
+          <button id="summary-condense-button" type="button">Run</button>
+        </span>
+      </summary>
+      <div class="voice-controls-content">
+      <header class="voice-header">
       <div>
         <p class="eyebrow">Hacky Helper</p>
         <h1>Voice Log</h1>
@@ -31,9 +42,8 @@
         <input id="auto-condense-toggle" type="checkbox" checked />
         <span>Auto-condense transcript</span>
       </label>
-    </header>
+      </header>
 
-    <main class="voice-main">
       <section id="control_pane" class="tool-bar" aria-label="Voice log tools">
         <div>
           <label for="model">Model</label>
@@ -45,7 +55,17 @@
         </div>
       </section>
 
-      <section class="log-card log-card--workarea">
+      <div class="layout-toolbar" aria-label="Log card layout">
+        <span class="layout-label">Arrange cards</span>
+        <button id="vertical-layout" class="layout-button" type="button" aria-pressed="true">Vertical</button>
+        <button id="horizontal-layout" class="layout-button" type="button" aria-pressed="false">Horizontal</button>
+        <span class="layout-hint">Drag cards to reorder · Resize height from a corner</span>
+      </div>
+      </div>
+    </details>
+
+    <main class="voice-main">
+      <section id="workarea-card" class="log-card log-card--workarea" draggable="true">
         <div class="card-heading">
           <div>
             <p class="section-kicker">01 · Workspace</p>
@@ -56,7 +76,7 @@
         <div id="workarea_content" class="log-editor" contenteditable="true" role="textbox" aria-label="Work area" data-placeholder="Write or refine your notes here…">ここは編集できる</div>
       </section>
 
-      <section class="log-card log-card--condensed">
+      <section id="condensed-card" class="log-card log-card--condensed" draggable="true">
         <div class="card-heading">
           <div>
             <p class="section-kicker">02 · Summary</p>
@@ -67,13 +87,22 @@
         <div id="condenced_log" class="log-editor" contenteditable="true" role="textbox" aria-label="Condensed log" data-placeholder="A concise version of the conversation will appear here…">ここは編集できる</div>
       </section>
 
-      <section class="log-card log-card--monologue">
+      <section id="monologue-card" class="log-card log-card--monologue" draggable="true">
         <div class="card-heading">
           <div>
             <p class="section-kicker">03 · Transcript</p>
             <h2>Monologue</h2>
           </div>
           <span class="interim" aria-live="polite">Interim: <span id="interim-result">…</span></span>
+        </div>
+        <div class="monologue-progress" aria-live="polite">
+          <div class="progress-label">
+            <span>Condensation coverage</span>
+            <span id="monologue-progress-label">Nothing processed yet</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div id="monologue-progress-bar" class="progress-bar"></div>
+          </div>
         </div>
         <div id="monologue_log" class="log-editor" contenteditable="true" role="textbox" aria-label="Monologue transcript" data-placeholder="Your live transcript will appear here…">ここは編集できる</div>
       </section>

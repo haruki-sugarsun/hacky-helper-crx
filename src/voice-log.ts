@@ -22,6 +22,21 @@ const condenseButton =
   document.querySelector<HTMLButtonElement>("#condense-button")!;
 const processingStatus =
   document.querySelector<HTMLSpanElement>("#processing-status")!;
+const summaryRecognitionStatus = document.querySelector<HTMLSpanElement>(
+  "#summary-recognition-status",
+)!;
+const summaryProcessingStatus = document.querySelector<HTMLSpanElement>(
+  "#summary-processing-status",
+)!;
+const summaryCondenseButton = document.querySelector<HTMLButtonElement>(
+  "#summary-condense-button",
+)!;
+const monologueProgressLabel = document.querySelector<HTMLSpanElement>(
+  "#monologue-progress-label",
+)!;
+const monologueProgressBar = document.querySelector<HTMLDivElement>(
+  "#monologue-progress-bar",
+)!;
 const installJapaneseModelButton = document.querySelector<HTMLButtonElement>(
   "#install-japanese-model",
 )!;
@@ -32,8 +47,125 @@ const autoCondenseToggle = document.querySelector<HTMLInputElement>(
   "#auto-condense-toggle",
 )!;
 const VOICE_LOG_MODEL_STORAGE_KEY = "voice_log_model";
+const VOICE_LOG_LAYOUT_STORAGE_KEY = "voice_log_layout";
+const VOICE_LOG_CARD_ORDER_STORAGE_KEY = "voice_log_card_order";
 const AUTO_CONDENSATION_TIMEOUT_MS = 30_000;
 const AUTO_CONDENSATION_CHANGE_RATIO = 0.5;
+
+const voiceMain = document.querySelector<HTMLElement>(".voice-main")!;
+const verticalLayoutButton =
+  document.querySelector<HTMLButtonElement>("#vertical-layout")!;
+const horizontalLayoutButton =
+  document.querySelector<HTMLButtonElement>("#horizontal-layout")!;
+const logCards = Array.from(
+  document.querySelectorAll<HTMLElement>(".log-card"),
+);
+
+function syncCompactControls() {
+  summaryRecognitionStatus.textContent = statusText.textContent || "";
+  summaryProcessingStatus.textContent = processingStatus.textContent || "";
+  summaryCondenseButton.disabled = condenseButton.disabled;
+  summaryCondenseButton.textContent = condenseButton.disabled ? "…" : "Run";
+}
+
+new MutationObserver(syncCompactControls).observe(statusText, {
+  childList: true,
+  characterData: true,
+  subtree: true,
+});
+new MutationObserver(syncCompactControls).observe(processingStatus, {
+  childList: true,
+  characterData: true,
+  subtree: true,
+});
+new MutationObserver(syncCompactControls).observe(condenseButton, {
+  attributes: true,
+  childList: true,
+  characterData: true,
+  subtree: true,
+});
+syncCompactControls();
+
+summaryCondenseButton.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  void condenseVoiceLog("manual");
+});
+
+function setLogLayout(layout: "vertical" | "horizontal") {
+  const horizontal = layout === "horizontal";
+  voiceMain.classList.toggle("is-horizontal", horizontal);
+  verticalLayoutButton.setAttribute("aria-pressed", String(!horizontal));
+  horizontalLayoutButton.setAttribute("aria-pressed", String(horizontal));
+}
+
+function saveLogLayout() {
+  const order = Array.from(voiceMain.querySelectorAll<HTMLElement>(".log-card"))
+    .map((card) => card.id);
+  chrome.storage.local.set({
+    [VOICE_LOG_LAYOUT_STORAGE_KEY]: voiceMain.classList.contains("is-horizontal")
+      ? "horizontal"
+      : "vertical",
+    [VOICE_LOG_CARD_ORDER_STORAGE_KEY]: order,
+  });
+}
+
+async function restoreLogLayout() {
+  const saved = await chrome.storage.local.get([
+    VOICE_LOG_LAYOUT_STORAGE_KEY,
+    VOICE_LOG_CARD_ORDER_STORAGE_KEY,
+  ]);
+  const layout = saved[VOICE_LOG_LAYOUT_STORAGE_KEY] === "horizontal"
+    ? "horizontal"
+    : "vertical";
+  setLogLayout(layout);
+
+  if (Array.isArray(saved[VOICE_LOG_CARD_ORDER_STORAGE_KEY])) {
+    const cardsById = new Map(logCards.map((card) => [card.id, card]));
+    for (const cardId of saved[VOICE_LOG_CARD_ORDER_STORAGE_KEY]) {
+      const card = typeof cardId === "string" ? cardsById.get(cardId) : undefined;
+      if (card) voiceMain.appendChild(card);
+    }
+  }
+}
+
+verticalLayoutButton.addEventListener("click", () => {
+  setLogLayout("vertical");
+  saveLogLayout();
+});
+horizontalLayoutButton.addEventListener("click", () => {
+  setLogLayout("horizontal");
+  saveLogLayout();
+});
+
+let draggedCard: HTMLElement | null = null;
+for (const card of logCards) {
+  card.addEventListener("dragstart", (event) => {
+    draggedCard = card;
+    card.classList.add("is-dragging");
+    event.dataTransfer?.setData("text/plain", card.id);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  });
+  card.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    if (!draggedCard || draggedCard === card) return;
+    const bounds = card.getBoundingClientRect();
+    const horizontal = voiceMain.classList.contains("is-horizontal");
+    const midpoint = horizontal
+      ? bounds.left + bounds.width / 2
+      : bounds.top + bounds.height / 2;
+    const pointer = horizontal ? event.clientX : event.clientY;
+    voiceMain.insertBefore(
+      draggedCard,
+      pointer < midpoint ? card : card.nextElementSibling,
+    );
+  });
+  card.addEventListener("dragend", () => {
+    card.classList.remove("is-dragging");
+    draggedCard = null;
+    saveLogLayout();
+  });
+}
 
 const JAPANESE_SPEECH_LANGUAGE = "ja-JP";
 type LocalSpeechRecognitionStatus =
@@ -137,6 +269,73 @@ let condensationRunning = false;
 let lastCondensedTranscript = "";
 let lastCondensationAt = Date.now();
 
+function getProcessedPrefixLength(currentTranscript: string) {
+  const commonLength = Math.min(
+    currentTranscript.length,
+    lastCondensedTranscript.length,
+  );
+  let index = 0;
+  while (
+    index < commonLength &&
+    currentTranscript[index] === lastCondensedTranscript[index]
+  ) {
+    index += 1;
+  }
+  return index;
+}
+
+function clearProcessedHighlights() {
+  monologueLog.querySelectorAll(".processed-segment").forEach((segment) => {
+    segment.replaceWith(document.createTextNode(segment.textContent || ""));
+  });
+}
+
+function highlightProcessedPrefix(processedLength: number) {
+  clearProcessedHighlights();
+  if (processedLength <= 0) return;
+
+  const walker = document.createTreeWalker(monologueLog, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (!node.parentElement?.closest(".processed-segment")) {
+      textNodes.push(node as Text);
+    }
+  }
+  let remaining = processedLength;
+
+  for (const node of textNodes) {
+    if (remaining <= 0) break;
+    const text = node.textContent || "";
+    if (!text) continue;
+
+    const length = Math.min(remaining, text.length);
+    const processed = document.createElement("span");
+    processed.className = "processed-segment";
+    processed.textContent = text.slice(0, length);
+    node.parentNode?.insertBefore(processed, node);
+    if (length === text.length) {
+      node.remove();
+    } else {
+      node.textContent = text.slice(length);
+    }
+    remaining -= length;
+  }
+}
+
+function updateMonologueProgress() {
+  const transcript = monologueLog.innerText.trim();
+  const processedLength = getProcessedPrefixLength(transcript);
+  const percentage = transcript.length
+    ? Math.round((processedLength / transcript.length) * 100)
+    : 0;
+  monologueProgressBar.style.width = `${percentage}%`;
+  monologueProgressLabel.textContent = transcript.length
+    ? `${percentage}% processed · new text remains unhighlighted`
+    : "Nothing processed yet";
+  highlightProcessedPrefix(processedLength);
+}
+
 async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
   if (condensationRunning) return false;
 
@@ -168,6 +367,7 @@ async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
     condensedLog.dispatchEvent(new Event("input", { bubbles: true }));
     lastCondensedTranscript = transcript;
     lastCondensationAt = Date.now();
+    updateMonologueProgress();
     processingStatus.textContent = trigger === "automatic"
       ? "Condensed automatically."
       : "Condensed log updated.";
@@ -260,9 +460,11 @@ async function init() {
   if (previousSave.condenced_log_save) {
     condensedLog.innerText = previousSave.condenced_log_save;
   }
+  await restoreLogLayout();
   await restoreSelectedModel();
   lastCondensedTranscript = monologueLog.innerText.trim();
   lastCondensationAt = Date.now();
+  updateMonologueProgress();
   await updateJapaneseModelStatus();
 }
 document.body.onload = init;
@@ -275,6 +477,7 @@ workareaContent.addEventListener("input", (_ev) => {
   });
 });
 monologueLog.addEventListener("input", saveMonologueLog);
+monologueLog.addEventListener("input", updateMonologueProgress);
 function saveMonologueLog(_ev: any) {
   console.log(monologueLog.innerText);
 
@@ -354,6 +557,7 @@ function startRecognition() {
         // monologueLog.textContent = (monologueLog.textContent + "<br>\n" + transcript).slice(-300);;
         // interimResults.textContent = ''
         saveMonologueLog(undefined);
+        updateMonologueProgress();
         checkAutomaticCondensation();
       } else {
         console.log("Ignored empty or whitespace-only transcript");
