@@ -22,7 +22,111 @@ const condenseButton =
   document.querySelector<HTMLButtonElement>("#condense-button")!;
 const processingStatus =
   document.querySelector<HTMLSpanElement>("#processing-status")!;
+const installJapaneseModelButton = document.querySelector<HTMLButtonElement>(
+  "#install-japanese-model",
+)!;
+const localModelStatus = document.querySelector<HTMLSpanElement>(
+  "#local-model-status",
+)!;
 const VOICE_LOG_MODEL_STORAGE_KEY = "voice_log_model";
+
+const JAPANESE_SPEECH_LANGUAGE = "ja-JP";
+type LocalSpeechRecognitionStatus =
+  | "available"
+  | "downloadable"
+  | "downloading"
+  | "unavailable";
+type LocalSpeechRecognitionConstructor = {
+  new (): SpeechRecognition;
+  available?: (options: {
+    langs: string[];
+    processLocally: boolean;
+  }) => Promise<LocalSpeechRecognitionStatus>;
+  install?: (options: {
+    langs: string[];
+    processLocally: boolean;
+  }) => Promise<boolean>;
+};
+
+function getSpeechRecognitionConstructor():
+  | LocalSpeechRecognitionConstructor
+  | undefined {
+  const speechWindow = window as typeof window & {
+    SpeechRecognition?: LocalSpeechRecognitionConstructor;
+    webkitSpeechRecognition?: LocalSpeechRecognitionConstructor;
+  };
+  return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+}
+
+async function updateJapaneseModelStatus() {
+  const speechRecognition = getSpeechRecognitionConstructor();
+  if (!speechRecognition?.available || !speechRecognition.install) {
+    installJapaneseModelButton.disabled = true;
+    localModelStatus.textContent =
+      "On-device model installation is not supported in this browser.";
+    return;
+  }
+
+  try {
+    const availability = await speechRecognition.available({
+      langs: [JAPANESE_SPEECH_LANGUAGE],
+      processLocally: true,
+    });
+    if (availability === "available") {
+      installJapaneseModelButton.disabled = true;
+      installJapaneseModelButton.textContent = "Japanese model installed";
+      localModelStatus.textContent = "On-device recognition is ready.";
+    } else if (availability === "downloadable") {
+      installJapaneseModelButton.disabled = false;
+      localModelStatus.textContent = "Download required for on-device recognition.";
+    } else if (availability === "downloading") {
+      installJapaneseModelButton.disabled = true;
+      localModelStatus.textContent = "Japanese model is downloading…";
+    } else {
+      installJapaneseModelButton.disabled = true;
+      localModelStatus.textContent =
+        "Japanese on-device recognition is unavailable.";
+    }
+  } catch (error) {
+    console.error("Failed to check Japanese speech model availability:", error);
+    installJapaneseModelButton.disabled = true;
+    localModelStatus.textContent = "Could not check the Japanese model.";
+  }
+}
+
+async function installJapaneseSpeechModel() {
+  const speechRecognition = getSpeechRecognitionConstructor();
+  if (!speechRecognition?.install) return;
+
+  installJapaneseModelButton.disabled = true;
+  installJapaneseModelButton.textContent = "Installing…";
+  localModelStatus.textContent = "Downloading the Japanese model…";
+
+  try {
+    const installed = await speechRecognition.install({
+      langs: [JAPANESE_SPEECH_LANGUAGE],
+      processLocally: true,
+    });
+    if (installed) {
+      installJapaneseModelButton.textContent = "Japanese model installed";
+      localModelStatus.textContent = "On-device recognition is ready.";
+    } else {
+      installJapaneseModelButton.disabled = false;
+      installJapaneseModelButton.textContent = "Install Japanese model";
+      localModelStatus.textContent = "The Japanese model was not installed.";
+    }
+  } catch (error) {
+    console.error("Failed to install Japanese speech model:", error);
+    installJapaneseModelButton.disabled = false;
+    installJapaneseModelButton.textContent = "Install Japanese model";
+    localModelStatus.textContent = "Japanese model installation failed.";
+  }
+}
+
+installJapaneseModelButton.addEventListener(
+  "click",
+  installJapaneseSpeechModel,
+);
 
 let condensationRunning = false;
 
@@ -97,6 +201,7 @@ modelSelect.addEventListener("change", () => {
 });
 
 let recognition: SpeechRecognition;
+let usingLocalSpeechRecognition = false;
 
 // Content Save
 // Initial load:
@@ -117,6 +222,7 @@ async function init() {
     condensedLog.innerText = previousSave.condenced_log_save;
   }
   await restoreSelectedModel();
+  await updateJapaneseModelStatus();
 }
 document.body.onload = init;
 
@@ -140,13 +246,21 @@ function saveCondensedLog(_ev: Event) {
 }
 
 function startRecognition() {
-  if (!("webkitSpeechRecognition" in window)) {
+  const speechRecognition = getSpeechRecognitionConstructor();
+  if (!speechRecognition) {
     console.log("Speech recognition not supported in this browser.");
     return false;
   }
   console.log("Speech recognition supported!");
 
-  recognition = new webkitSpeechRecognition();
+  recognition = new speechRecognition();
+  const localRecognition = recognition as SpeechRecognition & {
+    processLocally?: boolean;
+  };
+  usingLocalSpeechRecognition = "processLocally" in localRecognition;
+  if (usingLocalSpeechRecognition) {
+    localRecognition.processLocally = true;
+  }
   recognition.continuous = true;
   recognition.interimResults = true;
   // recognition.lang = 'en-US'; // Set the language as needed
@@ -154,7 +268,9 @@ function startRecognition() {
 
   recognition.onstart = function () {
     console.log("Speech recognition started");
-    statusText.textContent = "Recognition is on";
+    statusText.textContent = usingLocalSpeechRecognition
+      ? "Recognition is on (on-device)"
+      : "Recognition is on";
   };
 
   recognition.onresult = function (event) {
@@ -210,6 +326,10 @@ function startRecognition() {
 
   recognition.onerror = function (event) {
     console.error("Error occurred in recognition:", event.error);
+    if (usingLocalSpeechRecognition && event.error === "language-not-supported") {
+      statusText.textContent =
+        "On-device recognition is unavailable for this language.";
+    }
   };
 
   recognition.onend = function () {

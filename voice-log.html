@@ -23,6 +23,10 @@
         </label>
         <span id="status" class="status-pill" aria-live="polite">Recognition is off.</span>
       </div>
+      <div class="local-model-control">
+        <button id="install-japanese-model" type="button">Install Japanese model</button>
+        <span id="local-model-status" class="local-model-status" aria-live="polite"></span>
+      </div>
     </header>
 
     <main class="voice-main">
@@ -33,7 +37,7 @@
         </div>
         <div class="run-control">
           <button id="condense-button" type="button">Run condensation</button>
-          <span id="processing-status" class="processing-status" aria-live="polite"></span>
+          <span id="processing-status" class="processing-status" aria-live="polite">Checking local model…</span>
         </div>
       </section>
 
