@@ -14,6 +14,9 @@ We have unstructured, just-idea notes here:
 - We would like to have a UI to check embeddings of a tab in the "Summary" Cell in Tabs UI.
 - Status indicatror for the pending LLM requests to proccess(ongoing + pending).
 - Use LLM to suggest a short title for the unnamed sessions based on the current tab summaries.
+- Mouse Hover to show the full text of the Window/Session name in Tabs UI.
+- Export/Import the session.
+- Style Update for Voice Log page.
 
 ### UI & UX
 

@@ -9,30 +9,67 @@
   <body>
     <script type="module" src="/src/components.ts"></script>
 
-    <div id="control_pane">
-      <input id="control_pane_toggle" /><br />
-      <select id="model" data-sickhack-component="select_model"></select>
-      <button>Run</button>
-    </div>
+    <header class="voice-header">
+      <div>
+        <p class="eyebrow">Hacky Helper</p>
+        <h1>Voice Log</h1>
+        <p class="subtitle">Capture thoughts, shape the transcript, and keep your notes close.</p>
+      </div>
+      <div class="recognition-control">
+        <span class="control-label">Live recognition</span>
+        <label class="switch">
+          <input type="checkbox" id="recognition-toggle" aria-label="Toggle live recognition" />
+          <span class="slider"></span>
+        </label>
+        <span id="status" class="status-pill" aria-live="polite">Recognition is off.</span>
+      </div>
+    </header>
 
-    <!-- <h1>Hacky-Helper: Voice Log</h1> -->
+    <main class="voice-main">
+      <section id="control_pane" class="tool-bar" aria-label="Voice log tools">
+        <div>
+          <label for="model">Model</label>
+          <select id="model" data-sickhack-component="select_model"></select>
+        </div>
+        <div class="run-control">
+          <button id="condense-button" type="button">Run condensation</button>
+          <span id="processing-status" class="processing-status" aria-live="polite"></span>
+        </div>
+      </section>
 
-    workarea:
-    <div id="workarea_content" contenteditable="true">ここは編集できる</div>
+      <section class="log-card log-card--workarea">
+        <div class="card-heading">
+          <div>
+            <p class="section-kicker">01 · Workspace</p>
+            <h2>Work area</h2>
+          </div>
+          <span class="card-hint">Editable notes</span>
+        </div>
+        <div id="workarea_content" class="log-editor" contenteditable="true" role="textbox" aria-label="Work area" data-placeholder="Write or refine your notes here…">ここは編集できる</div>
+      </section>
 
-    <div>Condenced:</div>
-    <div id="condenced_log" contenteditable="true">ここは編集できる</div>
+      <section class="log-card log-card--condensed">
+        <div class="card-heading">
+          <div>
+            <p class="section-kicker">02 · Summary</p>
+            <h2>Condensed log</h2>
+          </div>
+          <span class="card-hint">Editable summary</span>
+        </div>
+        <div id="condenced_log" class="log-editor" contenteditable="true" role="textbox" aria-label="Condensed log" data-placeholder="A concise version of the conversation will appear here…">ここは編集できる</div>
+      </section>
 
-    <div>
-      monologue: (Interim Results: <span id="interim-result">...</span>)
-    </div>
-    <div id="monologue_log" contenteditable="true">ここは編集できる</div>
-
-    <label class="switch">
-      <input type="checkbox" id="recognition-toggle" />
-      <span class="slider"></span>
-    </label>
-    <p><span id="status">Recognition is off.</span></p>
+      <section class="log-card log-card--monologue">
+        <div class="card-heading">
+          <div>
+            <p class="section-kicker">03 · Transcript</p>
+            <h2>Monologue</h2>
+          </div>
+          <span class="interim" aria-live="polite">Interim: <span id="interim-result">…</span></span>
+        </div>
+        <div id="monologue_log" class="log-editor" contenteditable="true" role="textbox" aria-label="Monologue transcript" data-placeholder="Your live transcript will appear here…">ここは編集できる</div>
+      </section>
+    </main>
 
     <script type="module" src="/src/voice-log.ts"></script>
   </body>

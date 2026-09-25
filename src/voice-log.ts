@@ -1,5 +1,9 @@
 import "./style.css";
 import "./voice_log.css";
+import { CONFIG_RO } from "./features/config-store";
+import { OllamaLLMService } from "./features/llm-service";
+import { OLLAMA_API_URL_DEFAULT } from "./lib/constants";
+import { buildCondensationPrompt } from "./voice-log-prompt";
 
 // Page Elements
 const workareaContent =
@@ -11,6 +15,86 @@ const recognitionToggle = document.querySelector<HTMLInputElement>(
 )!;
 const interimResults =
   document.querySelector<HTMLSpanElement>("#interim-result")!;
+const condensedLog =
+  document.querySelector<HTMLDivElement>("#condenced_log")!;
+const modelSelect = document.querySelector<HTMLSelectElement>("#model")!;
+const condenseButton =
+  document.querySelector<HTMLButtonElement>("#condense-button")!;
+const processingStatus =
+  document.querySelector<HTMLSpanElement>("#processing-status")!;
+const VOICE_LOG_MODEL_STORAGE_KEY = "voice_log_model";
+
+let condensationRunning = false;
+
+async function condenseVoiceLog() {
+  if (condensationRunning) return;
+
+  const workarea = workareaContent.innerText.trim();
+  const currentCondensedLog = condensedLog.innerText.trim();
+  const transcript = monologueLog.innerText.trim();
+  if (!workarea && !currentCondensedLog && !transcript) {
+    processingStatus.textContent = "Add some notes or transcript first.";
+    return;
+  }
+
+  condensationRunning = true;
+  condenseButton.disabled = true;
+  condenseButton.textContent = "Condensing…";
+  processingStatus.textContent = "Using local model…";
+
+  try {
+    const apiUrl = (await CONFIG_RO.OLLAMA_API_URL()) || OLLAMA_API_URL_DEFAULT;
+    const model = modelSelect.value;
+    if (!model) throw new Error("No local model is selected.");
+
+    const service = new OllamaLLMService(apiUrl, model);
+    const result = await service.chat(
+      buildCondensationPrompt(workarea, currentCondensedLog, transcript),
+    );
+    if (!result.trim()) throw new Error("The local model returned no content.");
+
+    condensedLog.innerText = result.trim();
+    condensedLog.dispatchEvent(new Event("input", { bubbles: true }));
+    processingStatus.textContent = "Condensed log updated.";
+  } catch (error) {
+    console.error("Failed to condense Voice Log:", error);
+    processingStatus.textContent =
+      error instanceof Error ? error.message : "Condensation failed.";
+  } finally {
+    condensationRunning = false;
+    condenseButton.disabled = false;
+    condenseButton.textContent = "Run condensation";
+  }
+}
+
+condenseButton.addEventListener("click", condenseVoiceLog);
+
+async function restoreSelectedModel() {
+  const savedModel = await chrome.storage.local.get(
+    VOICE_LOG_MODEL_STORAGE_KEY,
+  );
+  const model = savedModel[VOICE_LOG_MODEL_STORAGE_KEY];
+  if (typeof model !== "string" || !model) return;
+
+  // components.ts populates the select asynchronously. Wait briefly so the
+  // saved model can be restored when the Ollama model list is ready.
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const matchingOption = Array.from(modelSelect.options).find(
+      (option) => option.value === model,
+    );
+    if (matchingOption) {
+      modelSelect.value = model;
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+modelSelect.addEventListener("change", () => {
+  chrome.storage.local.set({
+    [VOICE_LOG_MODEL_STORAGE_KEY]: modelSelect.value,
+  });
+});
 
 let recognition: SpeechRecognition;
 
@@ -19,6 +103,7 @@ let recognition: SpeechRecognition;
 async function init() {
   const previousSave = await chrome.storage.local.get([
     "workarea_content_save",
+    "condenced_log_save",
     "monologue_log_save",
   ]);
   console.log(previousSave);
@@ -28,6 +113,10 @@ async function init() {
   if (previousSave.monologue_log_save) {
     monologueLog.innerText = previousSave.monologue_log_save;
   }
+  if (previousSave.condenced_log_save) {
+    condensedLog.innerText = previousSave.condenced_log_save;
+  }
+  await restoreSelectedModel();
 }
 document.body.onload = init;
 
@@ -43,6 +132,11 @@ function saveMonologueLog(_ev: any) {
   console.log(monologueLog.innerText);
 
   chrome.storage.local.set({ monologue_log_save: monologueLog.innerText });
+}
+
+condensedLog.addEventListener("input", saveCondensedLog);
+function saveCondensedLog(_ev: Event) {
+  chrome.storage.local.set({ condenced_log_save: condensedLog.innerText });
 }
 
 function startRecognition() {
