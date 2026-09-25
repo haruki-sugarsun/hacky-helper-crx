@@ -55,6 +55,8 @@ h1 { margin-bottom: 0.55rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: 
 .local-model-control { display: grid; gap: 0.45rem; justify-items: end; }
 .local-model-control button { padding: 0.55rem 0.9rem; font-size: 0.82rem; }
 .local-model-status { color: var(--voice-muted); font-size: 0.74rem; text-align: right; }
+.auto-condense-control { display: flex; align-items: center; gap: 0.45rem; color: var(--voice-muted); font-size: 0.78rem; white-space: nowrap; }
+.auto-condense-control input { accent-color: var(--voice-blue); }
 
 .voice-main { display: grid; gap: 1rem; }
 .tool-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; background: #e9eef8; border: 1px solid var(--voice-border); border-radius: 1rem; }
@@ -130,7 +132,7 @@ input:checked + .slider:before {
 
 @media (max-width: 680px) {
   .voice-header { align-items: stretch; flex-direction: column; gap: 1.25rem; }
-  .recognition-control, .local-model-control { align-self: flex-start; }
+  .recognition-control, .local-model-control, .auto-condense-control { align-self: flex-start; }
   .local-model-control { justify-items: start; }
   .local-model-status { text-align: left; }
   .tool-bar { align-items: stretch; flex-direction: column; }

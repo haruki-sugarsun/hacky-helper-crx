@@ -28,7 +28,12 @@ const installJapaneseModelButton = document.querySelector<HTMLButtonElement>(
 const localModelStatus = document.querySelector<HTMLSpanElement>(
   "#local-model-status",
 )!;
+const autoCondenseToggle = document.querySelector<HTMLInputElement>(
+  "#auto-condense-toggle",
+)!;
 const VOICE_LOG_MODEL_STORAGE_KEY = "voice_log_model";
+const AUTO_CONDENSATION_TIMEOUT_MS = 30_000;
+const AUTO_CONDENSATION_CHANGE_RATIO = 0.5;
 
 const JAPANESE_SPEECH_LANGUAGE = "ja-JP";
 type LocalSpeechRecognitionStatus =
@@ -129,16 +134,18 @@ installJapaneseModelButton.addEventListener(
 );
 
 let condensationRunning = false;
+let lastCondensedTranscript = "";
+let lastCondensationAt = Date.now();
 
-async function condenseVoiceLog() {
-  if (condensationRunning) return;
+async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
+  if (condensationRunning) return false;
 
   const workarea = workareaContent.innerText.trim();
   const currentCondensedLog = condensedLog.innerText.trim();
   const transcript = monologueLog.innerText.trim();
   if (!workarea && !currentCondensedLog && !transcript) {
     processingStatus.textContent = "Add some notes or transcript first.";
-    return;
+    return false;
   }
 
   condensationRunning = true;
@@ -159,11 +166,17 @@ async function condenseVoiceLog() {
 
     condensedLog.innerText = result.trim();
     condensedLog.dispatchEvent(new Event("input", { bubbles: true }));
-    processingStatus.textContent = "Condensed log updated.";
+    lastCondensedTranscript = transcript;
+    lastCondensationAt = Date.now();
+    processingStatus.textContent = trigger === "automatic"
+      ? "Condensed automatically."
+      : "Condensed log updated.";
+    return true;
   } catch (error) {
     console.error("Failed to condense Voice Log:", error);
     processingStatus.textContent =
       error instanceof Error ? error.message : "Condensation failed.";
+    return false;
   } finally {
     condensationRunning = false;
     condenseButton.disabled = false;
@@ -171,7 +184,33 @@ async function condenseVoiceLog() {
   }
 }
 
-condenseButton.addEventListener("click", condenseVoiceLog);
+condenseButton.addEventListener("click", () => {
+  void condenseVoiceLog("manual");
+});
+
+function shouldAutomaticallyCondense() {
+  if (!autoCondenseToggle.checked || condensationRunning) return false;
+
+  const transcript = monologueLog.innerText.trim();
+  if (!transcript || transcript === lastCondensedTranscript) return false;
+
+  const addedCharacters = lastCondensedTranscript.length > 0 &&
+    transcript.startsWith(lastCondensedTranscript)
+    ? transcript.length - lastCondensedTranscript.length
+    : transcript.length;
+  const majorityOfTranscriptChanged =
+    addedCharacters >=
+    Math.max(1, lastCondensedTranscript.length * AUTO_CONDENSATION_CHANGE_RATIO);
+  const condensationTimedOut =
+    Date.now() - lastCondensationAt >= AUTO_CONDENSATION_TIMEOUT_MS;
+
+  return majorityOfTranscriptChanged || condensationTimedOut;
+}
+
+function checkAutomaticCondensation() {
+  if (!shouldAutomaticallyCondense()) return;
+  void condenseVoiceLog("automatic");
+}
 
 async function restoreSelectedModel() {
   const savedModel = await chrome.storage.local.get(
@@ -222,6 +261,8 @@ async function init() {
     condensedLog.innerText = previousSave.condenced_log_save;
   }
   await restoreSelectedModel();
+  lastCondensedTranscript = monologueLog.innerText.trim();
+  lastCondensationAt = Date.now();
   await updateJapaneseModelStatus();
 }
 document.body.onload = init;
@@ -313,6 +354,7 @@ function startRecognition() {
         // monologueLog.textContent = (monologueLog.textContent + "<br>\n" + transcript).slice(-300);;
         // interimResults.textContent = ''
         saveMonologueLog(undefined);
+        checkAutomaticCondensation();
       } else {
         console.log("Ignored empty or whitespace-only transcript");
       }
