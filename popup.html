@@ -5,70 +5,204 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hacky-Helper</title>
   </head>
-  <body>
-    <header>
-      <h1>H-H: Side</h1>
-      <div class="settings">
-        <a href="settings.html" target="_blank">⚙️<br />settings</a>
-      </div>
-    </header>
+  <body class="popup-page">
+    <div class="popup-shell">
+      <header class="popup-header">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">▰</span>
+          <div>
+            <p class="eyebrow">HACKY_HELPER // LOCAL</p>
+            <h1>
+              Side<span class="accent">Panel</span
+              ><span class="cursor" aria-hidden="true">_</span>
+            </h1>
+          </div>
+        </div>
+        <a class="settings-link" href="settings.html" target="_blank">
+          <span class="settings-icon" aria-hidden="true">⚙</span>
+          <span>settings</span>
+        </a>
+      </header>
 
-    <button id="openSidePanelButton">Open Side Panel</button>
-
-    <div class="migrate-button-container">
-      <button id="migrateTabButton">Migrate Current Tab</button>
-    </div>
-
-    <ul>
-      <li><a href="/editor.html" target="_blank">Open Editor</a></li>
-      <li><a href="/voice-log.html" target="_blank">Open Voice Log</a></li>
-      <!-- Open tabs UI via service-worker, as it can handle common logic. -->
-      <li><a href="/tabs.html" target="_blank">Open Tabs UI</a></li>
-    </ul>
-
-    <section class="llm-toggle-section">
-      <h2>LLM Services</h2>
-
-      <div class="toggle-container">
-        <label class="switch">
-          <input type="checkbox" id="llm-toggle" checked />
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label">Enable LLM Services</span>
+      <div class="system-status" role="status">
+        <span class="signal-dot" aria-hidden="true"></span>
+        <span>CONTROL DECK</span>
+        <span class="status-divider" aria-hidden="true">//</span>
+        <span class="status-ready">READY</span>
       </div>
 
-      <div class="toggle-container">
-        <label class="switch">
-          <input type="checkbox" id="battery-toggle" />
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label">Disable on Battery</span>
-      </div>
+      <main>
+        <section
+          class="popup-section quick-actions"
+          aria-labelledby="quick-actions-title"
+        >
+          <div class="section-heading">
+            <span class="section-index" aria-hidden="true">01</span>
+            <div>
+              <p class="section-kicker">EXECUTE</p>
+              <h2 id="quick-actions-title">Quick actions</h2>
+            </div>
+          </div>
 
+          <button
+            id="openSidePanelButton"
+            class="action-button action-button-primary"
+          >
+            <span class="action-icon" aria-hidden="true">↗</span>
+            <span class="action-copy">
+              <strong>Open Side Panel</strong>
+              <small>Launch the command interface</small>
+            </span>
+            <span class="action-arrow" aria-hidden="true">→</span>
+          </button>
+
+          <div class="migrate-button-container">
+            <button
+              id="migrateTabButton"
+              class="action-button action-button-secondary"
+            >
+              <span class="action-icon" aria-hidden="true">⇄</span>
+              <span class="action-copy">
+                <strong>Migrate Current Tab</strong>
+                <small>Move this tab to another window</small>
+              </span>
+              <span class="action-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </section>
+
+        <section
+          class="popup-section tool-section"
+          aria-labelledby="toolbox-title"
+        >
+          <div class="section-heading">
+            <span class="section-index" aria-hidden="true">02</span>
+            <div>
+              <p class="section-kicker">NAVIGATE</p>
+              <h2 id="toolbox-title">Toolbox</h2>
+            </div>
+          </div>
+
+          <ul class="tool-list">
+            <li>
+              <a href="/editor.html" target="_blank" class="tool-link">
+                <span class="tool-marker" aria-hidden="true">&gt;_</span>
+                <span class="tool-copy"
+                  ><strong>Open Editor</strong
+                  ><small>Write and refine content</small></span
+                >
+                <span class="tool-arrow" aria-hidden="true">↗</span>
+              </a>
+            </li>
+            <li>
+              <a href="/voice-log.html" target="_blank" class="tool-link">
+                <span class="tool-marker" aria-hidden="true">&gt;_</span>
+                <span class="tool-copy"
+                  ><strong>Open Voice Log</strong
+                  ><small>Review captured voice notes</small></span
+                >
+                <span class="tool-arrow" aria-hidden="true">↗</span>
+              </a>
+            </li>
+            <!-- Open tabs UI via service-worker, as it can handle common logic. -->
+            <li>
+              <a href="/tabs.html" target="_blank" class="tool-link">
+                <span class="tool-marker" aria-hidden="true">&gt;_</span>
+                <span class="tool-copy"
+                  ><strong>Open Tabs UI</strong
+                  ><small>Organize windows and sessions</small></span
+                >
+                <span class="tool-arrow" aria-hidden="true">↗</span>
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          class="popup-section llm-toggle-section"
+          aria-labelledby="llm-title"
+        >
+          <div class="section-heading section-heading-with-badge">
+            <div class="section-heading-main">
+              <span class="section-index" aria-hidden="true">03</span>
+              <div>
+                <p class="section-kicker">SYSTEM MODULE</p>
+                <h2 id="llm-title">LLM Services</h2>
+              </div>
+            </div>
+            <span class="section-badge">OPTIONAL</span>
+          </div>
+          <p class="section-description">
+            Manage local intelligence and power usage.
+          </p>
+
+          <div class="toggle-list">
+            <label class="toggle-container">
+              <span class="switch">
+                <input type="checkbox" id="llm-toggle" checked />
+                <span class="slider"></span>
+              </span>
+              <span class="toggle-copy">
+                <strong>Enable LLM Services</strong>
+                <small>Allow AI-assisted workflows</small>
+              </span>
+            </label>
+
+            <label class="toggle-container">
+              <span class="switch">
+                <input type="checkbox" id="battery-toggle" />
+                <span class="slider"></span>
+              </span>
+              <span class="toggle-copy">
+                <strong>Disable on Battery</strong>
+                <small>Conserve power when unplugged</small>
+              </span>
+            </label>
+          </div>
+
+          <div
+            id="battery-status"
+            class="battery-status"
+            style="display: none"
+          ></div>
+        </section>
+      </main>
+
+      <p class="footer-prompt" aria-hidden="true">
+        root@hacky-helper:~$ <span>_</span>
+      </p>
+
+      <!-- Migration Dialog -->
       <div
-        id="battery-status"
-        class="battery-status"
-        style="display: none"
-      ></div>
-    </section>
+        id="migrationDialog"
+        class="dialog-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="migration-dialog-title"
+      >
+        <div class="dialog-content">
+          <div class="dialog-heading">
+            <p class="section-kicker">TAB TRANSFER</p>
+            <h2 id="migration-dialog-title">Migrate Current Tab</h2>
+          </div>
+          <div id="migrationTabInfo"></div>
 
-    <!-- Migration Dialog -->
-    <div id="migrationDialog" class="dialog-overlay">
-      <div class="dialog-content">
-        <h2>Migrate Current Tab</h2>
-        <div id="migrationTabInfo"></div>
+          <h3>Available Windows/Sessions</h3>
+          <div id="availableDestinations"></div>
 
-        <h3>Available Windows/Sessions</h3>
-        <div id="availableDestinations"></div>
-
-        <div class="dialog-buttons">
-          <button id="cancelMigrationButton">Cancel</button>
+          <div class="dialog-buttons">
+            <button
+              id="cancelMigrationButton"
+              class="action-button action-button-danger"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div id="app"></div>
-    <div id="copy-page-info-toast" aria-live="polite"></div>
+      <div id="app"></div>
+    </div>
     <script type="module" src="/src/popup.ts"></script>
   </body>
 </html>
