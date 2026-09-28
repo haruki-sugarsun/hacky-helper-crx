@@ -32,6 +32,53 @@
   margin: 0;
 }
 
+/* Collapsible session sections */
+#named_sessions details > summary,
+#tabs_sessions details > summary {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+#named_sessions details > summary::-webkit-details-marker,
+#tabs_sessions details > summary::-webkit-details-marker {
+  display: none;
+}
+
+#named_sessions details > summary::before,
+#tabs_sessions details > summary::before {
+  content: "▸";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  order: 2;
+  margin-left: 6px;
+  color: #fff;
+  background-color: #5555aa;
+  border-radius: 4px;
+  font-size: 1.1em;
+  font-weight: bold;
+  line-height: 1;
+}
+
+#named_sessions details[open] > summary::before,
+#tabs_sessions details[open] > summary::before {
+  content: "▾";
+}
+
+#named_sessions details > summary h3,
+#tabs_sessions details > summary h3 {
+  order: 1;
+  flex: 1;
+  margin-top: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #555;
+  color: #aaddff;
+}
+
 #named_sessions li,
 #tabs_sessions li,
 #closed_sessions li {
@@ -538,7 +585,6 @@ content {
 }
 
 /* Section headers */
-#tabs_sessions h3,
 #tabs_tablist h3 {
   margin-top: 0;
   padding-bottom: 8px;
