@@ -6,6 +6,7 @@
  *  - window-id: The associated window ID.
  *  - created: The creation date/time.
  *  - updated: The last updated date/time.
+ *  - summary: A non-persistent summary of the session's current tabs.
  *  - unnamed: If set to "true", displays a message for unnamed sessions.
  */
 import { BaseComponent } from "./BaseComponent";
@@ -13,13 +14,21 @@ import styles from "./session-metadata.css?inline";
 
 export class SessionMetadataComponent extends BaseComponent {
   static get observedAttributes() {
-    return ["session-id", "window-id", "created", "updated", "unnamed"];
+    return [
+      "session-id",
+      "window-id",
+      "created",
+      "updated",
+      "summary",
+      "unnamed",
+    ];
   }
 
   private sessionIdSpan: HTMLElement;
   private windowIdSpan: HTMLElement;
   private createdSpan: HTMLElement;
   private updatedSpan: HTMLElement;
+  private summarySpan: HTMLElement;
   private unnamedSpan: HTMLElement;
 
   constructor() {
@@ -35,6 +44,7 @@ export class SessionMetadataComponent extends BaseComponent {
       <span class="created"></span>
       <span class="separator"> | </span>
       <span class="updated"></span>
+      <span class="summary"></span>
       <span class="unnamed"></span>
     `;
 
@@ -43,6 +53,7 @@ export class SessionMetadataComponent extends BaseComponent {
     this.windowIdSpan = this.shadow.querySelector(".window-id")!;
     this.createdSpan = this.shadow.querySelector(".created")!;
     this.updatedSpan = this.shadow.querySelector(".updated")!;
+    this.summarySpan = this.shadow.querySelector(".summary")!;
     this.unnamedSpan = this.shadow.querySelector(".unnamed")!;
   }
 
@@ -76,6 +87,9 @@ export class SessionMetadataComponent extends BaseComponent {
     this.windowIdSpan.textContent = `Window ID: ${this.getAttribute("window-id") || "N/A"}`;
     this.createdSpan.textContent = `Created: ${this.getAttribute("created") || "N/A"}`;
     this.updatedSpan.textContent = `Updated: ${this.getAttribute("updated") || "N/A"}`;
+    this.summarySpan.textContent = this.getAttribute("summary")
+      ? `Summary: ${this.getAttribute("summary")}`
+      : "";
     this.unnamedSpan.textContent = isUnnamed ? "(Unnamed session)" : "";
   }
 }

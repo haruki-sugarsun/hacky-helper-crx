@@ -194,7 +194,7 @@ Future improvements include refactoring individual CSS files to utilize CSS vari
 ## Unnamed Session Title Suggestions
 
 - [x] Use cached tab summaries to request a concise title from the configured LLM.
-- [x] Display the suggestion only in the unnamed-session list; do not rename or persist the session.
+- [x] Display the suggestion in the unnamed-session list and the same non-persistent summary in selected-session metadata; do not rename or persist the session.
 - [x] Cache and deduplicate suggestions in the service worker.
 - [x] Preserve a `Window <id>` fallback when LLM processing is disabled, unavailable, or uncached.
 

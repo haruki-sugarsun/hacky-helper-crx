@@ -58,6 +58,7 @@ var state_windows: chrome.windows.Window[]; // All windows
 var state_tabs: chrome.tabs.Tab[]; // Tabs in the current window. This is mostly redundant now that we have tabs in state_windows. TODO: Remove it.
 var state_sessions: NamedSession[] = []; // Named Sessions from the service worker
 var currentTabId: number | undefined; // ID of the current tab
+let sessionMetadataRequestId = 0;
 
 /**
  * Helper function to handle a drop event for a tab item.
@@ -2884,19 +2885,44 @@ function renderSessionsMetadata(
   session: NamedSession | null,
   windowId?: number,
 ) {
+  const requestId = ++sessionMetadataRequestId;
+  const metadataWindowId = session?.windowId ?? windowId;
+
+  // Clear the previous summary immediately so it cannot be mistaken for the
+  // summary of the newly selected session while the worker responds.
+  sessionMetadataElement.removeAttribute("summary");
+
   if (session) {
     const createdDate = new Date(session.createdAt).toLocaleString();
     const updatedDate = new Date(session.updatedAt).toLocaleString();
     // TODO: Merge these setAttribute  calls into one method call.
     sessionMetadataElement.setAttribute("session-id", session.id);
-    sessionMetadataElement.setAttribute("window-id", String(session.windowId));
+    sessionMetadataElement.setAttribute(
+      "window-id",
+      String(metadataWindowId ?? ""),
+    );
     sessionMetadataElement.setAttribute("created", createdDate);
     sessionMetadataElement.setAttribute("updated", updatedDate);
     sessionMetadataElement.setAttribute("unnamed", "false");
-  } else if (windowId) {
-    sessionMetadataElement.setAttribute("window-id", String(windowId));
+  } else if (metadataWindowId !== undefined) {
+    sessionMetadataElement.removeAttribute("session-id");
+    sessionMetadataElement.removeAttribute("created");
+    sessionMetadataElement.removeAttribute("updated");
+    sessionMetadataElement.setAttribute("window-id", String(metadataWindowId));
     sessionMetadataElement.setAttribute("unnamed", "true");
   }
+
+  if (metadataWindowId === undefined) return;
+
+  // Use the same cached, non-persistent session summary that supplies labels
+  // for unnamed windows. A request may also start background generation when
+  // no fresh summary is cached yet.
+  void serviceWorkerInterface
+    .getCachedSessionTitleSuggestion(metadataWindowId)
+    .then((summary) => {
+      if (requestId !== sessionMetadataRequestId || !summary) return;
+      sessionMetadataElement.setAttribute("summary", summary);
+    });
   // TODO: We need to support Closed Named Session as well.
 }
 

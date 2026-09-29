@@ -128,7 +128,7 @@ Active Named Sessions represent sessions that are currently active and bound to 
 
 ### Unnamed session title suggestions
 
-Unnamed windows remain unnamed in storage and continue to use the existing window identity for selection and migration. When cached tab summaries are available, the Tabs UI asks the service worker for a short LLM-generated label. This is presentation-only, is cached per window and summary fingerprint, and falls back to `Window <id>` without interrupting the user if generation fails.
+Unnamed windows remain unnamed in storage and continue to use the existing window identity for selection and migration. When cached tab summaries are available, the Tabs UI asks the service worker for a short LLM-generated label. This is presentation-only, is cached per window and summary fingerprint, and falls back to `Window <id>` without interrupting the user if generation fails. The same label is shown as the current session summary below the selected session's metadata.
 
 ## Data Storage/Synchronization
 
