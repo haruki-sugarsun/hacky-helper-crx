@@ -21,3 +21,13 @@
 :host(.unnamed) .separator {
   display: none;
 }
+
+/* The summary is optional while the service worker generates or refreshes it. */
+.summary {
+  display: block;
+  margin-top: 4px;
+}
+
+.summary:empty {
+  display: none;
+}

@@ -65,6 +65,8 @@ Tabs UI is an extention component
   requests by window and summary fingerprint.
 - If summaries or the configured LLM are unavailable, the UI falls back to
   the existing `Window <id>` label.
+- When an open session is selected, the same non-persistent result is shown as
+  a summary below the session metadata for both named and unnamed sessions.
 
 ### Closed Sessions (`[Closed]`)
 
