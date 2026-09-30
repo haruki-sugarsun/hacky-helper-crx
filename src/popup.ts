@@ -2,7 +2,7 @@ import "./style.css";
 import "./popup.css";
 import { CONFIG_RO, ConfigStore } from "./features/config-store";
 import serviceWorkerInterface from "./features/service-worker-interface";
-import { handleMessages } from "./popup/popup-messages";
+import { copyPageInfo, handleMessages } from "./popup/popup-messages";
 import { openSidePanel } from "./sidepanel-helper";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -240,6 +240,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const migrateButton = document.getElementById("migrateTabButton");
   if (migrateButton) {
     migrateButton.addEventListener("click", showMigrationDialog);
+  }
+
+  const copyPageInfoButton = document.getElementById("copyPageInfoButton");
+  if (copyPageInfoButton) {
+    copyPageInfoButton.addEventListener("click", () => copyPageInfo(() => {}));
   }
 
   // Add event listener for the cancel button in the migration dialog

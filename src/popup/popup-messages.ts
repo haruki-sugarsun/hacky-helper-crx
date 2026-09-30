@@ -58,7 +58,7 @@ export function showCopyPageInfoToast(
 
 // Function to copy page info by retrieving the active tab's title and URL
 // TODO: Use the shared definition of Success/Error Results.
-function copyPageInfo(sendResponse: (response?: any) => void) {
+export function copyPageInfo(sendResponse: (response?: any) => void) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs && tabs.length > 0) {
       const activeTab = tabs[0];
