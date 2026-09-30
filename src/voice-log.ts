@@ -59,6 +59,8 @@ const verticalLayoutButton =
   document.querySelector<HTMLButtonElement>("#vertical-layout")!;
 const horizontalLayoutButton =
   document.querySelector<HTMLButtonElement>("#horizontal-layout")!;
+const clearLogButton =
+  document.querySelector<HTMLButtonElement>("#clear-log-button")!;
 const logCards = Array.from(
   document.querySelectorAll<HTMLElement>(".log-card"),
 );
@@ -270,6 +272,7 @@ installJapaneseModelButton.addEventListener(
 let condensationRunning = false;
 let lastCondensedTranscript = "";
 let lastCondensationAt = Date.now();
+let contentRevision = 0;
 
 function getProcessedPrefixLength(currentTranscript: string) {
   const commonLength = Math.min(
@@ -341,6 +344,7 @@ function updateMonologueProgress() {
 async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
   if (condensationRunning) return false;
 
+  const requestRevision = contentRevision;
   const workarea = workareaContent.innerText.trim();
   const currentCondensedLog = condensedLog.innerText.trim();
   const transcript = monologueLog.innerText.trim();
@@ -364,6 +368,7 @@ async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
       buildCondensationPrompt(workarea, currentCondensedLog, transcript),
     );
     if (!result.trim()) throw new Error("The local model returned no content.");
+    if (requestRevision !== contentRevision) return false;
 
     condensedLog.innerText = result.trim();
     condensedLog.dispatchEvent(new Event("input", { bubbles: true }));
@@ -376,8 +381,10 @@ async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
     return true;
   } catch (error) {
     console.error("Failed to condense Voice Log:", error);
-    processingStatus.textContent =
-      error instanceof Error ? error.message : "Condensation failed.";
+    if (requestRevision === contentRevision) {
+      processingStatus.textContent =
+        error instanceof Error ? error.message : "Condensation failed.";
+    }
     return false;
   } finally {
     condensationRunning = false;
@@ -491,20 +498,23 @@ function scheduleRecognitionSessionStop() {
 // Content Save
 // Initial load:
 async function init() {
+  const initContentRevision = contentRevision;
   const previousSave = await chrome.storage.local.get([
     "workarea_content_save",
     "condenced_log_save",
     "monologue_log_save",
   ]);
   console.log(previousSave);
-  if (previousSave.workarea_content_save) {
-    workareaContent.innerText = previousSave.workarea_content_save;
-  }
-  if (previousSave.monologue_log_save) {
-    monologueLog.innerText = previousSave.monologue_log_save;
-  }
-  if (previousSave.condenced_log_save) {
-    condensedLog.innerText = previousSave.condenced_log_save;
+  if (initContentRevision === contentRevision) {
+    if (typeof previousSave.workarea_content_save === "string") {
+      workareaContent.innerText = previousSave.workarea_content_save;
+    }
+    if (typeof previousSave.monologue_log_save === "string") {
+      monologueLog.innerText = previousSave.monologue_log_save;
+    }
+    if (typeof previousSave.condenced_log_save === "string") {
+      condensedLog.innerText = previousSave.condenced_log_save;
+    }
   }
   await restoreLogLayout();
   await restoreSelectedModel();
@@ -535,6 +545,32 @@ function saveCondensedLog(_ev: Event) {
   chrome.storage.local.set({ condenced_log_save: condensedLog.innerText });
 }
 
+function clearVoiceLog() {
+  const confirmed = window.confirm(
+    "Clear the work area, condensed log, and transcript? This also stops live recognition.",
+  );
+  if (!confirmed) return;
+
+  contentRevision += 1;
+  lastCondensedTranscript = "";
+  lastCondensationAt = Date.now();
+  if (recognitionToggle.checked) {
+    stopRecognition("Recognition stopped after clearing the voice log.");
+  }
+
+  workareaContent.textContent = "";
+  condensedLog.textContent = "";
+  monologueLog.textContent = "";
+  workareaContent.dispatchEvent(new Event("input", { bubbles: true }));
+  condensedLog.dispatchEvent(new Event("input", { bubbles: true }));
+  monologueLog.dispatchEvent(new Event("input", { bubbles: true }));
+  interimResults.textContent = "…";
+  updateMonologueProgress();
+  processingStatus.textContent = "Content cleared.";
+}
+
+clearLogButton.addEventListener("click", clearVoiceLog);
+
 function startRecognition() {
   const speechRecognition = getSpeechRecognitionConstructor();
   if (!speechRecognition) {
@@ -550,6 +586,7 @@ function startRecognition() {
   scheduleRecognitionSessionStop();
 
   recognition = new speechRecognition();
+  const recognitionContentRevision = contentRevision;
   const localRecognition = recognition as SpeechRecognition & {
     processLocally?: boolean;
   };
@@ -570,6 +607,8 @@ function startRecognition() {
   };
 
   recognition.onresult = function (event) {
+    if (recognitionContentRevision !== contentRevision) return;
+
     // Get the last result from the results list
     const lastResultIndex = event.results.length - 1;
     const lastResult = event.results[lastResultIndex];

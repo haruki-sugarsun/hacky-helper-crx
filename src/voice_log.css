@@ -25,7 +25,9 @@ body *::before,
 body *::after { box-sizing: inherit; }
 
 .voice-header,
-.voice-main { width: min(100%, 1080px); margin-inline: auto; }
+.voice-main,
+.voice-log-actions { width: min(100%, 1080px); margin-inline: auto; }
+.voice-log-actions { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
 
 .voice-controls { width: min(100%, 1080px); margin: 0 auto 1.25rem; overflow: hidden; background: var(--voice-surface); border: 1px solid var(--voice-border); border-radius: 1rem; box-shadow: var(--voice-shadow); }
 .voice-controls > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1rem; color: var(--voice-ink); cursor: pointer; list-style: none; }
@@ -88,6 +90,8 @@ h1 { margin-bottom: 0.55rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: 
 .layout-button { padding: 0.42rem 0.75rem; color: var(--voice-muted); background: transparent; border: 1px solid var(--voice-border); font-size: 0.78rem; }
 .layout-button[aria-pressed="true"] { color: var(--voice-blue); background: var(--voice-blue-soft); border-color: var(--voice-blue); }
 .layout-hint { color: var(--voice-muted); font-size: 0.75rem; }
+.clear-log-button { padding: 0.42rem 0.75rem; color: #a33d3d; background: white; border: 1px solid #d9aaaa; font-size: 0.78rem; }
+.clear-log-button:hover { background: #fff2f2; }
 .tool-bar > div { display: grid; gap: 0.35rem; }
 .tool-bar label { color: var(--voice-muted); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 select { min-width: 13rem; padding: 0.6rem 2rem 0.6rem 0.75rem; color: var(--voice-ink); background: var(--voice-surface); border: 1px solid var(--voice-border); border-radius: 0.55rem; font: inherit; }
