@@ -75,9 +75,6 @@ h1 { margin-bottom: 0.55rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: 
 .voice-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .voice-main.is-horizontal {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "workarea condensed"
-    "monologue monologue";
   align-items: stretch;
 }
 .voice-main.is-horizontal .tool-bar,
@@ -99,15 +96,16 @@ button { color: white; background: var(--voice-blue); border: 0; border-radius: 
 button:hover { background: #304cae; }
 button:disabled { cursor: wait; opacity: 0.65; }
 
-.log-card { min-width: 0; min-height: 12rem; padding: 1.25rem; overflow: auto; background: var(--voice-surface); border: 1px solid var(--voice-border); border-left: 4px solid var(--voice-blue); border-radius: 1rem; box-shadow: var(--voice-shadow); resize: vertical; }
-.voice-main.is-horizontal .log-card--workarea { grid-area: workarea; min-height: 20rem; }
-.voice-main.is-horizontal .log-card--condensed { grid-area: condensed; min-height: 20rem; }
-.voice-main.is-horizontal .log-card--monologue { grid-area: monologue; min-height: 11rem; }
+.log-card { min-width: 0; min-height: 12rem; padding: 1.25rem; overflow: auto; background: var(--voice-surface); border: 1px solid var(--voice-border); border-left: 4px solid var(--voice-blue); border-radius: 1rem; box-shadow: var(--voice-shadow); resize: vertical; cursor: grab; }
+.voice-main.is-horizontal .log-card--workarea,
+.voice-main.is-horizontal .log-card--condensed { min-height: 20rem; }
+.voice-main.is-horizontal .log-card--monologue { grid-column: 1 / -1; min-height: 11rem; }
 .voice-main.is-horizontal .log-card--monologue .log-editor { min-height: 7rem; }
 .log-card.is-dragging { opacity: 0.45; }
 .log-card--condensed { border-left-color: #268a68; }
 .log-card--monologue { border-left-color: #c36b39; }
 .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; }
+.log-card:active { cursor: grabbing; }
 h2 { margin-bottom: 0; font-size: 1.05rem; letter-spacing: -0.015em; }
 .card-hint, .interim { color: var(--voice-muted); font-size: 0.78rem; }
 .interim { max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -115,7 +113,7 @@ h2 { margin-bottom: 0; font-size: 1.05rem; letter-spacing: -0.015em; }
 .progress-label { display: flex; justify-content: space-between; gap: 1rem; color: var(--voice-muted); font-size: 0.72rem; }
 .progress-track { height: 0.35rem; overflow: hidden; background: #e7ebf2; border-radius: 999px; }
 .progress-bar { width: 0; height: 100%; background: #c36b39; border-radius: inherit; transition: width 0.2s ease; }
-.log-editor { min-height: 9rem; padding: 1rem; color: var(--voice-ink); background: #fbfcfe; border: 1px solid var(--voice-border); border-radius: 0.7rem; font-size: 1rem; line-height: 1.7; outline: none; white-space: pre-wrap; }
+.log-editor { min-height: 9rem; padding: 1rem; color: var(--voice-ink); background: #fbfcfe; border: 1px solid var(--voice-border); border-radius: 0.7rem; font-size: 1rem; line-height: 1.7; outline: none; white-space: pre-wrap; cursor: text; }
 .log-editor:focus { border-color: var(--voice-blue); box-shadow: 0 0 0 3px rgb(59 92 204 / 0.14); }
 .log-editor:empty::before { content: attr(data-placeholder); color: #98a4b6; pointer-events: none; }
 #monologue_log { min-height: 13rem; }
@@ -183,12 +181,6 @@ input:checked + .slider:before {
   .tool-bar button { width: 100%; }
   .run-control { align-items: stretch; flex-direction: column; }
   .voice-main.is-horizontal { grid-template-columns: 1fr; }
-  .voice-main.is-horizontal {
-    grid-template-areas:
-      "workarea"
-      "condensed"
-      "monologue";
-  }
   .voice-main.is-horizontal .log-card--workarea,
   .voice-main.is-horizontal .log-card--condensed,
   .voice-main.is-horizontal .log-card--monologue { grid-column: auto; }

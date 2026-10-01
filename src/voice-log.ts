@@ -143,8 +143,33 @@ horizontalLayoutButton.addEventListener("click", () => {
 });
 
 let draggedCard: HTMLElement | null = null;
+let dragOriginCard: HTMLElement | null = null;
 for (const card of logCards) {
+  card.addEventListener("pointerdown", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      dragOriginCard = null;
+      return;
+    }
+
+    const startsInEditor = Boolean(
+      target.closest(".log-editor, textarea, input, select, button"),
+    );
+    const bounds = card.getBoundingClientRect();
+    const resizeCornerSize = 20;
+    const startsInResizeCorner =
+      event.clientX >= bounds.right - resizeCornerSize &&
+      event.clientY >= bounds.bottom - resizeCornerSize;
+    dragOriginCard = startsInEditor || startsInResizeCorner ? null : card;
+  });
+
   card.addEventListener("dragstart", (event) => {
+    if (dragOriginCard !== card) {
+      event.preventDefault();
+      return;
+    }
+
+    dragOriginCard = null;
     draggedCard = card;
     card.classList.add("is-dragging");
     event.dataTransfer?.setData("text/plain", card.id);
@@ -167,6 +192,7 @@ for (const card of logCards) {
   card.addEventListener("dragend", () => {
     card.classList.remove("is-dragging");
     draggedCard = null;
+    dragOriginCard = null;
     saveLogLayout();
   });
 }
