@@ -13,6 +13,67 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+// Keep embedding requests comfortably below the context limits of local models.
+// Character count is intentionally conservative because tokenization varies by
+// model and is especially dense for some non-Latin text.
+export const EMBEDDING_CHUNK_SIZE = 2000;
+
+/**
+ * Split content into bounded pieces without dropping any content. Prefer a
+ * whitespace boundary, but hard-split unusually long words/URLs when needed.
+ */
+export function splitEmbeddingContent(
+  content: string,
+  maxChunkLength: number = EMBEDDING_CHUNK_SIZE,
+): string[] {
+  if (maxChunkLength <= 0) {
+    throw new Error("Embedding chunk size must be greater than zero");
+  }
+
+  if (content.length <= maxChunkLength) {
+    return [content];
+  }
+
+  const chunks: string[] = [];
+  let start = 0;
+
+  while (start < content.length) {
+    let end = Math.min(start + maxChunkLength, content.length);
+
+    if (end < content.length) {
+      const whitespace = content.lastIndexOf(" ", end - 1);
+      const newline = content.lastIndexOf("\n", end - 1);
+      const boundary = Math.max(whitespace, newline);
+
+      if (boundary > start) {
+        end = boundary + 1;
+      }
+    }
+
+    chunks.push(content.slice(start, end));
+    start = end;
+  }
+
+  return chunks;
+}
+
+function averageEmbeddings(embeddings: number[][]): number[] {
+  if (embeddings.length === 0 || embeddings[0].length === 0) {
+    throw new Error("Cannot average empty embeddings");
+  }
+
+  const dimensions = embeddings[0].length;
+  if (embeddings.some((embedding) => embedding.length !== dimensions)) {
+    throw new Error("Embedding chunks returned different dimensions");
+  }
+
+  return embeddings[0].map(
+    (_, dimension) =>
+      embeddings.reduce((sum, embedding) => sum + embedding[dimension], 0) /
+      embeddings.length,
+  );
+}
+
 // Base class for LLM services
 // This base class is useful for:
 // 1. Providing common methods used by all LLM services
@@ -67,7 +128,19 @@ abstract class BaseLLMService implements LLMService {
   async generateEmbeddings(content: string): Promise<number[]> {
     const startTime = performance.now();
     try {
-      const embeddings = await this.doGenerateEmbeddings(content);
+      const chunks = splitEmbeddingContent(content);
+      const chunkEmbeddings: number[][] = [];
+
+      for (const chunk of chunks) {
+        chunkEmbeddings.push(await this.doGenerateEmbeddings(chunk));
+      }
+
+      const embeddings = averageEmbeddings(chunkEmbeddings);
+      if (chunks.length > 1) {
+        console.log(
+          `Generated embeddings from ${chunks.length} content chunks`,
+        );
+      }
       const endTime = performance.now();
       const duration = endTime - startTime;
       console.log(`Embeddings Generation Time: ${duration.toFixed(2)} ms`);
