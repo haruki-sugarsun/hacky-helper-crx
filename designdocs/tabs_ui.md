@@ -65,6 +65,10 @@ Tabs UI is an extention component
 
 - This is a Scroallable Area
 
+### Dialogs
+
+- The tab migration and tab category dialogs can be dismissed with the **Cancel/Close** button or by pressing **Escape**.
+
 ### Drag-and-Drop Tab Migration
 
 - Users can drag one or multiple tabs from the **"Open Tabs"** list (specifically, the `<tr>` elements representing tabs in the table body) and drop them onto a session list item (`<li>` element representing an active named or unnamed session) in the "Sessions Area".

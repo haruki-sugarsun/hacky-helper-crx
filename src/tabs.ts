@@ -384,6 +384,19 @@ if (toggleBookmarksButton) {
 
 // Synced tabs are now always visible, no toggle button needed
 
+// Allow modal-ish dialogs to be dismissed without leaving the keyboard.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+
+  document
+    .querySelectorAll<HTMLDivElement>(".dialog-overlay")
+    .forEach((dialog) => {
+      if (dialog.style.display !== "none") {
+        dialog.style.display = "none";
+      }
+    });
+});
+
 // Add event listener for the "Open All Bookmarks" button
 const openAllBookmarksButton = document.querySelector<HTMLButtonElement>(
   "#openAllBookmarksButton",
