@@ -458,7 +458,8 @@ async function processNextTask() {
           embeddings,
           timestamp,
         };
-        updateCache(url, digestEntry);
+        // Consider delay the updateCache if possible/efficient.
+        await updateCache(url, digestEntry);
         resolveTask();
       } catch (error) {
         console.error("Error during LLM task:", error);

@@ -313,6 +313,7 @@ export class OllamaLLMService extends BaseLLMService {
 
   protected async doListKeywords(content: string): Promise<string[]> {
     const KeywordsSchema = z.object({ keywords: z.array(z.string()) });
+    // TODO: When calling the backend, specify the max tokens to generate.
     const response = await this.client.generate({
       model: this.model,
       prompt: this.getKeywordsPrompt(content),

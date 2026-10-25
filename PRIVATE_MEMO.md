@@ -28,3 +28,6 @@ Read the file .clinerules to follow the rules first.
 
 - Prepare a rough idea with related filenames.
 - If we have a new dependency task, e.g. require refactoring, Add to the NEXT_TODO.md and do that as a new task.
+
+# Haruki's private note
+$ git fetch --all && git switch main && git rebase-origin && npm install && npm run build

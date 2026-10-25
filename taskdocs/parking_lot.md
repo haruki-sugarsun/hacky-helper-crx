@@ -8,6 +8,13 @@
 
 We have unstructured, just-idea notes here:
 
+### Not-yet Categorized:
+- Show a message toast for copy-url-and-title trigger.
+- "Suggested Destinations" in the tab migration diable should suggest top 3 destinations based on our knowledge.
+- We would like to have a UI to check embeddings of a tab in the "Summary" Cell in Tabs UI.
+- Status indicatror for the pending LLM requests to proccess(ongoing + pending).
+- Use LLM to suggest a short title for the unnamed sessions based on the current tab summaries.
+
 ### UI & UX
 
 - Tabs UI updates based on the window/tabs/sessions (open tabs / saved bookmarks) updates.
