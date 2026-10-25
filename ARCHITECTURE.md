@@ -19,6 +19,14 @@ The service worker is the central component that runs in the background and mana
   - _Note: A refactoring task exists (see `taskdocs/parking_lot.md`) to consolidate handlers into `service-worker-handler.ts`._
 - **Automatic Session Sync**: Periodically triggers session synchronization to the backend (bookmarks) via a Chrome Alarm (`autoSessionSyncAlarm`) and `SessionManagement.triggerAutoSessionSync`.
 
+All LLM-related processing is owned by the service worker. UI pages request
+LLM work through service-worker messages and do not create provider clients or
+run LLM requests directly. The service worker keeps the active `LLMService`
+instance and passes it to message handlers. A planned configuration-change
+refresh will replace that instance when provider, model, or endpoint settings
+change, avoiding stale LLM configuration without requiring UI pages to manage
+provider lifecycle.
+
 ### 2. LLM Services (`llmService.ts`)
 
 Provides an abstraction layer for interacting with different LLM providers:

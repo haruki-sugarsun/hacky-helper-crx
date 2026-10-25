@@ -858,7 +858,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           break;
         default:
           // TODO: Migrate the handlers to `service-worker-handler.ts`.
-          if (!handleServiceWorkerMessage(message, _sender, sendResponse)) {
+          if (
+            !handleServiceWorkerMessage(
+              message,
+              _sender,
+              sendResponse,
+              llmService,
+            )
+          ) {
             console.warn("Unknown Message type:", type);
             if (message.action === "callFunction") {
               // This is for editor.html, which has own handling logic.
