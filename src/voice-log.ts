@@ -297,6 +297,7 @@ installJapaneseModelButton.addEventListener(
 
 let condensationRunning = false;
 let lastCondensedTranscript = "";
+let lastCondensedWorkarea = "";
 let lastCondensationAt = Date.now();
 let contentRevision = 0;
 
@@ -399,6 +400,7 @@ async function condenseVoiceLog(trigger: "manual" | "automatic" = "manual") {
     condensedLog.innerText = result.trim();
     condensedLog.dispatchEvent(new Event("input", { bubbles: true }));
     lastCondensedTranscript = transcript;
+    lastCondensedWorkarea = workarea;
     lastCondensationAt = Date.now();
     updateMonologueProgress();
     processingStatus.textContent = trigger === "automatic"
@@ -427,25 +429,62 @@ function shouldAutomaticallyCondense() {
   if (!autoCondenseToggle.checked || condensationRunning) return false;
 
   const transcript = monologueLog.innerText.trim();
-  if (!transcript || transcript === lastCondensedTranscript) return false;
+  const workarea = workareaContent.innerText.trim();
+  const transcriptChanged = transcript !== lastCondensedTranscript;
+  const workareaChanged = workarea !== lastCondensedWorkarea;
+  if (!transcriptChanged && !workareaChanged) return false;
 
   const addedCharacters = lastCondensedTranscript.length > 0 &&
     transcript.startsWith(lastCondensedTranscript)
     ? transcript.length - lastCondensedTranscript.length
     : transcript.length;
-  const majorityOfTranscriptChanged =
+  const transcriptChangeIsSignificant = transcriptChanged &&
     addedCharacters >=
     Math.max(1, lastCondensedTranscript.length * AUTO_CONDENSATION_CHANGE_RATIO);
+  const changedWorkareaCharacters = getChangedCharacterCount(
+    lastCondensedWorkarea,
+    workarea,
+  );
+  const workareaChangeIsSignificant = workareaChanged &&
+    changedWorkareaCharacters >=
+      Math.max(1, lastCondensedWorkarea.length * AUTO_CONDENSATION_CHANGE_RATIO);
   const condensationTimedOut =
     Date.now() - lastCondensationAt >= AUTO_CONDENSATION_TIMEOUT_MS;
 
-  return majorityOfTranscriptChanged || condensationTimedOut;
+  return transcriptChangeIsSignificant || workareaChangeIsSignificant ||
+    condensationTimedOut;
+}
+
+function getChangedCharacterCount(previous: string, current: string) {
+  const commonLength = Math.min(previous.length, current.length);
+  let prefixLength = 0;
+  while (
+    prefixLength < commonLength &&
+    previous[prefixLength] === current[prefixLength]
+  ) {
+    prefixLength += 1;
+  }
+
+  let suffixLength = 0;
+  while (
+    suffixLength < previous.length - prefixLength &&
+    suffixLength < current.length - prefixLength &&
+    previous[previous.length - suffixLength - 1] ===
+      current[current.length - suffixLength - 1]
+  ) {
+    suffixLength += 1;
+  }
+
+  return (previous.length - prefixLength - suffixLength) +
+    (current.length - prefixLength - suffixLength);
 }
 
 function checkAutomaticCondensation() {
   if (!shouldAutomaticallyCondense()) return;
   void condenseVoiceLog("automatic");
 }
+
+window.setInterval(checkAutomaticCondensation, 1_000);
 
 async function restoreSelectedModel() {
   const savedModel = await chrome.storage.local.get(
@@ -545,6 +584,7 @@ async function init() {
   await restoreLogLayout();
   await restoreSelectedModel();
   lastCondensedTranscript = monologueLog.innerText.trim();
+  lastCondensedWorkarea = workareaContent.innerText.trim();
   lastCondensationAt = Date.now();
   updateMonologueProgress();
   await updateJapaneseModelStatus();
@@ -557,9 +597,11 @@ workareaContent.addEventListener("input", (_ev) => {
   chrome.storage.local.set({
     workarea_content_save: workareaContent.innerText,
   });
+  checkAutomaticCondensation();
 });
 monologueLog.addEventListener("input", saveMonologueLog);
 monologueLog.addEventListener("input", updateMonologueProgress);
+monologueLog.addEventListener("input", checkAutomaticCondensation);
 function saveMonologueLog(_ev: any) {
   console.log(monologueLog.innerText);
 
@@ -579,6 +621,7 @@ function clearVoiceLog() {
 
   contentRevision += 1;
   lastCondensedTranscript = "";
+  lastCondensedWorkarea = "";
   lastCondensationAt = Date.now();
   if (recognitionToggle.checked) {
     stopRecognition("Recognition stopped after clearing the voice log.");
