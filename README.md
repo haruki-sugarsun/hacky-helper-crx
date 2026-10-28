@@ -11,10 +11,9 @@ Hacky Helper is a browser extension designed to enhance productivity by organizi
 
 ## Environment
 
-Checked with:
+Node.js version is specified in `.node-version`:
 
-- Node.js v22.14.0
-- npm 10.9.2
+- Node.js v26.12.1
 
 ## Development
 
