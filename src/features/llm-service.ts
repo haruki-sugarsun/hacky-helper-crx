@@ -367,9 +367,10 @@ export class OllamaLLMService extends BaseLLMService {
       stream: false,
       format: zodToJsonSchema(SummarySchema),
     });
+    const output = response.response ?? "";
 
     try {
-      const result = SummarySchema.parse(JSON.parse(response.response));
+      const result = SummarySchema.parse(JSON.parse(output));
       console.log(
         "Ollama Summary Generated with structured output:",
         result.summary.trim(),
@@ -380,7 +381,7 @@ export class OllamaLLMService extends BaseLLMService {
         "Failed to parse JSON output, returning raw output:",
         error,
       );
-      return response.response.trim();
+      return output.trim();
     }
   }
 
@@ -393,9 +394,10 @@ export class OllamaLLMService extends BaseLLMService {
       stream: false,
       format: zodToJsonSchema(KeywordsSchema),
     });
+    const output = response.response ?? "";
 
     try {
-      const result = KeywordsSchema.parse(JSON.parse(response.response));
+      const result = KeywordsSchema.parse(JSON.parse(output));
       console.log(
         "Ollama Keywords Extracted with structured output:",
         result.keywords.join(", "),
@@ -406,7 +408,7 @@ export class OllamaLLMService extends BaseLLMService {
         "Failed to parse JSON output, falling back to raw output:",
         error,
       );
-      const keywords = response.response
+      const keywords = output
         .split(",")
         .map((keyword: string) => keyword.trim())
         .filter(Boolean);
