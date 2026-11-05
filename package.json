@@ -24,10 +24,10 @@
     "@types/chrome": "^0.0.278",
     "@types/dom-speech-recognition": "^0.0.4",
     "ollama": "^0.6.4",
-    "openai": "^4.86.1",
+    "openai": "^7.51.0",
     "prettier": "^3.5.3",
     "snabbdom": "^3.6.2",
-    "zod": "^3.24.2",
+    "zod": "^4.6.7",
     "zod-to-json-schema": "^3.24.5"
   }
 }
