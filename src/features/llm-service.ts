@@ -7,6 +7,7 @@ import {
   KEYWORDS_PROMPT,
   OPENAI_CHAT_MODEL,
   OPENAI_EMBEDDINGS_MODEL,
+  SESSION_TITLE_PROMPT,
 } from "../lib/constants";
 import { Ollama } from "ollama";
 import OpenAI from "openai";
@@ -110,6 +111,22 @@ abstract class BaseLLMService implements LLMService {
     }
   }
 
+  async createSessionTitle(tabSummaries: string[]): Promise<string> {
+    const startTime = performance.now();
+    try {
+      const title = sanitizeSessionTitle(
+        await this.doCreateSessionTitle(tabSummaries),
+      );
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      console.log(`Session Title Generation Time: ${duration.toFixed(2)} ms`);
+      return title;
+    } catch (error) {
+      console.error("Error generating session title:", error);
+      throw new Error("Failed to generate session title.");
+    }
+  }
+
   async listKeywords(content: string): Promise<string[]> {
     const startTime = performance.now();
     try {
@@ -165,6 +182,9 @@ abstract class BaseLLMService implements LLMService {
   // Protected methods that subclasses must implement
   protected abstract doChat(prompt: string): Promise<string>;
   protected abstract doCreateSummary(content: string): Promise<string>;
+  protected abstract doCreateSessionTitle(
+    tabSummaries: string[],
+  ): Promise<string>;
   protected abstract doListKeywords(content: string): Promise<string[]>;
   protected abstract doGenerateEmbeddings(content: string): Promise<number[]>;
 
@@ -177,10 +197,28 @@ abstract class BaseLLMService implements LLMService {
   protected getKeywordsPrompt(content: string): string {
     return `${KEYWORDS_PROMPT}${content}`;
   }
+
+  protected getSessionTitlePrompt(tabSummaries: string[]): string {
+    return `${SESSION_TITLE_PROMPT}${tabSummaries.join("\n")}`;
+  }
+}
+
+/** Normalizes a model response before it is displayed as a session label. */
+export function sanitizeSessionTitle(response: string): string {
+  return response
+    .replace(/^```(?:text|json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .replace(/[.!?。！？]+$/, "")
+    .replace(/^['"`]+|['"`]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60)
+    .trim();
 }
 
 export interface LLMService {
   createSummary(content: string): Promise<string>;
+  createSessionTitle(tabSummaries: string[]): Promise<string>;
   listKeywords(content: string): Promise<string[]>;
   generateEmbeddings(content: string): Promise<number[]>;
   chat(prompt: string): Promise<string>;
@@ -264,6 +302,12 @@ export class OpenAILLMService extends BaseLLMService {
     console.log("OpenAI Summary Generated:", summary);
 
     return summary;
+  }
+
+  protected async doCreateSessionTitle(
+    tabSummaries: string[],
+  ): Promise<string> {
+    return this.doChat(this.getSessionTitlePrompt(tabSummaries));
   }
 
   protected async doListKeywords(content: string): Promise<string[]> {
@@ -383,6 +427,12 @@ export class OllamaLLMService extends BaseLLMService {
       );
       return output.trim();
     }
+  }
+
+  protected async doCreateSessionTitle(
+    tabSummaries: string[],
+  ): Promise<string> {
+    return this.doChat(this.getSessionTitlePrompt(tabSummaries));
   }
 
   protected async doListKeywords(content: string): Promise<string[]> {

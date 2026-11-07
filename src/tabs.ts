@@ -1142,6 +1142,20 @@ async function updateUI(
   // Sort windows by ID for unnamed sessions
   const sortedWindows = [...windows].sort((a, b) => (a.id || 0) - (b.id || 0));
 
+  // TODO: Make this call pass and receive set of win.id at once?
+  const suggestedTitles = new Map<number, string>();
+  await Promise.all(
+    sortedWindows.map(async (win) => {
+      if (win.id === undefined || !win.tabs?.some((tab) => tab.url && /^https?:|^chrome-extension:/.test(tab.url))) {
+        return;
+      }
+      const title = await serviceWorkerInterface.getCachedSessionTitleSuggestion(
+        win.id,
+      );
+      if (title) suggestedTitles.set(win.id, title);
+    }),
+  );
+
   // Track the current window to auto-select it
   let currentWindowItem: HTMLLIElement | undefined = undefined;
   // Auto-select the specified window and load its tabs
@@ -1303,7 +1317,8 @@ async function updateUI(
     }
 
     // Build the label
-    const label = `Window ${win.id} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
+    const sessionTitle = win.id !== undefined ? suggestedTitles.get(win.id) : undefined;
+    const label = `${sessionTitle || `Window ${win.id}`} (${tabCount} tab${tabCount !== 1 ? "s" : ""})`;
 
     const isCurrent = win.focused;
     // Create the list item
