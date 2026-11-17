@@ -13,6 +13,12 @@ const statusText = document.querySelector<HTMLDivElement>("#status")!;
 const recognitionToggle = document.querySelector<HTMLInputElement>(
   "#recognition-toggle",
 )!;
+const japaneseRecognitionToggle = document.querySelector<HTMLInputElement>(
+  "#recognition-ja",
+)!;
+const englishRecognitionToggle = document.querySelector<HTMLInputElement>(
+  "#recognition-en",
+)!;
 const interimResults =
   document.querySelector<HTMLSpanElement>("#interim-result")!;
 const condensedLog =
@@ -198,6 +204,7 @@ for (const card of logCards) {
 }
 
 const JAPANESE_SPEECH_LANGUAGE = "ja-JP";
+const ENGLISH_SPEECH_LANGUAGE = "en-US";
 type LocalSpeechRecognitionStatus =
   | "available"
   | "downloadable"
@@ -235,25 +242,58 @@ async function updateJapaneseModelStatus() {
   }
 
   try {
-    const availability = await speechRecognition.available({
-      langs: [JAPANESE_SPEECH_LANGUAGE],
-      processLocally: true,
-    });
-    if (availability === "available") {
-      installJapaneseModelButton.disabled = true;
-      installJapaneseModelButton.textContent = "Japanese model installed";
-      localModelStatus.textContent = "On-device recognition is ready.";
-    } else if (availability === "downloadable") {
-      installJapaneseModelButton.disabled = false;
-      localModelStatus.textContent = "Download required for on-device recognition.";
-    } else if (availability === "downloading") {
-      installJapaneseModelButton.disabled = true;
-      localModelStatus.textContent = "Japanese model is downloading…";
-    } else {
-      installJapaneseModelButton.disabled = true;
-      localModelStatus.textContent =
-        "Japanese on-device recognition is unavailable.";
-    }
+    const [japaneseResult, englishResult] = await Promise.allSettled(
+      [JAPANESE_SPEECH_LANGUAGE, ENGLISH_SPEECH_LANGUAGE].map((language) =>
+        speechRecognition.available!({
+          langs: [language],
+          processLocally: true,
+        }),
+      ),
+    );
+    const results = [japaneseResult, englishResult];
+    const downloadableLanguages = results.flatMap((result, index) =>
+      result.status === "fulfilled" && result.value === "downloadable"
+        ? [[JAPANESE_SPEECH_LANGUAGE, ENGLISH_SPEECH_LANGUAGE][index]]
+        : [],
+    );
+    const allModelsAvailable = results.every(
+      (result) => result.status === "fulfilled" && result.value === "available",
+    );
+    const modelDownloading = results.some(
+      (result) => result.status === "fulfilled" && result.value === "downloading",
+    );
+    installJapaneseModelButton.disabled = downloadableLanguages.length === 0;
+    installJapaneseModelButton.textContent =
+      downloadableLanguages.length === 2
+        ? "Install missing models"
+        : downloadableLanguages.length === 1
+          ? `Install ${downloadableLanguages[0] === JAPANESE_SPEECH_LANGUAGE ? "Japanese" : "English"} model`
+          : allModelsAvailable
+            ? "Speech models installed"
+            : modelDownloading
+              ? "Model downloading…"
+              : "Models unavailable";
+
+    const describeAvailability = (
+      language: string,
+      result: PromiseSettledResult<LocalSpeechRecognitionStatus>,
+    ) => {
+      if (result.status === "rejected") return `${language} status could not be checked`;
+      switch (result.value) {
+        case "available":
+          return `${language} model installed`;
+        case "downloadable":
+          return `${language} model download required`;
+        case "downloading":
+          return `${language} model downloading`;
+        default:
+          return `${language} on-device recognition unavailable`;
+      }
+    };
+    localModelStatus.textContent = [
+      describeAvailability("Japanese", japaneseResult),
+      describeAvailability("English", englishResult),
+    ].join("; ") + ".";
   } catch (error) {
     console.error("Failed to check Japanese speech model availability:", error);
     installJapaneseModelButton.disabled = true;
@@ -263,30 +303,43 @@ async function updateJapaneseModelStatus() {
 
 async function installJapaneseSpeechModel() {
   const speechRecognition = getSpeechRecognitionConstructor();
-  if (!speechRecognition?.install) return;
+  if (!speechRecognition?.available || !speechRecognition.install) return;
 
   installJapaneseModelButton.disabled = true;
-  installJapaneseModelButton.textContent = "Installing…";
-  localModelStatus.textContent = "Downloading the Japanese model…";
+  installJapaneseModelButton.textContent = "Checking models…";
 
   try {
-    const installed = await speechRecognition.install({
-      langs: [JAPANESE_SPEECH_LANGUAGE],
-      processLocally: true,
-    });
-    if (installed) {
-      installJapaneseModelButton.textContent = "Japanese model installed";
-      localModelStatus.textContent = "On-device recognition is ready.";
-    } else {
-      installJapaneseModelButton.disabled = false;
-      installJapaneseModelButton.textContent = "Install Japanese model";
-      localModelStatus.textContent = "The Japanese model was not installed.";
+    const languages = [JAPANESE_SPEECH_LANGUAGE, ENGLISH_SPEECH_LANGUAGE];
+    const availability = await Promise.allSettled(
+      languages.map((language) =>
+        speechRecognition.available!({ langs: [language], processLocally: true }),
+      ),
+    );
+    const missingLanguages = languages.filter(
+      (_language, index) =>
+        availability[index].status === "fulfilled" &&
+        availability[index].value === "downloadable",
+    );
+
+    if (missingLanguages.length === 0) {
+      await updateJapaneseModelStatus();
+      return;
     }
+
+    installJapaneseModelButton.textContent = "Installing…";
+    localModelStatus.textContent = `Downloading ${missingLanguages
+      .map((language) => language === JAPANESE_SPEECH_LANGUAGE ? "Japanese" : "English")
+      .join(" and ")} model${missingLanguages.length > 1 ? "s" : ""}…`;
+    await Promise.allSettled(
+      missingLanguages.map((language) =>
+        speechRecognition.install!({ langs: [language], processLocally: true }),
+      ),
+    );
+    await updateJapaneseModelStatus();
   } catch (error) {
-    console.error("Failed to install Japanese speech model:", error);
-    installJapaneseModelButton.disabled = false;
-    installJapaneseModelButton.textContent = "Install Japanese model";
-    localModelStatus.textContent = "Japanese model installation failed.";
+    console.error("Failed to install on-device speech models:", error);
+    await updateJapaneseModelStatus();
+    localModelStatus.textContent += " Installation attempt failed.";
   }
 }
 
@@ -513,12 +566,16 @@ modelSelect.addEventListener("change", () => {
   });
 });
 
-let recognition: SpeechRecognition;
+let recognitions: SpeechRecognition[] = [];
 let usingLocalSpeechRecognition = false;
 let recognitionInactivityTimer: ReturnType<typeof setTimeout> | undefined;
 let recognitionSessionTimer: ReturnType<typeof setTimeout> | undefined;
 let recognitionStopRequested = false;
 let recognitionStopReason: string | null = null;
+let recognitionRunId = 0;
+let pendingLanguageRestart:
+  | { runId: number; pending: Set<SpeechRecognition> }
+  | undefined;
 
 function clearRecognitionTimers() {
   if (recognitionInactivityTimer) clearTimeout(recognitionInactivityTimer);
@@ -528,18 +585,22 @@ function clearRecognitionTimers() {
 }
 
 function stopRecognition(reason?: string) {
+  recognitionRunId += 1;
+  pendingLanguageRestart = undefined;
   recognitionStopRequested = true;
   recognitionStopReason = reason || null;
   clearRecognitionTimers();
   recognitionToggle.checked = false;
-  if (recognition) {
+  japaneseRecognitionToggle.disabled = false;
+  englishRecognitionToggle.disabled = false;
+  for (const activeRecognition of recognitions) {
     try {
-      recognition.stop();
+      activeRecognition.stop();
     } catch (error) {
       console.warn("Speech recognition was already stopped:", error);
     }
   }
-  if (reason) statusText.textContent = reason;
+  statusText.textContent = reason || "Recognition is off";
 }
 
 function scheduleRecognitionInactivityStop() {
@@ -641,9 +702,13 @@ function clearVoiceLog() {
 clearLogButton.addEventListener("click", clearVoiceLog);
 
 function startRecognition() {
+  const runId = ++recognitionRunId;
+  pendingLanguageRestart = undefined;
   const speechRecognition = getSpeechRecognitionConstructor();
   if (!speechRecognition) {
     console.log("Speech recognition not supported in this browser.");
+    recognitionToggle.checked = false;
+    statusText.textContent = "Speech recognition is not supported in this browser.";
     return false;
   }
   console.log("Speech recognition supported!");
@@ -651,32 +716,30 @@ function startRecognition() {
   recognitionStopRequested = false;
   recognitionStopReason = null;
   clearRecognitionTimers();
+
+  const languages = [
+    ...(japaneseRecognitionToggle.checked ? ["ja-JP"] : []),
+    ...(englishRecognitionToggle.checked ? ["en-US"] : []),
+  ];
+  if (languages.length === 0) {
+    stopRecognition("Select at least one recognition language.");
+    return false;
+  }
+
   scheduleRecognitionInactivityStop();
   scheduleRecognitionSessionStop();
 
-  recognition = new speechRecognition();
+  recognitions = languages.map(() => new speechRecognition());
   const recognitionContentRevision = contentRevision;
-  const localRecognition = recognition as SpeechRecognition & {
-    processLocally?: boolean;
-  };
-  usingLocalSpeechRecognition = "processLocally" in localRecognition;
-  if (usingLocalSpeechRecognition) {
-    localRecognition.processLocally = true;
-  }
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  // recognition.lang = 'en-US'; // Set the language as needed
-  recognition.lang = "ja-JP";
+  usingLocalSpeechRecognition = recognitions.some((activeRecognition) =>
+    "processLocally" in activeRecognition,
+  );
 
-  recognition.onstart = function () {
-    console.log("Speech recognition started");
-    statusText.textContent = usingLocalSpeechRecognition
-      ? "Recognition is on (on-device)"
-      : "Recognition is on";
-  };
-
-  recognition.onresult = function (event) {
-    if (recognitionContentRevision !== contentRevision) return;
+  const handleRecognitionResult = (
+    event: SpeechRecognitionEvent,
+    language: string,
+  ) => {
+    if (runId !== recognitionRunId || recognitionContentRevision !== contentRevision) return;
 
     // Get the last result from the results list
     const lastResultIndex = event.results.length - 1;
@@ -685,12 +748,12 @@ function startRecognition() {
     // Check if the result is final
     if (lastResult.isFinal) {
       const transcript = lastResult[0].transcript.trim();
-      console.log("Latest Transcript:", transcript);
+      console.log(`Latest Transcript (${language}):`, transcript);
 
       if (transcript) {
         scheduleRecognitionInactivityStop();
         // Append the new transcript with a <br> for a new line
-        monologueLog.innerHTML += transcript + "<br> // "; //'<span> // </span>';
+        monologueLog.innerHTML += `[${language}] ${transcript}<br> // `;
 
         // Check if the length exceeds 300 characters
         // Convert innerHTML to plain text to count characters
@@ -725,37 +788,130 @@ function startRecognition() {
       }
     } else {
       const transcript = lastResult[0].transcript;
-      console.log("Interim Transcript:", transcript);
+      console.log(`Interim Transcript (${language}):`, transcript);
 
-      interimResults.textContent = transcript;
+      interimResults.textContent = `[${language}] ${transcript}`;
     }
   };
 
-  recognition.onerror = function (event) {
-    console.error("Error occurred in recognition:", event.error);
-    if (usingLocalSpeechRecognition && event.error === "language-not-supported") {
-      statusText.textContent =
-        "On-device recognition is unavailable for this language.";
+  recognitions.forEach((activeRecognition, index) => {
+    if (recognitionStopRequested) return;
+    const localRecognition = activeRecognition as SpeechRecognition & {
+      processLocally?: boolean;
+    };
+    if ("processLocally" in localRecognition) {
+      localRecognition.processLocally = true;
     }
-  };
+    activeRecognition.continuous = true;
+    activeRecognition.interimResults = true;
+    activeRecognition.lang = languages[index];
 
-  recognition.onend = function () {
-    console.log("Speech recognition ended");
+    activeRecognition.onstart = function () {
+      console.log(`Speech recognition started (${languages[index]})`);
+      statusText.textContent = usingLocalSpeechRecognition
+        ? "Recognition is on (on-device)"
+        : "Recognition is on";
+    };
 
-    statusText.textContent = recognitionStopReason || "Recognition is off";
-    recognitionStopReason = null;
-    if (recognitionToggle.checked && !recognitionStopRequested) {
-      recognition!.start();
+    activeRecognition.onresult = (event) =>
+      handleRecognitionResult(event, languages[index]);
+
+    activeRecognition.onerror = function (event) {
+      console.error(`Speech recognition error (${languages[index]}):`, event.error);
+      if (
+        runId === recognitionRunId &&
+        usingLocalSpeechRecognition &&
+        event.error === "language-not-supported"
+      ) {
+        alert(`On-device recognition is unavailable for ${languages[index]}.`);
+        statusText.textContent =
+          `On-device recognition is unavailable for ${languages[index]}.`;
+      }
+    };
+
+    activeRecognition.onend = function () {
+      console.log(`Speech recognition ended (${languages[index]})`);
+      if (runId !== recognitionRunId) {
+        const restart = pendingLanguageRestart;
+        if (
+          restart?.runId === recognitionRunId &&
+          restart.pending.delete(activeRecognition) &&
+          restart.pending.size === 0
+        ) {
+          pendingLanguageRestart = undefined;
+          if (recognitionToggle.checked) startRecognition();
+        }
+        return;
+      }
+      if (recognitionToggle.checked && !recognitionStopRequested) {
+        activeRecognition.start();
+      } else {
+        statusText.textContent = recognitionStopReason || "Recognition is off";
+        recognitionStopReason = null;
+      }
+    };
+
+    try {
+      activeRecognition.start();
+    } catch (error) {
+      console.warn(`Could not start ${languages[index]} recognition:`, error);
+      if (index === 0) {
+        stopRecognition(`Could not start ${languages[index]} recognition.`);
+      }
     }
-  };
-
-  recognition.start();
+  });
 }
+
+function restartRecognitionForLanguageChange() {
+  if (!recognitionToggle.checked) return;
+
+  if (pendingLanguageRestart) {
+    pendingLanguageRestart.runId = ++recognitionRunId;
+    return;
+  }
+
+  const previousRecognitions = recognitions;
+  recognitionRunId += 1;
+  recognitionStopRequested = true;
+  recognitions = [];
+
+  if (previousRecognitions.length === 0) {
+    startRecognition();
+    return;
+  }
+
+  const restart = {
+    runId: recognitionRunId,
+    pending: new Set(previousRecognitions),
+  };
+  pendingLanguageRestart = restart;
+  for (const activeRecognition of previousRecognitions) {
+    try {
+      activeRecognition.stop();
+    } catch (error) {
+      console.warn("Speech recognition was already stopped:", error);
+      restart.pending.delete(activeRecognition);
+    }
+  }
+
+  if (restart.pending.size === 0) {
+    pendingLanguageRestart = undefined;
+    startRecognition();
+  }
+}
+
+japaneseRecognitionToggle.addEventListener(
+  "change",
+  restartRecognitionForLanguageChange,
+);
+englishRecognitionToggle.addEventListener(
+  "change",
+  restartRecognitionForLanguageChange,
+);
 
 recognitionToggle.addEventListener("change", function () {
   if (recognitionToggle.checked) {
     startRecognition();
-    // if (recognition) recognition.start();
   } else {
     stopRecognition();
   }

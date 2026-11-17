@@ -65,6 +65,9 @@ h1 { margin-bottom: 0.55rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: 
 
 .recognition-control { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.9rem; background: var(--voice-surface); border: 1px solid var(--voice-border); border-radius: 999px; box-shadow: var(--voice-shadow); }
 .control-label { color: var(--voice-muted); font-size: 0.82rem; font-weight: 650; white-space: nowrap; }
+.recognition-languages { display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; white-space: nowrap; }
+.recognition-languages label { display: inline-flex; align-items: center; gap: 0.2rem; }
+.recognition-languages input { accent-color: var(--voice-blue); }
 .status-pill { color: var(--voice-muted); font-size: 0.78rem; white-space: nowrap; }
 .local-model-control { display: grid; gap: 0.45rem; justify-items: end; }
 .local-model-control button { padding: 0.55rem 0.9rem; font-size: 0.82rem; }
