@@ -59,6 +59,7 @@ We have unstructured, just-idea notes here:
 - Allow the user to rename the saved bookmarks.
 - Add a flag for saved bookmarks and open them automatically when the session gets activated.
 - Allow migration to the closed named session and support migrating tabs into closed sessions (backend + UI).
+- Provide "Reordering" function for the "Saved Bookmark" UI in Tabs UI.
 
 ### Refactor, Architecture & Message Handling
 

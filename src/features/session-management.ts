@@ -271,6 +271,19 @@ export async function getSavedBookmarks(sessionId: string) {
   return await BookmarkStorage.getInstance().getSavedBookmarks(sessionId);
 }
 
+/** Moves a saved bookmark within the specified named session. */
+export async function moveSavedBookmark(
+  sessionId: string,
+  bookmarkId: string,
+  index: number,
+): Promise<void> {
+  await BookmarkStorage.getInstance().moveSavedBookmark(
+    sessionId,
+    bookmarkId,
+    index,
+  );
+}
+
 /**
  * Gets synced bookmarks for a session
  * TODO: Improve the comment.

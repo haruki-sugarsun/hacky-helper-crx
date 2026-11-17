@@ -335,6 +335,36 @@ export class BookmarkStorage {
   }
 
   /**
+   * Moves a saved bookmark within the "Saved Pages" folder for a session.
+   */
+  public async moveSavedBookmark(
+    sessionId: string,
+    bookmarkId: string,
+    index: number,
+  ): Promise<void> {
+    await this.initialize();
+
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error("A non-negative bookmark index is required");
+    }
+
+    const sessionFolder = this.sessionFolders.get(sessionId);
+    if (!sessionFolder) {
+      throw new Error(`Session folder not found for session ID: ${sessionId}`);
+    }
+
+    const [bookmark] = await chrome.bookmarks.get(bookmarkId);
+    if (!bookmark?.url || bookmark.parentId !== sessionFolder.savedPagesId) {
+      throw new Error("Bookmark does not belong to this session's Saved Pages");
+    }
+
+    await chrome.bookmarks.move(bookmarkId, {
+      parentId: sessionFolder.savedPagesId,
+      index,
+    });
+  }
+
+  /**
    * Gets all synced open tabs from the "Opened Pages" folder for a session
    */
   public async getSyncedOpenTabs(

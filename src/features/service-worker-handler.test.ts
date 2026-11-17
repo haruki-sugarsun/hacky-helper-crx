@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"; // Use vitest imports
-import { handleTakeoverTab } from "./service-worker-handler";
+import {
+  handleMoveSavedBookmark,
+  handleTakeoverTab,
+} from "./service-worker-handler";
 import * as SessionManagement from "./session-management";
 
 vi.mock("./session-management"); // Use vi.mock
@@ -56,6 +59,52 @@ describe("handleTakeoverTab", () => {
     );
     expect(mockSendResponse).toHaveBeenCalledWith({
       error: "Failed to take over tab",
+    });
+  });
+});
+
+describe("handleMoveSavedBookmark", () => {
+  const mockSendResponse = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("moves the bookmark through session management", async () => {
+    const message = {
+      payload: {
+        sessionId: "session-id",
+        bookmarkId: "bookmark-id",
+        index: 1,
+      },
+    };
+    vi.mocked(SessionManagement.moveSavedBookmark).mockResolvedValueOnce();
+
+    await handleMoveSavedBookmark(message, mockSendResponse);
+
+    expect(SessionManagement.moveSavedBookmark).toHaveBeenCalledWith(
+      "session-id",
+      "bookmark-id",
+      1,
+    );
+    expect(mockSendResponse).toHaveBeenCalledWith({ success: true });
+  });
+
+  it("rejects a missing or invalid destination index", async () => {
+    await handleMoveSavedBookmark(
+      {
+        payload: {
+          sessionId: "session-id",
+          bookmarkId: "bookmark-id",
+          index: -1,
+        },
+      },
+      mockSendResponse,
+    );
+
+    expect(SessionManagement.moveSavedBookmark).not.toHaveBeenCalled();
+    expect(mockSendResponse).toHaveBeenCalledWith({
+      error: "Session ID, bookmark ID, and valid index are required",
     });
   });
 });

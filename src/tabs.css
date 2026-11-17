@@ -358,8 +358,28 @@
   align-items: center;
 }
 
+#saved_bookmarks li[data-bookmark-id] {
+  cursor: grab;
+}
+
+#saved_bookmarks li[data-bookmark-id]:active {
+  cursor: grabbing;
+}
+
 #saved_bookmarks li:hover {
   background-color: #444466;
+}
+
+#saved_bookmarks li.bookmark-dragging {
+  opacity: 0.45;
+}
+
+#saved_bookmarks li.bookmark-drop-before {
+  box-shadow: inset 0 2px #aaddff;
+}
+
+#saved_bookmarks li.bookmark-drop-after {
+  box-shadow: inset 0 -2px #aaddff;
 }
 
 .bookmark-title {

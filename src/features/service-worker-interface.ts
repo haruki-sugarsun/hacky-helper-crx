@@ -22,6 +22,7 @@ import {
   GET_SAVED_BOOKMARKS,
   TAKEOVER_TAB,
   MIGRATE_TABS,
+  MOVE_SAVED_BOOKMARK,
   GET_CACHED_SESSION_TITLE_SUGGESTION,
 } from "./service-worker-messages";
 
@@ -65,6 +66,30 @@ class ServiceWorkerInterface {
     } catch (error) {
       console.error("Error in getSavedBookmarks:", error);
       return [];
+    }
+  }
+
+  /** Persists a saved bookmark's position in its session's Saved Pages folder. */
+  async moveSavedBookmark(
+    sessionId: string,
+    bookmarkId: string,
+    index: number,
+  ): Promise<SuccessResult | ErrorResult> {
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: MOVE_SAVED_BOOKMARK,
+        payload: { sessionId, bookmarkId, index },
+      })) as SuccessResult | ErrorResult;
+
+      if (!response || "error" in response) {
+        throw new Error(
+          response?.error ?? "Service worker returned no response",
+        );
+      }
+      return response;
+    } catch (error) {
+      console.error("Error in moveSavedBookmark:", error);
+      throw error;
     }
   }
 

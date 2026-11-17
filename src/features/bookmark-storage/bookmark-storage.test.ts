@@ -23,6 +23,7 @@ vi.mock("chrome", () => ({
     search: vi.fn(),
     getChildren: vi.fn(),
     update: vi.fn(),
+    move: vi.fn(),
     remove: vi.fn(),
     removeTree: vi.fn(),
     get: vi.fn(),
@@ -257,6 +258,60 @@ describe("BookmarkStorage", () => {
       sessionId: testSessionId,
       owner: tab2.owner,
     });
+  });
+
+  it("moves a saved bookmark to the requested position in its session folder", async () => {
+    const savedPagesFolderId = "mock-saved-pages-id";
+    const bookmarkId = "saved-bookmark-id";
+    (bookmarkStorage as any).sessionFolders.set(testSessionId, {
+      id: "mock-main-folder-id",
+      name: testSessionName,
+      sessionId: testSessionId,
+      openedPagesId: "mock-opened-pages-id",
+      savedPagesId: savedPagesFolderId,
+    });
+    vi.mocked(chrome.bookmarks.get).mockResolvedValue([
+      {
+        id: bookmarkId,
+        title: "Saved bookmark",
+        url: "https://example.com",
+        parentId: savedPagesFolderId,
+        dateAdded: Date.now(),
+      },
+    ]);
+
+    await bookmarkStorage.moveSavedBookmark(testSessionId, bookmarkId, 2);
+
+    expect(chrome.bookmarks.get).toHaveBeenCalledWith(bookmarkId);
+    expect(chrome.bookmarks.move).toHaveBeenCalledWith(bookmarkId, {
+      parentId: savedPagesFolderId,
+      index: 2,
+    });
+  });
+
+  it("rejects moving a bookmark that is outside the session Saved Pages folder", async () => {
+    const bookmarkId = "unrelated-bookmark-id";
+    (bookmarkStorage as any).sessionFolders.set(testSessionId, {
+      id: "mock-main-folder-id",
+      name: testSessionName,
+      sessionId: testSessionId,
+      openedPagesId: "mock-opened-pages-id",
+      savedPagesId: "mock-saved-pages-id",
+    });
+    vi.mocked(chrome.bookmarks.get).mockResolvedValue([
+      {
+        id: bookmarkId,
+        title: "Other bookmark",
+        url: "https://example.org",
+        parentId: "another-folder-id",
+        dateAdded: Date.now(),
+      },
+    ]);
+
+    await expect(
+      bookmarkStorage.moveSavedBookmark(testSessionId, bookmarkId, 0),
+    ).rejects.toThrow("does not belong to this session's Saved Pages");
+    expect(chrome.bookmarks.move).not.toHaveBeenCalled();
   });
 
   // Add more tests for other methods like syncSessionToBookmarks, getSyncedOpenTabs, deleteSessionFolder, etc.

@@ -20,6 +20,10 @@ import {
 import "./style.css";
 import "./tabs.css";
 import serviceWorkerInterface from "./features/service-worker-interface";
+import {
+  applySavedBookmarkReorder,
+  enableSavedBookmarkReordering,
+} from "./ui/saved-bookmark-reordering";
 // We import files and *Component names separately to ensure the top-level side effects.
 import "./ui/session-label";
 import "./ui/search-bar";
@@ -2551,7 +2555,7 @@ async function fetchAndDisplaySavedBookmarks(sessionId: string) {
     const bookmarks = await serviceWorkerInterface.getSavedBookmarks(sessionId);
 
     if (bookmarks && bookmarks.length > 0) {
-      displaySavedBookmarks(bookmarks);
+      displaySavedBookmarks(bookmarks, sessionId);
     } else {
       console.error("No saved bookmarks found.");
       clearSavedBookmarks();
@@ -2565,7 +2569,10 @@ async function fetchAndDisplaySavedBookmarks(sessionId: string) {
 /**
  * Displays saved bookmarks in the saved bookmarks section
  */
-function displaySavedBookmarks(bookmarks: SyncedTabEntity[]) {
+function displaySavedBookmarks(
+  bookmarks: SyncedTabEntity[],
+  sessionId: string,
+) {
   const savedBookmarksContainer =
     document.querySelector<HTMLDivElement>("#saved_bookmarks")!;
   const bookmarksList = savedBookmarksContainer.querySelector("ul")!;
@@ -2585,6 +2592,10 @@ function displaySavedBookmarks(bookmarks: SyncedTabEntity[]) {
   // Add dbclick to open the bookmark.
   bookmarks.forEach((bookmark) => {
     const listItem = document.createElement("li");
+    listItem.dataset.bookmarkId = bookmark.id;
+    enableSavedBookmarkReordering(listItem, (bookmarkId, destinationIndex) => {
+      void reorderSavedBookmark(sessionId, bookmarkId, destinationIndex);
+    });
 
     // Create bookmark title container
     const titleContainer = document.createElement("div");
@@ -2631,6 +2642,46 @@ function displaySavedBookmarks(bookmarks: SyncedTabEntity[]) {
 
     bookmarksList.appendChild(listItem);
   });
+}
+
+let bookmarkReorderInProgress = false;
+
+/** Persists a drag-and-drop reorder and reloads the authoritative bookmark order. */
+async function reorderSavedBookmark(
+  sessionId: string,
+  bookmarkId: string,
+  destinationIndex: number,
+): Promise<void> {
+  const isSessionSelected = () =>
+    document
+      .querySelector("#named_sessions li.selected")
+      ?.getAttribute("data-session-id") === sessionId;
+
+  if (bookmarkReorderInProgress || !isSessionSelected()) return;
+  bookmarkReorderInProgress = true;
+  try {
+    await applySavedBookmarkReorder(
+      () =>
+        serviceWorkerInterface.moveSavedBookmark(
+          sessionId,
+          bookmarkId,
+          destinationIndex,
+        ),
+      () =>
+        isSessionSelected()
+          ? fetchAndDisplaySavedBookmarks(sessionId)
+          : Promise.resolve(),
+      (error) => {
+        console.error("Error reordering saved bookmark:", error);
+        alert(
+          "Error reordering bookmark: " +
+            (error instanceof Error ? error.message : String(error)),
+        );
+      },
+    );
+  } finally {
+    bookmarkReorderInProgress = false;
+  }
 }
 
 /**

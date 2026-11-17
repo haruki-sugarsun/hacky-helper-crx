@@ -21,6 +21,7 @@ import {
   GET_SYNCED_OPENTABS,
   TAKEOVER_TAB,
   GET_SAVED_BOOKMARKS,
+  MOVE_SAVED_BOOKMARK,
   GET_CLOSED_NAMED_SESSIONS,
   RESTORE_CLOSED_SESSION,
   MIGRATE_TABS,
@@ -81,6 +82,10 @@ export function handleServiceWorkerMessage(
 
     case GET_SAVED_BOOKMARKS:
       handleGetSavedBookmarks(message, sendResponse);
+      break;
+
+    case MOVE_SAVED_BOOKMARK:
+      handleMoveSavedBookmark(message, sendResponse);
       break;
 
     case RESTORE_CLOSED_SESSION:
@@ -406,6 +411,36 @@ export async function handleGetSavedBookmarks(
   } catch (error) {
     console.error("Error fetching saved bookmarks:", error);
     sendResponse({ error: "Failed to fetch saved bookmarks" });
+  }
+}
+
+/** Handles reordering a saved bookmark within its named session. */
+export async function handleMoveSavedBookmark(
+  message: {
+    payload?: { sessionId?: string; bookmarkId?: string; index?: number };
+  },
+  sendResponse: (response?: SuccessResult | ErrorResult) => void,
+): Promise<void> {
+  const { sessionId, bookmarkId, index } = message.payload ?? {};
+  if (
+    !sessionId ||
+    !bookmarkId ||
+    typeof index !== "number" ||
+    !Number.isInteger(index) ||
+    index < 0
+  ) {
+    sendResponse({
+      error: "Session ID, bookmark ID, and valid index are required",
+    });
+    return;
+  }
+
+  try {
+    await SessionManagement.moveSavedBookmark(sessionId, bookmarkId, index);
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error("Error moving saved bookmark:", error);
+    sendResponse({ error: "Failed to move saved bookmark" });
   }
 }
 
