@@ -13,7 +13,7 @@ We have unstructured, just-idea notes here:
 - "Suggested Destinations" in the tab migration diable should suggest top 3 destinations based on our knowledge.
 - We would like to have a UI to check embeddings of a tab in the "Summary" Cell in Tabs UI.
 - Status indicatror for the pending LLM requests to proccess(ongoing + pending).
-- Use LLM to suggest a short title for the unnamed sessions based on the current tab summaries.
+- Unnamed-session title suggestions are implemented; see [taskdocs/unnamed_session_title_suggestion.md](unnamed_session_title_suggestion.md).
 - Mouse Hover to show the full text of the Window/Session name in Tabs UI.
 - Export/Import the session.
 - Style Update for Voice Log page.

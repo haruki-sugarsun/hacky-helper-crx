@@ -37,6 +37,7 @@ Provides an abstraction layer for interacting with different LLM providers:
   - Content summarization
   - Keyword extraction
   - Embedding generation
+- **Unnamed-window title suggestions**: The Tabs UI requests a short LLM title through `GET_CACHED_SESSION_TITLE_SUGGESTION`. The service worker gathers cached summaries for eligible, unpinned tabs in the window, then calls `LLMService.createSessionTitle`. Results are cached by window and summary fingerprint, with concurrent requests deduplicated. The label is presentation-only: it does not name or persist a session. The UI falls back to `Window <id>` if no title is available.
 
 ### 3. Configuration Management (`config_store.ts`)
 
@@ -63,6 +64,8 @@ Multiple HTML pages for different extension functionalities:
 - **Tabs Management** (`tabs.html`, `tabs.ts`): Tab organization interface.
   - Provides a view of active, unnamed, and closed sessions.
   - Displays tabs within the selected session.
+  - Unnamed-window labels use the non-persistent LLM title suggestion described above; selecting an open session displays the same suggestion as its current tab summary.
+  - Users can also manually create a named session from an unnamed window by entering a name. Separately, the migration dialog suggests destination sessions for a tab based on content similarity.
   - Implements **drag-and-drop tab migration**: Users can drag one or multiple tabs from the tab list and drop them onto a session item in the session list. The event flow involves `dragstart` (setting data and a custom drag image), `dragover`/`dragleave` (providing visual feedback on the target session item using CSS classes like `drag-over`), and `drop` (triggering `handleTabDrop` which communicates with the service worker via `MIGRATE_TABS` message).
 - **Editor** (`editor.html`, `editor.ts`): Text editing interface
 - **Log Viewers** (`logview.html`, `voice_log.html`): Logging interfaces

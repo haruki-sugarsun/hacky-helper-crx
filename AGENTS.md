@@ -35,10 +35,13 @@ For new agentic features, ensure the following documentation is updated:
 4. **designdocs/**: Detailed design documentation for agentic components
 5. **AGENTS.md**: Development workflow and branch management guidelines
 
+For proposed features that are not implemented yet, label them as proposed in the architecture and roadmap docs. Keep the feature-specific task and design documents aligned, and remove the proposal status only after implementation is complete.
+
 ## Best Practices
 
 - **Progressive Enhancement**: Ensure features work without AI/ML capabilities
 - **User Control**: Provide clear toggles and settings for agentic features
 - **Transparency**: Show when and how AI is being used
+- **Unnamed-session title suggestions**: Keep LLM-generated labels presentation-only; they must not rename or persist a session.
 - **Performance**: Optimize LLM task processing to minimize resource usage
 - **Error Handling**: Graceful degradation when LLM services are unavailable

@@ -197,6 +197,7 @@ Future improvements include refactoring individual CSS files to utilize CSS vari
 - [x] Display the suggestion in the unnamed-session list and the same non-persistent summary in selected-session metadata; do not rename or persist the session.
 - [x] Cache and deduplicate suggestions in the service worker.
 - [x] Preserve a `Window <id>` fallback when LLM processing is disabled, unavailable, or uncached.
+- See `designdocs/tabs_ui.md`, `designdocs/concepts.md`, and `taskdocs/unnamed_session_title_suggestion.md` for the implemented flow and design.
 
 ## Centralized LLM Lifecycle
 
