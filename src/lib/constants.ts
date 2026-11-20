@@ -10,7 +10,7 @@ export const SUMMARY_PROMPT =
 export const KEYWORDS_PROMPT =
   'Extract 5-10 important keywords from the following content. Return a JSON with only a `keywords` field of string array. e.g. `{keywords:["Key1", "Word2", "Topic", "Theme", "ワンちゃん"]}`:\n\n';
 export const SESSION_TITLE_PROMPT =
-  "Suggest a concise session title based on the browser tab summaries below. Return only the title, with no quotation marks, punctuation at the end, or explanation. Use at most 6 words and 60 characters. If the content is mixed, choose the most useful common theme.\n\n";
+  "Create a short, informative title for this browser session from the tab summaries below. Name the main topic or activity using the most specific useful details shared across the tabs. Prefer 2–5 words; never exceed 6 words or 60 characters. If the tabs cover different topics, choose the strongest common theme. Return only the title, with no quotation marks, ending punctuation, or explanation.\n\n";
 
 // OpenAI API Models
 export const OPENAI_CHAT_MODEL = "gpt-3.5-turbo";
