@@ -32,7 +32,10 @@ import * as SessionManagement from "./session-management";
 // TODO: Consider if we can/should enclose this as a part of DigestManagement 
 const sessionTitleCache = new Map<string, { fingerprint: string; title: string }>();
 
-const pendingSessionTitleRequests = new Map<string, Promise<string>>();
+const pendingSessionTitleRequests = new Map<
+  string,
+  { fingerprint: string; promise: Promise<string> }
+>();
 
 /**
  * Handles incoming messages to the service worker.
@@ -147,17 +150,22 @@ async function handleGetCachedSessionTitleSuggestion(
     }
 
     const pending = pendingSessionTitleRequests.get(cacheKey);
-    if (!pending) {
-      const titlePromise = (async () => {
+    if (!pending || pending.fingerprint !== fingerprint) {
+      const request = { fingerprint, promise: Promise.resolve("") };
+      const titlePromise = Promise.resolve().then(async () => {
+        if (pending) await pending.promise.catch(() => "");
         try {
           const title = await llmService.createSessionTitle(usableSummaries);
           if (title) sessionTitleCache.set(cacheKey, { fingerprint, title });
           return title;
         } finally {
-          pendingSessionTitleRequests.delete(cacheKey);
+          if (pendingSessionTitleRequests.get(cacheKey) === request) {
+            pendingSessionTitleRequests.delete(cacheKey);
+          }
         }
-      })();
-      pendingSessionTitleRequests.set(cacheKey, titlePromise);
+      });
+      request.promise = titlePromise;
+      pendingSessionTitleRequests.set(cacheKey, request);
       void titlePromise.catch((error) => {
         console.error(`Error generating title for window ${windowId}:`, error);
       });
@@ -165,7 +173,11 @@ async function handleGetCachedSessionTitleSuggestion(
 
     // Do not block the Tabs UI on a new or refreshed LLM request. Return the
     // previous title when available; a later UI refresh will read the update.
-    sendResponse({ title: cached?.title || "" });
+    sendResponse({
+      title: cached?.title
+        ? `${cached.title}${cached.fingerprint !== fingerprint ? " (refreshing…)" : ""}`
+        : "",
+    });
   } catch (error) {
     console.error(`Error suggesting title for window ${windowId}:`, error);
     sendResponse({ title: "" });

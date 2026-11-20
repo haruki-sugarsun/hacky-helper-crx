@@ -76,6 +76,7 @@ class SessionLabelComponent extends BaseComponent {
    */
   set label(value: string) {
     this.labelContainer.textContent = value;
+    this.labelContainer.title = value;
   }
 
   /**
