@@ -34,6 +34,10 @@ import { SessionMetadataComponent } from "./ui/session-metadata";
 import { initSearchFunctionality } from "./features/search-functionality";
 import { CONFIG_RO } from "./features/config-store";
 import { TB_TOGGLE_BOOKMARKS_PANE } from "./messages/messages";
+import {
+  buildNamedSessionExport,
+  downloadNamedSessionExport,
+} from "./ui/session-export";
 
 // Entrypoint code for tabs.html.
 console.log("tabs.ts", new Date());
@@ -565,6 +569,13 @@ function createSessionListItem(
         onClick: () => cloneSession(sessionId),
       },
       {
+        text: "Export Session (JSON)",
+        onClick: () => {
+          const session = state_sessions.find((item) => item.id === sessionId);
+          if (session) void exportNamedSession(session);
+        },
+      },
+      {
         text: "Pull Window",
         onClick: () => {
           if (windowId !== undefined) {
@@ -912,6 +923,53 @@ function promptCreateNamedSession() {
   });
 }
 
+/** Downloads the stored contents of a named session as a portable JSON file. */
+async function exportNamedSession(
+  session: NamedSession | ClosedNamedSession,
+): Promise<void> {
+  try {
+    let openedTabs = await serviceWorkerInterface.getSyncedOpenTabs(session.id);
+
+    // Include the latest local tabs for an active session while preserving tabs
+    // synced from other browser instances.
+    if ("windowId" in session && session.windowId !== undefined) {
+      try {
+        const [windowTabs, instanceId] = await Promise.all([
+          chrome.tabs.query({ windowId: session.windowId, pinned: false }),
+          CONFIG_RO.INSTANCE_ID(),
+        ]);
+        const remoteTabs = openedTabs.filter((tab) => tab.owner !== instanceId);
+        const localTabs = windowTabs
+          .filter(
+            (tab) => tab.url && /^https?:|^chrome-extension:/.test(tab.url),
+          )
+          .map((tab) => ({
+            id: String(tab.id ?? ""),
+            title: tab.title || "Untitled",
+            url: tab.url!,
+            sessionId: session.id,
+            owner: instanceId,
+          }));
+        openedTabs = [...remoteTabs, ...localTabs];
+      } catch (error) {
+        console.warn("Could not read live tabs for session export:", error);
+      }
+    }
+
+    const savedBookmarks = await serviceWorkerInterface.getSavedBookmarks(
+      session.id,
+    );
+    const data = buildNamedSessionExport(session, openedTabs, savedBookmarks);
+    downloadNamedSessionExport(session, data);
+  } catch (error) {
+    console.error("Error exporting named session:", error);
+    alert(
+      "Could not export this session: " +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+}
+
 // Helper function to create a closed session list item
 function createClosedSessionListItem(
   closedSession: ClosedNamedSession,
@@ -928,6 +986,10 @@ function createClosedSessionListItem(
 
   // Set menu items for closed sessions
   sessionLabel.menuItems = [
+    {
+      text: "Export Session (JSON)",
+      onClick: () => void exportNamedSession(closedSession),
+    },
     {
       text: "Restore Session",
       onClick: () => restoreClosedSession(closedSession.id),
